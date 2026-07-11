@@ -9,6 +9,9 @@ targets:
     sources: [CoolUICatalog]
     dependencies:
       - package: CoolUI
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
 packages:
   CoolUI:
     path: ../../packages/swift

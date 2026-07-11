@@ -62,6 +62,9 @@ test('all four runnable Catalog entry points exist', async () => {
     'apps/catalog-android/src/main/AndroidManifest.xml',
     'apps/catalog-arkui/entry/src/main/module.json5',
   ]) await access(new URL(path, root));
+
+  const swiftCatalog = await read('apps/catalog-swift/project.yml');
+  assert.match(swiftCatalog, /GENERATE_INFOPLIST_FILE: YES/);
 });
 
 test('platform package metadata pins the agreed minimums and coordinates', async () => {
