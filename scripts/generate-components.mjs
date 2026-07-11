@@ -111,12 +111,26 @@ Component({
   properties: {
     openType: { type: String, value: '' },
     formType: { type: String, value: '' },
+    lang: { type: String, value: 'en' },
+    sessionFrom: { type: String, value: '' },
+    sendMessageTitle: { type: String, value: '' },
+    sendMessagePath: { type: String, value: '' },
+    sendMessageImg: { type: String, value: '' },
+    appParameter: { type: String, value: '' },
+    showMessageCard: { type: Boolean, value: false },
+    phoneNumberNoQuotaToast: { type: Boolean, value: true },
   },
   data: { componentName: 'Button', interactive: true },
   methods: {
     handleButtonTap() {
       if (this.data.disabled || this.data.loading) return;
-      this.triggerEvent('tap', { value: this.data.value });
+      this.triggerEvent('tap', { value: this.data.value, selected: this.data.selected });
+    },
+    handleFormSubmit(event) {
+      this.triggerEvent('submit', event.detail);
+    },
+    handleFormReset(event) {
+      this.triggerEvent('reset', event.detail);
     },
     forwardNativeEvent(event) {
       this.triggerEvent(event.type, event.detail);
@@ -125,11 +139,20 @@ Component({
 });`);
     await output(`${dir}/index.json`, JSON.stringify({ component: true, styleIsolation: 'apply-shared' }, null, 2));
     await output(`${dir}/index.wxml`, `
+<form bindsubmit="handleFormSubmit" bindreset="handleFormReset">
 <button
   class="cool-component cool-glass cool-button-native cool-button cool-material-{{resolvedMaterial}} cool-tone-{{tone}} cool-size-{{size}} {{selected ? 'is-selected' : ''}} {{disabled || loading ? 'is-disabled' : ''}} {{error ? 'is-error' : ''}}"
   data-component="Button"
   open-type="{{openType}}"
   form-type="{{formType}}"
+  lang="{{lang}}"
+  session-from="{{sessionFrom}}"
+  send-message-title="{{sendMessageTitle}}"
+  send-message-path="{{sendMessagePath}}"
+  send-message-img="{{sendMessageImg}}"
+  app-parameter="{{appParameter}}"
+  show-message-card="{{showMessageCard}}"
+  phone-number-no-quota-toast="{{phoneNumberNoQuotaToast}}"
   disabled="{{disabled || loading}}"
   loading="{{loading}}"
   aria-label="{{resolvedAccessibilityLabel}}"
@@ -138,6 +161,8 @@ Component({
   bindgetuserinfo="forwardNativeEvent"
   bindcontact="forwardNativeEvent"
   bindgetphonenumber="forwardNativeEvent"
+  bindgetrealtimephonenumber="forwardNativeEvent"
+  createliveactivity="forwardNativeEvent"
   binderror="forwardNativeEvent"
   bindopensetting="forwardNativeEvent"
   bindlaunchapp="forwardNativeEvent"
@@ -150,7 +175,8 @@ Component({
     <slot/>
   </view>
   <text wx:if="{{errorMessage}}" class="cool-error" role="alert">{{errorMessage}}</text>
-</button>`);
+</button>
+</form>`);
     await output(`${dir}/index.wxss`, `
 @import "../../styles/glass.wxss";
 
@@ -243,8 +269,10 @@ await output('apps/catalog-wechat/app.js', `App({ globalData: { catalogVersion: 
 await output('apps/catalog-wechat/pages/index/index.json', JSON.stringify({ usingComponents }, null, 2));
 await output('apps/catalog-wechat/pages/index/index.js', `
 Page({
-  data: { version: '${release.version}' },
-  handleButtonSubmit() {},
+  data: { version: '${release.version}', buttonSubmitResult: 'Not submitted' },
+  handleButtonSubmit(event) {
+    this.setData({ buttonSubmitResult: JSON.stringify(event.detail) });
+  },
 });`);
 await output('apps/catalog-wechat/pages/index/index.wxml', `
 <view class="catalog-shell cool-theme">
@@ -255,9 +283,8 @@ await output('apps/catalog-wechat/pages/index/index.wxml', `
     <cool-button label="Loading" loading="{{true}}" accessibility-label="Loading button example" />
     <cool-button label="Disabled" disabled="{{true}}" accessibility-label="Disabled button example" />
     <cool-button label="Share" open-type="share" accessibility-label="Share button example" />
-    <form bindsubmit="handleButtonSubmit">
-      <cool-button label="Submit" form-type="submit" accessibility-label="Submit button example" />
-    </form>
+    <cool-button label="Submit" form-type="submit" bind:submit="handleButtonSubmit" accessibility-label="Submit button example" />
+    <text class="catalog-copy">Submit detail: {{buttonSubmitResult}}</text>
   </view></view>
 ${['foundations', 'actions-inputs', 'navigation', 'content', 'feedback-overlays'].map((category) => `
   <view class="catalog-section"><text class="catalog-section-title">${category}</text><view class="catalog-grid">

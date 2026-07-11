@@ -6,6 +6,32 @@ import vm from 'node:vm';
 const root = new URL('../', import.meta.url);
 const contract = JSON.parse(await readFile(new URL('../../contracts/components.json', root), 'utf8'));
 
+const buttonNativeProperties = [
+  { name: 'openType', attribute: 'open-type', type: 'String', defaultValue: '' },
+  { name: 'formType', attribute: 'form-type', type: 'String', defaultValue: '' },
+  { name: 'lang', attribute: 'lang', type: 'String', defaultValue: 'en' },
+  { name: 'sessionFrom', attribute: 'session-from', type: 'String', defaultValue: '' },
+  { name: 'sendMessageTitle', attribute: 'send-message-title', type: 'String', defaultValue: '' },
+  { name: 'sendMessagePath', attribute: 'send-message-path', type: 'String', defaultValue: '' },
+  { name: 'sendMessageImg', attribute: 'send-message-img', type: 'String', defaultValue: '' },
+  { name: 'appParameter', attribute: 'app-parameter', type: 'String', defaultValue: '' },
+  { name: 'showMessageCard', attribute: 'show-message-card', type: 'Boolean', defaultValue: false },
+  { name: 'phoneNumberNoQuotaToast', attribute: 'phone-number-no-quota-toast', type: 'Boolean', defaultValue: true },
+];
+
+const buttonOpenCapabilityEvents = [
+  { name: 'getuserinfo', attribute: 'bindgetuserinfo' },
+  { name: 'contact', attribute: 'bindcontact' },
+  { name: 'getphonenumber', attribute: 'bindgetphonenumber' },
+  { name: 'getrealtimephonenumber', attribute: 'bindgetrealtimephonenumber' },
+  { name: 'createliveactivity', attribute: 'createliveactivity' },
+  { name: 'error', attribute: 'binderror' },
+  { name: 'opensetting', attribute: 'bindopensetting' },
+  { name: 'launchapp', attribute: 'bindlaunchapp' },
+  { name: 'chooseavatar', attribute: 'bindchooseavatar' },
+  { name: 'agreeprivacyauthorization', attribute: 'bindagreeprivacyauthorization' },
+];
+
 async function loadGeneratedComponent(tag) {
   const source = await readFile(new URL(`src/components/${tag}/index.js`, root), 'utf8');
   let definition;
@@ -69,28 +95,50 @@ test('Button renders one native button with native attributes and slot content',
   assert.match(source, /bindtap="handleButtonTap"/);
 });
 
+test('Button owns form semantics and forwards original submit and reset detail', async () => {
+  const wxml = await readFile(new URL('src/components/cool-button/index.wxml', root), 'utf8');
+  const readme = await readFile(new URL('README.md', root), 'utf8');
+  const { definition } = await loadGeneratedComponent('cool-button');
+
+  assert.match(wxml, /^<form\b[^>]*bindsubmit="handleFormSubmit"[^>]*bindreset="handleFormReset"/);
+  assert.equal(wxml.match(/<button\b/g)?.length, 1);
+
+  for (const [methodName, eventName] of [['handleFormSubmit', 'submit'], ['handleFormReset', 'reset']]) {
+    const detail = { eventName, marker: Symbol(eventName) };
+    let forwarded;
+    definition.methods[methodName].call({
+      triggerEvent(name, forwardedDetail) { forwarded = { name, detail: forwardedDetail }; },
+    }, { detail });
+    assert.equal(forwarded.name, eventName);
+    assert.equal(forwarded.detail, detail);
+  }
+
+  assert.match(readme, /internal `<form>`/i);
+  assert.match(readme, /cross-component form[\s\S]*native button/i);
+});
+
 test('Button explicitly forwards every supported native event', async () => {
   const source = await readFile(new URL('src/components/cool-button/index.wxml', root), 'utf8');
-  const nativeEvents = [
-    'getuserinfo',
-    'contact',
-    'getphonenumber',
-    'error',
-    'opensetting',
-    'launchapp',
-    'chooseavatar',
-    'agreeprivacyauthorization',
-  ];
 
-  for (const eventName of nativeEvents) {
-    assert.match(source, new RegExp(`bind${eventName}="forwardNativeEvent"`));
+  for (const { name, attribute } of buttonOpenCapabilityEvents) {
+    assert.match(source, new RegExp(`${attribute}="forwardNativeEvent"`), name);
   }
 });
 
-test('Button declares native properties and suppresses disabled or loading taps', async () => {
-  const { definition, source } = await loadGeneratedComponent('cool-button');
-  assert.match(source, /openType:\s*\{\s*type:\s*String/);
-  assert.match(source, /formType:\s*\{\s*type:\s*String/);
+test('Button declares the complete native property matrix', async () => {
+  const wxml = await readFile(new URL('src/components/cool-button/index.wxml', root), 'utf8');
+  const { definition } = await loadGeneratedComponent('cool-button');
+  assert.deepEqual(Object.keys(definition.properties), buttonNativeProperties.map(({ name }) => name));
+
+  for (const { name, attribute, type, defaultValue } of buttonNativeProperties) {
+    assert.equal(definition.properties[name].type.name, type, name);
+    assert.equal(definition.properties[name].value, defaultValue, name);
+    assert.match(wxml, new RegExp(`${attribute}="\\{\\{${name}\\}\\}"`), name);
+  }
+});
+
+test('Button suppresses disabled or loading taps', async () => {
+  const { definition } = await loadGeneratedComponent('cool-button');
 
   for (const state of [{ disabled: true, loading: false }, { disabled: false, loading: true }]) {
     const events = [];
@@ -101,30 +149,23 @@ test('Button declares native properties and suppresses disabled or loading taps'
     assert.deepEqual(events, []);
   }
 
-  const events = [];
-  definition.methods.handleButtonTap.call({
-    data: { disabled: false, loading: false, value: 'primary' },
-    triggerEvent(name, detail) { events.push({ name, detail }); },
-  });
-  assert.equal(events.length, 1);
-  assert.equal(events[0].name, 'tap');
-  assert.equal(events[0].detail.value, 'primary');
+  for (const selected of [false, true]) {
+    const events = [];
+    definition.methods.handleButtonTap.call({
+      data: { disabled: false, loading: false, value: 'primary', selected },
+      triggerEvent(name, detail) { events.push({ name, detail }); },
+    });
+    assert.equal(events.length, 1);
+    assert.equal(events[0].name, 'tap');
+    assert.equal(events[0].detail.value, 'primary');
+    assert.equal(events[0].detail.selected, selected);
+  }
 });
 
 test('Button forwardNativeEvent preserves the native event name and detail object', async () => {
   const { definition } = await loadGeneratedComponent('cool-button');
-  const nativeEvents = [
-    'getuserinfo',
-    'contact',
-    'getphonenumber',
-    'error',
-    'opensetting',
-    'launchapp',
-    'chooseavatar',
-    'agreeprivacyauthorization',
-  ];
 
-  for (const eventName of nativeEvents) {
+  for (const { name: eventName } of buttonOpenCapabilityEvents) {
     const detail = { eventName, marker: Symbol(eventName) };
     let forwarded;
     definition.methods.forwardNativeEvent.call({
@@ -157,7 +198,9 @@ test('WeChat catalog showcases native Button states without replacing the compon
   assert.match(source, /<cool-button label="Loading"[^>]*loading="\{\{true\}\}"/);
   assert.match(source, /<cool-button label="Disabled"[^>]*disabled="\{\{true\}\}"/);
   assert.match(source, /<cool-button label="Share"[^>]*open-type="share"/);
-  assert.match(source, /<form bindsubmit="handleButtonSubmit">[\s\S]*<cool-button label="Submit"[^>]*form-type="submit"[\s\S]*<\/form>/);
-  assert.match(pageSource, /handleButtonSubmit\(\)/);
+  assert.doesNotMatch(source, /<form\b/);
+  assert.match(source, /<cool-button label="Submit"[^>]*form-type="submit"[^>]*bind:submit="handleButtonSubmit"/);
+  assert.match(source, /\{\{buttonSubmitResult\}\}/);
+  assert.match(pageSource, /handleButtonSubmit\(event\)[\s\S]*setData\(\{ buttonSubmitResult:/);
   assert.equal((source.match(/accessibility-label="Button example"/g) ?? []).length, 1);
 });

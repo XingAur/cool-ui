@@ -6,9 +6,8 @@
     <cool-button label="Loading" loading="{{true}}" accessibility-label="Loading button example" />
     <cool-button label="Disabled" disabled="{{true}}" accessibility-label="Disabled button example" />
     <cool-button label="Share" open-type="share" accessibility-label="Share button example" />
-    <form bindsubmit="handleButtonSubmit">
-      <cool-button label="Submit" form-type="submit" accessibility-label="Submit button example" />
-    </form>
+    <cool-button label="Submit" form-type="submit" bind:submit="handleButtonSubmit" accessibility-label="Submit button example" />
+    <text class="catalog-copy">Submit detail: {{buttonSubmitResult}}</text>
   </view></view>
 
   <view class="catalog-section"><text class="catalog-section-title">foundations</text><view class="catalog-grid">
