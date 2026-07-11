@@ -27,6 +27,7 @@ test('artifact workflow produces metadata without public registry commands', asy
   const pack = await read('scripts/pack-local.mjs');
   const artifacts = await read('scripts/build-artifacts.mjs');
   assert.match(pack, /pnpm/);
+  assert.match(pack, /packages\/wechat[\s\S]*build/, 'WeChat dist must be built before packing');
   assert.match(artifacts, /sbom/i);
   assert.match(artifacts, /sha256/i);
   assert.doesNotMatch(`${pack}\n${artifacts}`, /npm\s+publish|mavenCentral|ohpm\s+publish/i);

@@ -9,8 +9,7 @@ await mkdir(destination, { recursive: true });
 const pnpmEntrypoint = process.env.npm_execpath;
 const executable = pnpmEntrypoint ? process.execPath : process.platform === 'win32' ? 'powershell.exe' : 'pnpm';
 
-for (const packagePath of ['packages/tokens', 'packages/wechat']) {
-  const pnpmArgs = ['--dir', packagePath, 'pack', '--pack-destination', destination];
+function runPnpm(pnpmArgs) {
   const args = pnpmEntrypoint
     ? [pnpmEntrypoint, ...pnpmArgs]
     : process.platform === 'win32'
@@ -19,4 +18,10 @@ for (const packagePath of ['packages/tokens', 'packages/wechat']) {
   const result = spawnSync(executable, args, { cwd: root, stdio: 'inherit' });
   if (result.error) throw result.error;
   if (result.status !== 0) process.exit(result.status ?? 1);
+}
+
+runPnpm(['--dir', 'packages/wechat', 'build']);
+
+for (const packagePath of ['packages/tokens', 'packages/wechat']) {
+  runPnpm(['--dir', packagePath, 'pack', '--pack-destination', destination]);
 }
