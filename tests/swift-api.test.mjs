@@ -37,6 +37,8 @@ test('SwiftUI actions and inputs expose native typed values', async () => {
   assert.match(actions, /public struct CoolIconButton: View/);
   assert.match(actions, /public struct CoolFloatingActionButton: View/);
   assert.match(actions, /public struct CoolChip<Label: View>/);
+  assert.match(actions, /if #available\(iOS 26\.1/);
+  assert.match(actions, /GlassButtonStyle\(\)/);
   assert.match(textInputs, /Binding<String>/);
   assert.match(selections, /Binding<Bool>/);
   assert.match(selections, /public struct CoolSelectionOption<Value: Hashable/);

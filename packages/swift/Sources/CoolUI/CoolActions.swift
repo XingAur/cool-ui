@@ -81,15 +81,28 @@ public struct CoolButton<Label: View>: View {
 
   @ViewBuilder
   public var body: some View {
-    switch material {
-    case .clear:
-      nativeButton.buttonStyle(GlassButtonStyle(.clear.tint(coolActionTone(tone, colorScheme: colorScheme))))
-    case .regular:
-      nativeButton.buttonStyle(GlassButtonStyle(.regular.tint(coolActionTone(tone, colorScheme: colorScheme))))
-    case .prominent:
-      nativeButton.buttonStyle(GlassProminentButtonStyle())
-    case .solidFallback:
-      nativeButton.buttonStyle(.borderedProminent)
+    if #available(iOS 26.1, macOS 26.1, *) {
+      switch material {
+      case .clear:
+        nativeButton.buttonStyle(GlassButtonStyle(.clear.tint(coolActionTone(tone, colorScheme: colorScheme))))
+      case .regular:
+        nativeButton.buttonStyle(GlassButtonStyle(.regular.tint(coolActionTone(tone, colorScheme: colorScheme))))
+      case .prominent:
+        nativeButton.buttonStyle(GlassProminentButtonStyle())
+      case .solidFallback:
+        nativeButton.buttonStyle(.borderedProminent)
+      }
+    } else {
+      switch material {
+      case .prominent:
+        nativeButton.buttonStyle(GlassProminentButtonStyle())
+      case .solidFallback:
+        nativeButton.buttonStyle(.borderedProminent)
+      case .clear, .regular:
+        nativeButton
+          .buttonStyle(GlassButtonStyle())
+          .tint(coolActionTone(tone, colorScheme: colorScheme))
+      }
     }
   }
 }
@@ -229,11 +242,20 @@ public struct CoolChip<Label: View>: View {
   }
 
   public var body: some View {
-    Button { isSelected.toggle() } label: { label }
-      .buttonStyle(GlassButtonStyle(isSelected ? .regular.tint(.accentColor) : .clear))
-      .accessibilityLabel(accessibilityLabel)
-      .accessibilityValue(isSelected ? "Selected" : "Not selected")
-      .coolControlState(disabled: disabled, selected: isSelected)
+    if #available(iOS 26.1, macOS 26.1, *) {
+      Button { isSelected.toggle() } label: { label }
+        .buttonStyle(GlassButtonStyle(isSelected ? .regular.tint(.accentColor) : .clear))
+        .accessibilityLabel(accessibilityLabel)
+        .accessibilityValue(isSelected ? "Selected" : "Not selected")
+        .coolControlState(disabled: disabled, selected: isSelected)
+    } else {
+      Button { isSelected.toggle() } label: { label }
+        .buttonStyle(GlassButtonStyle())
+        .tint(isSelected ? Color.accentColor : Color.clear)
+        .accessibilityLabel(accessibilityLabel)
+        .accessibilityValue(isSelected ? "Selected" : "Not selected")
+        .coolControlState(disabled: disabled, selected: isSelected)
+    }
   }
 }
 

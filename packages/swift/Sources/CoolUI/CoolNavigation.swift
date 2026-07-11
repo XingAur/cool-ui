@@ -62,7 +62,7 @@ public struct CoolBottomNavigation<Value: Hashable & Sendable>: View {
     CoolGlassGroup(spacing: CoolTokenValue.points(CoolTokens.spaceXs)) {
       HStack(spacing: CoolTokenValue.points(CoolTokens.spaceXs)) {
         ForEach(items) { item in
-          Button { selection = item.id } label: {
+          let itemButton = Button { selection = item.id } label: {
             VStack(spacing: CoolTokenValue.points(CoolTokens.spaceXs)) {
               Image(systemName: CoolSemanticIcons.sfSymbol(for: item.systemImage))
               Text(item.title).font(.caption)
@@ -70,8 +70,16 @@ public struct CoolBottomNavigation<Value: Hashable & Sendable>: View {
             .frame(maxWidth: .infinity)
             .frame(minHeight: CoolTokenValue.points(CoolTokens.sizeTouchTarget))
           }
-          .buttonStyle(GlassButtonStyle(selection == item.id ? .regular.tint(.accentColor) : .clear))
-          .accessibilityValue(selection == item.id ? "Selected" : "")
+          if #available(iOS 26.1, macOS 26.1, *) {
+            itemButton
+              .buttonStyle(GlassButtonStyle(selection == item.id ? .regular.tint(.accentColor) : .clear))
+              .accessibilityValue(selection == item.id ? "Selected" : "")
+          } else {
+            itemButton
+              .buttonStyle(GlassButtonStyle())
+              .tint(selection == item.id ? Color.accentColor : Color.clear)
+              .accessibilityValue(selection == item.id ? "Selected" : "")
+          }
         }
       }
     }
@@ -153,14 +161,23 @@ public struct CoolNavigationRail<Value: Hashable & Sendable>: View {
     CoolGlassGroup(spacing: CoolTokenValue.points(CoolTokens.spaceXs)) {
       VStack(spacing: CoolTokenValue.points(CoolTokens.spaceXs)) {
         ForEach(items) { item in
-          Button { selection = item.id } label: {
+          let itemButton = Button { selection = item.id } label: {
             Label(item.title, systemImage: CoolSemanticIcons.sfSymbol(for: item.systemImage))
               .labelStyle(.iconOnly)
               .frame(width: CoolTokenValue.points(CoolTokens.sizeControlLarge), height: CoolTokenValue.points(CoolTokens.sizeControlLarge))
           }
-          .buttonStyle(GlassButtonStyle(selection == item.id ? .regular.tint(.accentColor) : .clear))
-          .accessibilityLabel(item.title)
-          .accessibilityValue(selection == item.id ? "Selected" : "")
+          if #available(iOS 26.1, macOS 26.1, *) {
+            itemButton
+              .buttonStyle(GlassButtonStyle(selection == item.id ? .regular.tint(.accentColor) : .clear))
+              .accessibilityLabel(item.title)
+              .accessibilityValue(selection == item.id ? "Selected" : "")
+          } else {
+            itemButton
+              .buttonStyle(GlassButtonStyle())
+              .tint(selection == item.id ? Color.accentColor : Color.clear)
+              .accessibilityLabel(item.title)
+              .accessibilityValue(selection == item.id ? "Selected" : "")
+          }
         }
       }
     }
