@@ -23,6 +23,7 @@ test('Compose uses native navigation and presentation primitives', async () => {
     assert.match(source, new RegExp(`\\b${primitive}\\b`), primitive);
   }
   assert.doesNotMatch(source, /\.fluidGlass\(material\)/, 'glass surface must not blur its own content');
+  assert.doesNotMatch(source, /graphicsLayer\s*\{[\s\S]{0,500}LocalCoolTheme\.current/, 'composition locals must be resolved before draw lambdas');
 });
 
 test('Compose Catalog exercises public components instead of a string renderer', async () => {

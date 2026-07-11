@@ -19,6 +19,7 @@ fun CoolBackdrop(
   background: @Composable BoxScope.() -> Unit,
   content: @Composable BoxScope.() -> Unit,
 ) {
+  val transparencyMode = LocalCoolTheme.current.transparencyMode
   val blur = when (material) {
     GlassMaterial.clear -> CoolTokens.blurClear.tokenDp()
     GlassMaterial.regular -> CoolTokens.blurRegular.tokenDp()
@@ -27,7 +28,7 @@ fun CoolBackdrop(
   }
   Box(modifier) {
     Box(Modifier.matchParentSize().graphicsLayer {
-      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && material != GlassMaterial.solidFallback && LocalCoolTheme.current.transparencyMode == TransparencyMode.full) {
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && material != GlassMaterial.solidFallback && transparencyMode == TransparencyMode.full) {
         renderEffect = RenderEffect.createBlurEffect(blur.toPx(), blur.toPx(), Shader.TileMode.CLAMP).asComposeRenderEffect()
       }
     }, content = background)
