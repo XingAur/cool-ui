@@ -1,0 +1,22 @@
+{
+  "version": "0.1.0",
+  "apiKinds": {
+    "provider": "Injects configuration into descendant components.",
+    "container": "Composes arbitrary platform-native child content.",
+    "action": "Emits an activation event without owning a value.",
+    "textInput": "Owns a controlled string value through native text input.",
+    "booleanInput": "Owns a controlled boolean value.",
+    "choiceInput": "Owns a controlled selection from typed options.",
+    "numericInput": "Owns a controlled numeric value and range.",
+    "dateInput": "Owns a controlled date or time value.",
+    "navigation": "Coordinates selection or actions in native navigation UI.",
+    "content": "Displays or composes application content.",
+    "status": "Communicates progress, state, or a compact value.",
+    "presentation": "Uses the platform presentation mechanism and dismissal model."
+  },
+  "maturityLevels": {
+    "stable": "Native implementation, behavioral tests, accessibility checks, Catalog example, and consumer documentation are complete.",
+    "beta": "Native behavior exists but at least one acceptance area is incomplete.",
+    "planned": "The public contract is reserved but the platform implementation is not production-ready."
+  }
+}

@@ -56,3 +56,20 @@ test('interactive components expose state, value, event, icon and accessibility 
     assert.deepEqual(component.capabilities, ['controlledValue', 'event', 'accessibilityLabel', 'semanticIconSlot'], component.name);
   }
 });
+
+test('every component declares native API shape and platform maturity', () => {
+  const validKinds = new Set([
+    'provider', 'container', 'action', 'textInput', 'booleanInput', 'choiceInput',
+    'numericInput', 'dateInput', 'navigation', 'content', 'status', 'presentation',
+  ]);
+  const validMaturity = new Set(['stable', 'beta', 'planned']);
+
+  for (const component of contract.components) {
+    assert.ok(validKinds.has(component.api?.kind), `${component.name} api.kind`);
+    assert.equal(typeof component.api.valueType, 'string', `${component.name} api.valueType`);
+    assert.ok(Array.isArray(component.api.events), `${component.name} api.events`);
+    assert.ok(Array.isArray(component.api.slots), `${component.name} api.slots`);
+    assert.deepEqual(Object.keys(component.maturity), ['swiftui', 'compose', 'arkui', 'wechat'], `${component.name} maturity platforms`);
+    assert.ok(Object.values(component.maturity).every((value) => validMaturity.has(value)), `${component.name} maturity values`);
+  }
+});

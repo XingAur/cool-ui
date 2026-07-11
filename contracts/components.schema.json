@@ -11,15 +11,38 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["name", "category", "platforms", "interactive"],
+        "required": ["name", "category", "platforms", "interactive", "api", "maturity"],
         "properties": {
           "name": {"type": "string"},
           "category": {"type": "string"},
           "platforms": {"const": ["swiftui", "compose", "arkui", "wechat"]},
           "interactive": {"type": "boolean"},
           "states": {"type": "array"},
-          "capabilities": {"type": "array"}
-        }
+          "capabilities": {"type": "array"},
+          "api": {
+            "type": "object",
+            "required": ["kind", "valueType", "events", "slots"],
+            "properties": {
+              "kind": {"enum": ["provider", "container", "action", "textInput", "booleanInput", "choiceInput", "numericInput", "dateInput", "navigation", "content", "status", "presentation"]},
+              "valueType": {"enum": ["none", "string", "boolean", "number", "date"]},
+              "events": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+              "slots": {"type": "array", "items": {"type": "string"}, "uniqueItems": true}
+            },
+            "additionalProperties": false
+          },
+          "maturity": {
+            "type": "object",
+            "required": ["swiftui", "compose", "arkui", "wechat"],
+            "properties": {
+              "swiftui": {"enum": ["stable", "beta", "planned"]},
+              "compose": {"enum": ["stable", "beta", "planned"]},
+              "arkui": {"enum": ["stable", "beta", "planned"]},
+              "wechat": {"enum": ["stable", "beta", "planned"]}
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
       }
     }
   }
