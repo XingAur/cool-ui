@@ -39,8 +39,8 @@
   <view class="catalog-section"><text class="catalog-section-title">navigation</text><view class="catalog-grid">
     <cool-top-bar label="TopBar" accessibility-label="TopBar example" />
     <cool-bottom-navigation label="BottomNavigation" accessibility-label="BottomNavigation example" />
-    <cool-tab-bar label="TabBar" accessibility-label="TabBar example" />
-    <cool-segmented-control label="SegmentedControl" accessibility-label="SegmentedControl example" />
+    <cool-tab-bar options="{{tabOptions}}" value="{{tabValue}}" bind:change="handleTabChange" accessibility-label="TabBar example" />
+    <cool-segmented-control options="{{segmentOptions}}" value="{{segmentValue}}" bind:change="handleSegmentChange" accessibility-label="SegmentedControl example" />
     <cool-navigation-rail label="NavigationRail" accessibility-label="NavigationRail example" />
   </view></view>
 

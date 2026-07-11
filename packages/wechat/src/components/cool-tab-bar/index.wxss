@@ -1,1 +1,54 @@
 @import "../../styles/glass.wxss";
+
+.cool-page-tab,
+.cool-segmented-option {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--cool-space-xs);
+  box-sizing: border-box;
+  min-height: var(--cool-size-touchTarget);
+  color: var(--cool-color-light-textSecondary);
+  background: var(--cool-color-light-surface);
+  border: var(--cool-border-hairline) solid var(--cool-color-light-surfaceTint);
+  transition: background var(--cool-motion-fast), border-color var(--cool-motion-fast), color var(--cool-motion-fast);
+}
+
+.cool-page-tab.is-active,
+.cool-segmented-option.is-active {
+  color: var(--cool-color-light-background);
+  background: var(--cool-color-light-accent);
+  border-color: var(--cool-color-light-accent);
+}
+
+.cool-page-tab.is-disabled,
+.cool-segmented-option.is-disabled,
+.cool-tab-bar.is-disabled,
+.cool-segmented-control.is-disabled { opacity: var(--cool-opacity-disabled); }
+
+.cool-option-label { font-size: var(--cool-typography-caption); }
+.cool-option-badge {
+  min-width: var(--cool-space-md);
+  padding: var(--cool-space-xs);
+  color: var(--cool-color-light-text);
+  font-size: var(--cool-typography-caption);
+  line-height: 1;
+  text-align: center;
+  background: var(--cool-color-light-surfaceTint);
+  border: var(--cool-border-hairline) solid var(--cool-color-light-surfaceTint);
+  border-radius: var(--cool-radius-pill);
+}
+
+.cool-tab-bar { width: 100%; box-sizing: border-box; }
+.cool-tab-track {
+  display: flex;
+  gap: var(--cool-space-xs);
+  min-width: 100%;
+  padding: var(--cool-space-xs);
+  box-sizing: border-box;
+}
+.cool-page-tab {
+  flex: none;
+  padding: 0 var(--cool-space-md);
+  border-radius: var(--cool-radius-pill);
+}

@@ -32,12 +32,13 @@ const buttonOpenCapabilityEvents = [
   { name: 'agreeprivacyauthorization', attribute: 'bindagreeprivacyauthorization' },
 ];
 
-async function loadGeneratedComponent(tag) {
+async function loadGeneratedComponent(tag, globals = {}) {
   const source = await readFile(new URL(`src/components/${tag}/index.js`, root), 'utf8');
   let definition;
   vm.runInNewContext(source, {
     Component(value) { definition = value; },
     require() { return {}; },
+    ...globals,
   }, { filename: `${tag}/index.js` });
   return { definition, source };
 }
@@ -203,4 +204,133 @@ test('WeChat catalog showcases native Button states without replacing the compon
   assert.match(source, /\{\{buttonSubmitResult\}\}/);
   assert.match(pageSource, /handleButtonSubmit\(event\)[\s\S]*setData\(\{ buttonSubmitResult:/);
   assert.equal((source.match(/accessibility-label="Button example"/g) ?? []).length, 1);
+});
+
+const controlledOptionTags = ['cool-tab-bar', 'cool-segmented-control'];
+const plainData = (value) => JSON.parse(JSON.stringify(value));
+
+test('controlled TabBar and SegmentedControl render option semantics from stable value keys', async () => {
+  for (const tag of controlledOptionTags) {
+    const wxml = await readFile(new URL(`src/components/${tag}/index.wxml`, root), 'utf8');
+    assert.match(wxml, /wx:for="\{\{options\}\}"/, tag);
+    assert.match(wxml, /wx:key="value"/, tag);
+    assert.match(wxml, /data-index="\{\{index\}\}"/, tag);
+    assert.match(wxml, /bindtap="handleOptionTap"/, tag);
+    assert.match(wxml, /index === selectedIndex/, `${tag} first-match active state`);
+    assert.match(wxml, /item\.disabled \|\| disabled/, `${tag} disabled state`);
+    assert.match(wxml, /wx:if="\{\{item\.badge \|\| item\.badge === 0\}\}"/, `${tag} badge`);
+    assert.match(wxml, /role="tablist"/, tag);
+    assert.match(wxml, /role="tab"/, tag);
+  }
+
+  const tabWxml = await readFile(new URL('src/components/cool-tab-bar/index.wxml', root), 'utf8');
+  assert.match(tabWxml, /<scroll-view\b[^>]*scroll-x="\{\{true\}\}"/);
+  assert.match(tabWxml, /cool-page-tab/);
+
+  const segmentWxml = await readFile(new URL('src/components/cool-segmented-control/index.wxml', root), 'utf8');
+  assert.match(segmentWxml, /cool-segmented-group/);
+});
+
+test('controlled option components emit exact change details without writing value', async () => {
+  for (const tag of controlledOptionTags) {
+    const { definition, source } = await loadGeneratedComponent(tag);
+    assert.doesNotMatch(source, /setData\(\{\s*value\s*:/, tag);
+
+    const options = [
+      { value: 'overview', label: 'Overview' },
+      { value: 2, label: 'Two' },
+      { value: 'blocked', label: 'Blocked', disabled: true },
+    ];
+    const invoke = (index, overrides = {}) => {
+      const events = [];
+      const writes = [];
+      definition.methods.handleOptionTap.call({
+        data: { options, value: 'overview', disabled: false, ...overrides },
+        setData(update) { writes.push(update); },
+        triggerEvent(name, detail) { events.push({ name, detail }); },
+      }, { currentTarget: { dataset: { index } } });
+      return { events, writes };
+    };
+
+    assert.deepEqual(plainData(invoke(1).events), [{ name: 'change', detail: { value: 2, index: 1 } }], tag);
+    assert.deepEqual(invoke(0).events, [], `${tag} current selection`);
+    assert.deepEqual(invoke(2).events, [], `${tag} disabled option`);
+    assert.deepEqual(invoke(1, { disabled: true }).events, [], `${tag} disabled component`);
+    assert.deepEqual(invoke(99).events, [], `${tag} out of range`);
+    assert.deepEqual(invoke(-1).events, [], `${tag} negative index`);
+    assert.deepEqual(invoke(undefined).events, [], `${tag} missing index`);
+    assert.deepEqual(invoke(1).writes, [], `${tag} controlled value`);
+
+    const stringResult = invoke(0, { value: 2 });
+    assert.deepEqual(plainData(stringResult.events), [{ name: 'change', detail: { value: 'overview', index: 0 } }], `${tag} string value`);
+  }
+});
+
+test('controlled option validation selects the first duplicate and warns without throwing', async () => {
+  for (const tag of controlledOptionTags) {
+    const warnings = [];
+    const { definition } = await loadGeneratedComponent(tag, {
+      console: { warn(...args) { warnings.push(args); } },
+    });
+    const writes = [];
+    const options = [
+      { value: 1, label: 'First number' },
+      { value: '1', label: 'String' },
+      { value: 1, label: 'Duplicate number' },
+    ];
+
+    assert.doesNotThrow(() => definition.observers['options, value'].call({
+      setData(update) { writes.push(update); },
+    }, options, 1));
+    assert.deepEqual(plainData(writes), [{ selectedIndex: 0 }], tag);
+    assert.equal(warnings.length, 1, tag);
+    assert.match(String(warnings[0][0]), /duplicate/i, tag);
+  }
+});
+
+test('controlled option components treat invalid options as an empty safe list', async () => {
+  for (const tag of controlledOptionTags) {
+    const { definition } = await loadGeneratedComponent(tag);
+    const writes = [];
+    const events = [];
+
+    assert.doesNotThrow(() => definition.observers['options, value'].call({
+      setData(update) { writes.push(update); },
+    }, { value: 'not-an-array' }, 'missing'));
+    assert.deepEqual(plainData(writes), [{ options: [], selectedIndex: -1 }], tag);
+    assert.doesNotThrow(() => definition.methods.handleOptionTap.call({
+      data: { options: null, value: 'missing', disabled: false },
+      triggerEvent(name, detail) { events.push({ name, detail }); },
+    }, { currentTarget: { dataset: { index: 0 } } }));
+    assert.deepEqual(events, [], tag);
+  }
+});
+
+test('controlled option surfaces use one glass group and token-only option fills and borders', async () => {
+  for (const tag of controlledOptionTags) {
+    const source = [
+      await readFile(new URL(`src/components/${tag}/index.wxml`, root), 'utf8'),
+      await readFile(new URL(`src/components/${tag}/index.wxss`, root), 'utf8'),
+    ].join('\n');
+    assert.equal((source.match(/cool-glass/g) ?? []).length, 1, `${tag} glass group`);
+    assert.match(source, /background:\s*var\(--cool-/);
+    assert.match(source, /border(?:-color)?:[^;]*var\(--cool-/);
+    assert.doesNotMatch(source, /#[\da-f]{3,8}|rgba?\(|backdrop-filter|filter:\s*blur/i, tag);
+  }
+});
+
+test('WeChat catalog controls TabBar and SegmentedControl with typed interactive examples', async () => {
+  const wxml = await readFile(new URL('../../apps/catalog-wechat/pages/index/index.wxml', root), 'utf8');
+  const pageSource = await readFile(new URL('../../apps/catalog-wechat/pages/index/index.js', root), 'utf8');
+
+  assert.match(pageSource, /tabValue:\s*'overview'/);
+  assert.match(pageSource, /segmentValue:\s*2/);
+  assert.match(pageSource, /tabOptions:[\s\S]*badge:[\s\S]*disabled:/);
+  assert.match(pageSource, /segmentOptions:[\s\S]*value:\s*1[\s\S]*value:\s*2/);
+  assert.match(pageSource, /handleTabChange\(event\)[\s\S]*setData\(\{ tabValue: event\.detail\.value \}\)/);
+  assert.match(pageSource, /handleSegmentChange\(event\)[\s\S]*setData\(\{ segmentValue: event\.detail\.value \}\)/);
+  assert.match(wxml, /<cool-tab-bar[^>]*options="\{\{tabOptions\}\}"[^>]*value="\{\{tabValue\}\}"[^>]*bind:change="handleTabChange"/);
+  assert.match(wxml, /<cool-segmented-control[^>]*options="\{\{segmentOptions\}\}"[^>]*value="\{\{segmentValue\}\}"[^>]*bind:change="handleSegmentChange"/);
+  assert.equal((wxml.match(/accessibility-label="Button example"/g) ?? []).length, 1);
+  assert.match(wxml, /43 components/);
 });

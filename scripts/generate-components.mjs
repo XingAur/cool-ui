@@ -12,11 +12,164 @@ const generationModes = capabilities.generationModes ?? {};
 const generationMode = (name, platform) => generationModes[name]?.[platform] ?? 'generated';
 const componentApiName = (name) => name;
 const kebab = (name) => name.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase();
+const controlledOptionComponents = new Set(['TabBar', 'SegmentedControl']);
 
 async function output(path, contents) {
   const target = resolve(root, path);
   await mkdir(dirname(target), { recursive: true });
   await writeFile(target, `${contents.trim()}\n`, 'utf8');
+}
+
+function controlledOptionScript(componentName) {
+  return `
+const coolBehavior = require('../../behaviors/cool-ui');
+
+function isOptionValue(value) {
+  return typeof value === 'string' || typeof value === 'number';
+}
+
+function firstSelectedIndex(options, value) {
+  if (!Array.isArray(options)) return -1;
+  return options.findIndex((option) => option && isOptionValue(option.value) && option.value === value);
+}
+
+function warnForDuplicateValues(options) {
+  const seen = new Set();
+  const duplicates = new Set();
+  for (const option of options) {
+    if (!option || !isOptionValue(option.value)) continue;
+    const identity = typeof option.value + ':' + String(option.value);
+    if (seen.has(identity)) duplicates.add(identity);
+    seen.add(identity);
+  }
+  if (duplicates.size > 0 && typeof console !== 'undefined' && typeof console.warn === 'function') {
+    console.warn('[cooL UI] ${componentName} options contain duplicate values; the first match is selected.', [...duplicates]);
+  }
+}
+
+Component({
+  behaviors: [coolBehavior],
+  options: { multipleSlots: true, styleIsolation: 'apply-shared' },
+  data: { componentName: '${componentName}', interactive: true, selectedIndex: -1 },
+  observers: {
+    'options, value': function validateOptions(options, value) {
+      if (!Array.isArray(options)) {
+        this.setData({ options: [], selectedIndex: -1 });
+        return;
+      }
+      warnForDuplicateValues(options);
+      this.setData({ selectedIndex: firstSelectedIndex(options, value) });
+    },
+  },
+  methods: {
+    handleOptionTap(event) {
+      if (this.data.disabled) return;
+      const dataset = event && event.currentTarget && event.currentTarget.dataset;
+      const index = dataset ? Number(dataset.index) : Number.NaN;
+      const options = Array.isArray(this.data.options) ? this.data.options : [];
+      if (!Number.isInteger(index) || index < 0 || index >= options.length) return;
+      const option = options[index];
+      if (!option || !isOptionValue(option.value) || option.disabled || option.value === this.data.value) return;
+      this.triggerEvent('change', { value: option.value, index });
+    },
+  },
+});`;
+}
+
+function controlledOptionTemplate(componentName) {
+  if (componentName === 'TabBar') return `
+<scroll-view class="cool-component cool-glass cool-tab-bar cool-material-{{resolvedMaterial}} cool-tone-{{tone}} cool-size-{{size}} {{disabled ? 'is-disabled' : ''}}" data-component="TabBar" scroll-x="{{true}}" enhanced="{{true}}" show-scrollbar="{{false}}" role="tablist" aria-label="{{resolvedAccessibilityLabel}}">
+  <view class="cool-tab-track">
+    <view wx:for="{{options}}" wx:key="value" class="cool-page-tab {{index === selectedIndex ? 'is-active' : ''}} {{item.disabled || disabled ? 'is-disabled' : ''}}" data-index="{{index}}" role="tab" aria-selected="{{index === selectedIndex}}" aria-disabled="{{item.disabled || disabled}}" bindtap="handleOptionTap">
+      <text class="cool-option-label">{{item.label}}</text>
+      <text wx:if="{{item.badge || item.badge === 0}}" class="cool-option-badge">{{item.badge}}</text>
+    </view>
+  </view>
+</scroll-view>`;
+
+  return `
+<view class="cool-component cool-glass cool-segmented-control cool-segmented-group cool-material-{{resolvedMaterial}} cool-tone-{{tone}} cool-size-{{size}} {{disabled ? 'is-disabled' : ''}}" data-component="SegmentedControl" role="tablist" aria-label="{{resolvedAccessibilityLabel}}">
+  <view wx:for="{{options}}" wx:key="value" class="cool-segmented-option {{index === selectedIndex ? 'is-active' : ''}} {{item.disabled || disabled ? 'is-disabled' : ''}}" data-index="{{index}}" role="tab" aria-selected="{{index === selectedIndex}}" aria-disabled="{{item.disabled || disabled}}" bindtap="handleOptionTap">
+    <text class="cool-option-label">{{item.label}}</text>
+    <text wx:if="{{item.badge || item.badge === 0}}" class="cool-option-badge">{{item.badge}}</text>
+  </view>
+</view>`;
+}
+
+function controlledOptionStyles(componentName) {
+  const shared = `
+@import "../../styles/glass.wxss";
+
+.cool-page-tab,
+.cool-segmented-option {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--cool-space-xs);
+  box-sizing: border-box;
+  min-height: var(--cool-size-touchTarget);
+  color: var(--cool-color-light-textSecondary);
+  background: var(--cool-color-light-surface);
+  border: var(--cool-border-hairline) solid var(--cool-color-light-surfaceTint);
+  transition: background var(--cool-motion-fast), border-color var(--cool-motion-fast), color var(--cool-motion-fast);
+}
+
+.cool-page-tab.is-active,
+.cool-segmented-option.is-active {
+  color: var(--cool-color-light-background);
+  background: var(--cool-color-light-accent);
+  border-color: var(--cool-color-light-accent);
+}
+
+.cool-page-tab.is-disabled,
+.cool-segmented-option.is-disabled,
+.cool-tab-bar.is-disabled,
+.cool-segmented-control.is-disabled { opacity: var(--cool-opacity-disabled); }
+
+.cool-option-label { font-size: var(--cool-typography-caption); }
+.cool-option-badge {
+  min-width: var(--cool-space-md);
+  padding: var(--cool-space-xs);
+  color: var(--cool-color-light-text);
+  font-size: var(--cool-typography-caption);
+  line-height: 1;
+  text-align: center;
+  background: var(--cool-color-light-surfaceTint);
+  border: var(--cool-border-hairline) solid var(--cool-color-light-surfaceTint);
+  border-radius: var(--cool-radius-pill);
+}`;
+
+  if (componentName === 'TabBar') return `${shared}
+
+.cool-tab-bar { width: 100%; box-sizing: border-box; }
+.cool-tab-track {
+  display: flex;
+  gap: var(--cool-space-xs);
+  min-width: 100%;
+  padding: var(--cool-space-xs);
+  box-sizing: border-box;
+}
+.cool-page-tab {
+  flex: none;
+  padding: 0 var(--cool-space-md);
+  border-radius: var(--cool-radius-pill);
+}`;
+
+  return `${shared}
+
+.cool-segmented-group {
+  display: flex;
+  gap: var(--cool-space-xs);
+  width: 100%;
+  padding: var(--cool-space-xs);
+  box-sizing: border-box;
+}
+.cool-segmented-option {
+  flex: 1;
+  min-width: 0;
+  padding: 0 var(--cool-space-sm);
+  border-radius: var(--cool-radius-medium);
+}`;
 }
 
 const swift = `
@@ -210,6 +363,13 @@ Component({
 }`);
     continue;
   }
+  if (controlledOptionComponents.has(component.name)) {
+    await output(`${dir}/index.js`, controlledOptionScript(component.name));
+    await output(`${dir}/index.json`, JSON.stringify({ component: true, styleIsolation: 'apply-shared' }, null, 2));
+    await output(`${dir}/index.wxml`, controlledOptionTemplate(component.name));
+    await output(`${dir}/index.wxss`, controlledOptionStyles(component.name));
+    continue;
+  }
   const role = /Button|Chip|Item|Card|Navigation|TabBar|Segmented|Banner|Dialog|Sheet|Popover/.test(component.name) ? 'button' : 'none';
   const inputType = /TextField|SearchField/.test(component.name) ? 'input'
     : component.name === 'TextArea' ? 'textarea'
@@ -264,14 +424,40 @@ Component({
 await output('packages/wechat/component-manifest.json', JSON.stringify(manifest, null, 2));
 
 const usingComponents = Object.fromEntries(Object.keys(manifest).map((tag) => [tag, `../../../packages/wechat/dist/components/${tag}/index`]));
+const catalogComponentExample = ({ name }) => {
+  if (name === 'TabBar') return '<cool-tab-bar options="{{tabOptions}}" value="{{tabValue}}" bind:change="handleTabChange" accessibility-label="TabBar example" />';
+  if (name === 'SegmentedControl') return '<cool-segmented-control options="{{segmentOptions}}" value="{{segmentValue}}" bind:change="handleSegmentChange" accessibility-label="SegmentedControl example" />';
+  return `<cool-${kebab(name)} label="${name}" accessibility-label="${name} example" />`;
+};
 await output('apps/catalog-wechat/app.json', JSON.stringify({ pages: ['pages/index/index'], window: { navigationStyle: 'custom', backgroundColor: '#071018' }, style: 'v2', lazyCodeLoading: 'requiredComponents' }, null, 2));
 await output('apps/catalog-wechat/app.js', `App({ globalData: { catalogVersion: '${release.version}' } });`);
 await output('apps/catalog-wechat/pages/index/index.json', JSON.stringify({ usingComponents }, null, 2));
 await output('apps/catalog-wechat/pages/index/index.js', `
 Page({
-  data: { version: '${release.version}', buttonSubmitResult: 'Not submitted' },
+  data: {
+    version: '${release.version}',
+    buttonSubmitResult: 'Not submitted',
+    tabValue: 'overview',
+    tabOptions: [
+      { value: 'overview', label: 'Overview' },
+      { value: 'updates', label: 'Updates', badge: 3 },
+      { value: 'settings', label: 'Settings', disabled: true },
+    ],
+    segmentValue: 2,
+    segmentOptions: [
+      { value: 1, label: 'Day' },
+      { value: 2, label: 'Week' },
+      { value: 3, label: 'Month', badge: 'New' },
+    ],
+  },
   handleButtonSubmit(event) {
     this.setData({ buttonSubmitResult: JSON.stringify(event.detail) });
+  },
+  handleTabChange(event) {
+    this.setData({ tabValue: event.detail.value });
+  },
+  handleSegmentChange(event) {
+    this.setData({ segmentValue: event.detail.value });
   },
 });`);
 await output('apps/catalog-wechat/pages/index/index.wxml', `
@@ -288,7 +474,7 @@ await output('apps/catalog-wechat/pages/index/index.wxml', `
   </view></view>
 ${['foundations', 'actions-inputs', 'navigation', 'content', 'feedback-overlays'].map((category) => `
   <view class="catalog-section"><text class="catalog-section-title">${category}</text><view class="catalog-grid">
-    ${components.filter((component) => component.category === category).map(({ name }) => `<cool-${kebab(name)} label="${name}" accessibility-label="${name} example" />`).join('\n    ')}
+    ${components.filter((component) => component.category === category).map(catalogComponentExample).join('\n    ')}
   </view></view>`).join('\n')}
 </view>`);
 

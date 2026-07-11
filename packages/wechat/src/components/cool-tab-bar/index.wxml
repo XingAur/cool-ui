@@ -1,6 +1,8 @@
-<view class="cool-component cool-glass cool-tab-bar cool-material-{{resolvedMaterial}} cool-tone-{{tone}} cool-size-{{size}} {{selected ? 'is-selected' : ''}} {{disabled ? 'is-disabled' : ''}} {{error ? 'is-error' : ''}}" data-component="TabBar">
-  <view wx:if="{{loading}}" class="cool-loading" aria-label="loading"></view>
-  <slot name="icon"/>
-  <view class="cool-content" role="button" aria-label="{{accessibilityLabel}}" bindtap="handleTap"><text wx:if="{{label}}" class="cool-label">{{label}}</text><slot/></view>
-  <text wx:if="{{errorMessage}}" class="cool-error" role="alert">{{errorMessage}}</text>
-</view>
+<scroll-view class="cool-component cool-glass cool-tab-bar cool-material-{{resolvedMaterial}} cool-tone-{{tone}} cool-size-{{size}} {{disabled ? 'is-disabled' : ''}}" data-component="TabBar" scroll-x="{{true}}" enhanced="{{true}}" show-scrollbar="{{false}}" role="tablist" aria-label="{{resolvedAccessibilityLabel}}">
+  <view class="cool-tab-track">
+    <view wx:for="{{options}}" wx:key="value" class="cool-page-tab {{index === selectedIndex ? 'is-active' : ''}} {{item.disabled || disabled ? 'is-disabled' : ''}}" data-index="{{index}}" role="tab" aria-selected="{{index === selectedIndex}}" aria-disabled="{{item.disabled || disabled}}" bindtap="handleOptionTap">
+      <text class="cool-option-label">{{item.label}}</text>
+      <text wx:if="{{item.badge || item.badge === 0}}" class="cool-option-badge">{{item.badge}}</text>
+    </view>
+  </view>
+</scroll-view>
