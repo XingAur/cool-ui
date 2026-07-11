@@ -141,10 +141,10 @@ test('MonthCalendar shares machine-validatable calendar day and marker models', 
   });
 });
 
-test('MonthCalendar generation enables the native SwiftUI and WeChat implementations', () => {
+test('MonthCalendar generation enables the native SwiftUI, Compose, and WeChat implementations', () => {
   assert.deepEqual(capabilities.generationModes?.MonthCalendar, {
     swiftui: 'native',
-    compose: 'registryOnly',
+    compose: 'native',
     arkui: 'registryOnly',
     wechat: 'native',
   });

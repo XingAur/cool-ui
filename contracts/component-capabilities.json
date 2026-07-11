@@ -60,7 +60,7 @@
   "generationModes": {
     "MonthCalendar": {
       "swiftui": "native",
-      "compose": "registryOnly",
+      "compose": "native",
       "arkui": "registryOnly",
       "wechat": "native"
     }

@@ -1,8 +1,8 @@
 import org.gradle.api.publish.maven.MavenPublication
 
 plugins {
-  id("com.android.library") version "9.2.0"
-  id("org.jetbrains.kotlin.plugin.compose") version "2.3.21"
+  id("com.android.library")
+  id("org.jetbrains.kotlin.plugin.compose")
   `maven-publish`
 }
 
