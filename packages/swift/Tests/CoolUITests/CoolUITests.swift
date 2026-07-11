@@ -148,3 +148,85 @@ import SwiftUI
   #expect(boundMonth == initialMonth)
   #expect(requestedDirection == .next)
 }
+
+@Test @MainActor func monthCalendarResolvesSelectionForSlotsAndCallbacks() {
+  let selectedDate = Date(timeIntervalSince1970: 0)
+  let otherDate = Date(timeIntervalSince1970: 86_400)
+  let markers = CoolTone.allCases.map { CoolCalendarMarker(tone: $0) }
+  let source = CoolCalendarDay(
+    date: selectedDate,
+    day: 1,
+    secondaryText: "Holiday",
+    accessibilityLabel: "January 1",
+    isToday: true,
+    isSelected: false,
+    isDisabled: false,
+    tone: .success,
+    badge: "2",
+    markers: markers
+  )
+  let staleSelection = CoolCalendarDay(date: otherDate, day: 2, isSelected: true)
+  var callbackPayload: CoolCalendarDay?
+  let calendar = CoolMonthCalendar(
+    selection: .constant(selectedDate),
+    displayedMonth: .constant(selectedDate),
+    days: [source, staleSelection],
+    onSelect: { callbackPayload = $0 }
+  )
+
+  let resolved = calendar.resolvedDay(source)
+  #expect(resolved.date == source.date)
+  #expect(resolved.secondaryText == source.secondaryText)
+  #expect(resolved.accessibilityLabel == source.accessibilityLabel)
+  #expect(resolved.isToday == source.isToday)
+  #expect(resolved.isSelected)
+  #expect(resolved.tone == source.tone)
+  #expect(resolved.badge == source.badge)
+  #expect(resolved.markers.count == 3)
+  #expect(!calendar.resolvedDay(staleSelection).isSelected)
+
+  calendar.requestSelection(source)
+  #expect(callbackPayload?.isSelected == true)
+  #expect(callbackPayload?.markers.count == 3)
+}
+
+@Test @MainActor func monthCalendarFormattingUsesCalendarTimeZoneAndLocale() {
+  let instant = Date(timeIntervalSince1970: 0)
+  var eastCalendar = Calendar(identifier: .gregorian)
+  eastCalendar.timeZone = TimeZone(secondsFromGMT: 14 * 60 * 60)!
+  eastCalendar.locale = Locale(identifier: "en_US_POSIX")
+  var westCalendar = Calendar(identifier: .gregorian)
+  westCalendar.timeZone = TimeZone(secondsFromGMT: -12 * 60 * 60)!
+  westCalendar.locale = Locale(identifier: "en_US_POSIX")
+  let east = CoolMonthCalendar(
+    selection: .constant(instant), displayedMonth: .constant(instant), days: [], calendar: eastCalendar
+  )
+  let west = CoolMonthCalendar(
+    selection: .constant(instant), displayedMonth: .constant(instant), days: [], calendar: westCalendar
+  )
+
+  #expect(eastCalendar.component(.day, from: instant) == 1)
+  #expect(east.localizedDay(instant).contains("January"))
+  #expect(east.localizedMonth(instant).contains("January"))
+  #expect(westCalendar.component(.day, from: instant) == 31)
+  #expect(west.localizedDay(instant).contains("December"))
+  #expect(west.localizedMonth(instant).contains("December"))
+}
+
+@Test @MainActor func monthCalendarFallsBackFromInvalidWeekdayLabelsAndAcceptsLocalizedAccessibility() {
+  let date = Date(timeIntervalSince1970: 0)
+  let labels = CoolMonthCalendarAccessibilityLabels(
+    previousMonth: "上个月",
+    nextMonth: "下个月",
+    today: "今天"
+  )
+  let calendar = CoolMonthCalendar(
+    selection: .constant(date),
+    displayedMonth: .constant(date),
+    days: [],
+    weekdayLabels: ["invalid"],
+    accessibilityLabels: labels
+  )
+
+  #expect(calendar.weekdayLabels.count == 7)
+}

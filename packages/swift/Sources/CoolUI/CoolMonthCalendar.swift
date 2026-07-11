@@ -19,6 +19,22 @@ public struct CoolMonthCalendarHeaderContext {
   }
 }
 
+public struct CoolMonthCalendarAccessibilityLabels: Hashable, Sendable {
+  public let previousMonth: String
+  public let nextMonth: String
+  public let today: String
+
+  public init(
+    previousMonth: String = "Previous month",
+    nextMonth: String = "Next month",
+    today: String = "Today"
+  ) {
+    self.previousMonth = previousMonth
+    self.nextMonth = nextMonth
+    self.today = today
+  }
+}
+
 public struct CoolCalendarMarker: Hashable, Sendable {
   public let tone: CoolTone
   public let accessibilityLabel: String?
@@ -75,10 +91,11 @@ public struct CoolMonthCalendar<Header: View, DayContent: View, MarkerContent: V
   @Binding private var displayedMonth: Date
 
   private let days: [CoolCalendarDay]
-  private let weekdayLabels: [String]
+  let weekdayLabels: [String]
   private let calendar: Calendar
   private let material: CoolGlassMaterial
   private let tone: CoolTone
+  private let accessibilityLabels: CoolMonthCalendarAccessibilityLabels
   private let onSelect: (CoolCalendarDay) -> Void
   private let onMonthChange: (CoolMonthDirection) -> Void
   private let header: (CoolMonthCalendarHeaderContext) -> Header
@@ -94,21 +111,21 @@ public struct CoolMonthCalendar<Header: View, DayContent: View, MarkerContent: V
     calendar: Calendar = .autoupdatingCurrent,
     material: CoolGlassMaterial = .regular,
     tone: CoolTone = .neutral,
+    accessibilityLabels: CoolMonthCalendarAccessibilityLabels = .init(),
     onSelect: @escaping (CoolCalendarDay) -> Void = { _ in },
     onMonthChange: @escaping (CoolMonthDirection) -> Void = { _ in },
     @ViewBuilder header: @escaping (CoolMonthCalendarHeaderContext) -> Header,
     @ViewBuilder day: @escaping (CoolCalendarDay) -> DayContent,
     @ViewBuilder marker: @escaping (CoolCalendarMarker) -> MarkerContent
   ) {
-    let labels = weekdayLabels ?? Self.defaultWeekdayLabels(for: calendar)
-    precondition(labels.count == 7, "weekdayLabels must contain exactly seven labels")
     _selection = selection
     _displayedMonth = displayedMonth
     self.days = days
-    self.weekdayLabels = labels
+    self.weekdayLabels = Self.resolvedWeekdayLabels(weekdayLabels, calendar: calendar)
     self.calendar = calendar
     self.material = material
     self.tone = tone
+    self.accessibilityLabels = accessibilityLabels
     self.onSelect = onSelect
     self.onMonthChange = onMonthChange
     self.header = header
@@ -119,9 +136,16 @@ public struct CoolMonthCalendar<Header: View, DayContent: View, MarkerContent: V
 
   private static func defaultWeekdayLabels(for calendar: Calendar) -> [String] {
     let symbols = calendar.veryShortStandaloneWeekdaySymbols
-    guard symbols.count == 7 else { return symbols }
+    guard symbols.count == 7 else {
+      return Calendar(identifier: .gregorian).veryShortStandaloneWeekdaySymbols
+    }
     let start = max(0, min(symbols.count - 1, calendar.firstWeekday - 1))
     return Array(symbols[start...]) + Array(symbols[..<start])
+  }
+
+  private static func resolvedWeekdayLabels(_ labels: [String]?, calendar: Calendar) -> [String] {
+    guard let labels, labels.count == 7 else { return defaultWeekdayLabels(for: calendar) }
+    return labels
   }
 
   private var spacingExtraSmall: CGFloat { CoolTokenValue.points(CoolTokens.spaceXs) }
@@ -133,9 +157,13 @@ public struct CoolMonthCalendar<Header: View, DayContent: View, MarkerContent: V
 
   private var columns: [GridItem] {
     Array(
-      repeating: GridItem(.flexible(minimum: .zero), spacing: spacingExtraSmall, alignment: .top),
+      repeating: GridItem(.flexible(minimum: touchTarget), spacing: spacingExtraSmall, alignment: .top),
       count: 7
     )
+  }
+
+  private var minimumGridWidth: CGFloat {
+    (touchTarget * 7) + (spacingExtraSmall * 6)
   }
 
   private func toneColor(_ tone: CoolTone) -> Color {
@@ -149,15 +177,19 @@ public struct CoolMonthCalendar<Header: View, DayContent: View, MarkerContent: V
     }
   }
 
-  private func localizedMonth(_ date: Date) -> String {
+  func localizedMonth(_ date: Date) -> String {
     var style = Date.FormatStyle.dateTime.year().month(.wide)
     style.calendar = calendar
+    style.timeZone = calendar.timeZone
+    if let locale = calendar.locale { style.locale = locale }
     return date.formatted(style)
   }
 
-  private func localizedDay(_ date: Date) -> String {
+  func localizedDay(_ date: Date) -> String {
     var style = Date.FormatStyle(date: .long, time: .omitted)
     style.calendar = calendar
+    style.timeZone = calendar.timeZone
+    if let locale = calendar.locale { style.locale = locale }
     return date.formatted(style)
   }
 
@@ -169,17 +201,29 @@ public struct CoolMonthCalendar<Header: View, DayContent: View, MarkerContent: V
     return details.joined(separator: ", ")
   }
 
+  func resolvedDay(_ model: CoolCalendarDay) -> CoolCalendarDay {
+    CoolCalendarDay(
+      date: model.date,
+      day: model.day,
+      secondaryText: model.secondaryText,
+      accessibilityLabel: model.accessibilityLabel,
+      isToday: model.isToday,
+      isSelected: calendar.isDate(model.date, inSameDayAs: selection),
+      isDisabled: model.isDisabled,
+      tone: model.tone,
+      badge: model.badge,
+      markers: model.markers
+    )
+  }
+
   func requestSelection(_ model: CoolCalendarDay) {
-    guard !model.isDisabled else { return }
-    onSelect(model)
+    let resolved = resolvedDay(model)
+    guard !resolved.isDisabled else { return }
+    onSelect(resolved)
   }
 
   func requestMonthChange(_ direction: CoolMonthDirection) {
     onMonthChange(direction)
-  }
-
-  private func isSelected(_ day: CoolCalendarDay) -> Bool {
-    calendar.isDate(day.date, inSameDayAs: selection)
   }
 
   @ViewBuilder
@@ -192,7 +236,7 @@ public struct CoolMonthCalendar<Header: View, DayContent: View, MarkerContent: V
           Image(systemName: CoolSemanticIcons.sfSymbol(for: "back"))
             .frame(minWidth: touchTarget, minHeight: touchTarget)
         }
-        .accessibilityLabel("Previous month")
+        .accessibilityLabel(accessibilityLabels.previousMonth)
 
         Text(localizedMonth(displayedMonth))
           .font(.headline)
@@ -205,7 +249,7 @@ public struct CoolMonthCalendar<Header: View, DayContent: View, MarkerContent: V
           Image(systemName: CoolSemanticIcons.sfSymbol(for: "forward"))
             .frame(minWidth: touchTarget, minHeight: touchTarget)
         }
-        .accessibilityLabel("Next month")
+        .accessibilityLabel(accessibilityLabels.nextMonth)
       }
       .buttonStyle(.plain)
     } else {
@@ -219,39 +263,36 @@ public struct CoolMonthCalendar<Header: View, DayContent: View, MarkerContent: V
   @ViewBuilder
   private func daySlot(_ model: CoolCalendarDay) -> some View {
     if usesDefaultSlots {
-      ZStack(alignment: .topTrailing) {
-        VStack(spacing: spacingExtraSmall) {
-          Text(String(model.day))
-            .font(.body.weight(isSelected(model) ? .semibold : .regular))
-          if let secondaryText = model.secondaryText {
-            Text(secondaryText)
-              .font(.caption)
-              .foregroundStyle(.secondary)
-              .lineLimit(2)
-              .multilineTextAlignment(.center)
-          }
+      VStack(spacing: spacingExtraSmall) {
+        Text(String(model.day))
+          .font(.body.weight(model.isSelected ? .semibold : .regular))
+        if let secondaryText = model.secondaryText {
+          Text(secondaryText)
+            .font(.caption)
+            .foregroundStyle(.secondary)
+            .multilineTextAlignment(.center)
+            .fixedSize(horizontal: false, vertical: true)
         }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, spacingExtraSmall)
-        .foregroundStyle(toneColor(model.tone))
-        .background {
-          if isSelected(model) {
-            RoundedRectangle(cornerRadius: smallRadius, style: .continuous)
-              .fill(toneColor(model.tone).opacity(CoolTokens.lightingEdgeOpacity))
-          }
-        }
-        .overlay {
-          if model.isToday {
-            RoundedRectangle(cornerRadius: smallRadius, style: .continuous)
-              .stroke(toneColor(model.tone), lineWidth: hairlineWidth)
-          }
-        }
-
         if let badge = model.badge {
           Text(badge)
             .font(.caption.weight(.semibold))
             .padding(.horizontal, spacingExtraSmall)
             .background(toneColor(model.tone).opacity(CoolTokens.lightingHighlightOpacity), in: Capsule())
+        }
+      }
+      .frame(maxWidth: .infinity)
+      .padding(.vertical, spacingExtraSmall)
+      .foregroundStyle(toneColor(model.tone))
+      .background {
+        if model.isSelected {
+          RoundedRectangle(cornerRadius: smallRadius, style: .continuous)
+            .fill(toneColor(model.tone).opacity(CoolTokens.lightingEdgeOpacity))
+        }
+      }
+      .overlay {
+        if model.isToday {
+          RoundedRectangle(cornerRadius: smallRadius, style: .continuous)
+            .stroke(toneColor(model.tone), lineWidth: hairlineWidth)
         }
       }
     } else {
@@ -285,7 +326,7 @@ public struct CoolMonthCalendar<Header: View, DayContent: View, MarkerContent: V
           }
         }
       }
-      .frame(maxWidth: .infinity, minHeight: touchTarget, alignment: .top)
+      .frame(minWidth: touchTarget, maxWidth: .infinity, minHeight: touchTarget, alignment: .top)
       .contentShape(Rectangle())
     }
     .buttonStyle(.plain)
@@ -293,24 +334,30 @@ public struct CoolMonthCalendar<Header: View, DayContent: View, MarkerContent: V
     .opacity(model.isDisabled ? CoolTokens.opacityDisabled : 1)
     .accessibilityElement(children: .ignore)
     .accessibilityLabel(localizedAccessibilityLabel(model))
-    .accessibilityAddTraits(isSelected(model) ? .isSelected : [])
-    .accessibilityHint(model.isToday ? "Today" : "")
+    .accessibilityAddTraits(model.isSelected ? .isSelected : [])
+    .accessibilityHint(model.isToday ? accessibilityLabels.today : "")
   }
 
   public var body: some View {
     CoolGlassSurface(material: material, tone: tone, size: .large) {
       VStack(spacing: spacingMedium) {
         headerSlot
-        LazyVGrid(columns: columns, spacing: spacingSmall) {
-          ForEach(Array(weekdayLabels.enumerated()), id: \.offset) { _, label in
-            Text(label)
-              .font(.caption.weight(.semibold))
-              .foregroundStyle(.secondary)
-              .frame(maxWidth: .infinity)
-              .accessibilityAddTraits(.isHeader)
+        ScrollView(.horizontal) {
+          LazyVGrid(columns: columns, spacing: spacingSmall) {
+            ForEach(Array(weekdayLabels.enumerated()), id: \.offset) { _, label in
+              Text(label)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity)
+                .accessibilityAddTraits(.isHeader)
+            }
+            ForEach(Array(days.enumerated()), id: \.offset) { _, model in
+              dayCell(resolvedDay(model))
+            }
           }
-          ForEach(days) { model in dayCell(model) }
+          .frame(minWidth: minimumGridWidth)
         }
+        .scrollIndicators(.hidden)
       }
       .frame(maxWidth: .infinity)
     }
@@ -327,18 +374,18 @@ public extension CoolMonthCalendar where Header == EmptyView, DayContent == Empt
     calendar: Calendar = .autoupdatingCurrent,
     material: CoolGlassMaterial = .regular,
     tone: CoolTone = .neutral,
+    accessibilityLabels: CoolMonthCalendarAccessibilityLabels = .init(),
     onSelect: @escaping (CoolCalendarDay) -> Void = { _ in },
     onMonthChange: @escaping (CoolMonthDirection) -> Void = { _ in }
   ) {
-    let labels = weekdayLabels ?? Self.defaultWeekdayLabels(for: calendar)
-    precondition(labels.count == 7, "weekdayLabels must contain exactly seven labels")
     _selection = selection
     _displayedMonth = displayedMonth
     self.days = days
-    self.weekdayLabels = labels
+    self.weekdayLabels = Self.resolvedWeekdayLabels(weekdayLabels, calendar: calendar)
     self.calendar = calendar
     self.material = material
     self.tone = tone
+    self.accessibilityLabels = accessibilityLabels
     self.onSelect = onSelect
     self.onMonthChange = onMonthChange
     self.header = { _ in EmptyView() }
