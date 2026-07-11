@@ -212,8 +212,8 @@ const plainData = (value) => JSON.parse(JSON.stringify(value));
 test('controlled TabBar and SegmentedControl render option semantics from stable value keys', async () => {
   for (const tag of controlledOptionTags) {
     const wxml = await readFile(new URL(`src/components/${tag}/index.wxml`, root), 'utf8');
-    assert.match(wxml, /wx:for="\{\{options\}\}"/, tag);
-    assert.match(wxml, /wx:key="value"/, tag);
+    assert.match(wxml, /wx:for="\{\{viewOptions\}\}"/, tag);
+    assert.match(wxml, /wx:key="_key"/, tag);
     assert.match(wxml, /data-index="\{\{index\}\}"/, tag);
     assert.match(wxml, /bindtap="handleOptionTap"/, tag);
     assert.match(wxml, /index === selectedIndex/, `${tag} first-match active state`);
@@ -266,11 +266,11 @@ test('controlled option components emit exact change details without writing val
   }
 });
 
-test('controlled option validation selects the first duplicate and warns without throwing', async () => {
+test('controlled option validation gives duplicates unique keys and preserves first-match selection', async () => {
   for (const tag of controlledOptionTags) {
-    const warnings = [];
     const { definition } = await loadGeneratedComponent(tag, {
-      console: { warn(...args) { warnings.push(args); } },
+      console: { warn() {} },
+      wx: { getAccountInfoSync() { return { miniProgram: { envVersion: 'develop' } }; } },
     });
     const writes = [];
     const options = [
@@ -279,12 +279,62 @@ test('controlled option validation selects the first duplicate and warns without
       { value: 1, label: 'Duplicate number' },
     ];
 
-    assert.doesNotThrow(() => definition.observers['options, value'].call({
+    definition.observers['options, value'].call({
       setData(update) { writes.push(update); },
-    }, options, 1));
-    assert.deepEqual(plainData(writes), [{ selectedIndex: 0 }], tag);
-    assert.equal(warnings.length, 1, tag);
-    assert.match(String(warnings[0][0]), /duplicate/i, tag);
+    }, options, 1);
+    const firstUpdate = plainData(writes[0]);
+    assert.equal(firstUpdate.selectedIndex, 0, tag);
+    assert.deepEqual(firstUpdate.viewOptions.map(({ _key }) => _key), [
+      'number:1:0',
+      'string:1:1',
+      'number:1:2',
+    ], tag);
+    assert.equal(new Set(firstUpdate.viewOptions.map(({ _key }) => _key)).size, options.length, tag);
+
+    const reordered = [options[1], options[0], { value: 2, label: 'Updated' }];
+    definition.observers['options, value'].call({
+      setData(update) { writes.push(update); },
+    }, reordered, 1);
+    const secondUpdate = plainData(writes[1]);
+    assert.equal(secondUpdate.selectedIndex, 1, `${tag} first numeric match after reorder`);
+    assert.deepEqual(secondUpdate.viewOptions.map(({ _key }) => _key), [
+      'string:1:0',
+      'number:1:1',
+      'number:2:2',
+    ], `${tag} refreshed identities`);
+  }
+});
+
+test('duplicate option warnings are silent in release and once per signature in develop', async () => {
+  for (const tag of controlledOptionTags) {
+    const options = [
+      { value: 'same', label: 'First' },
+      { value: 'same', label: 'Second' },
+    ];
+    for (const [envVersion, expectedWarnings] of [['release', 0], ['develop', 1], ['trial', 1]]) {
+      const warnings = [];
+      const { definition } = await loadGeneratedComponent(tag, {
+        console: { warn(...args) { warnings.push(args); } },
+        wx: { getAccountInfoSync() { return { miniProgram: { envVersion } }; } },
+      });
+      const context = { setData() {} };
+      definition.observers['options, value'].call(context, options, 'same');
+      definition.observers['options, value'].call(context, options, 'same');
+      assert.equal(warnings.length, expectedWarnings, `${tag} ${envVersion}`);
+    }
+  }
+});
+
+test('duplicate option validation does not swallow account environment errors', async () => {
+  for (const tag of controlledOptionTags) {
+    const { definition } = await loadGeneratedComponent(tag, {
+      console: { warn() {} },
+      wx: { getAccountInfoSync() { throw new Error('account info unavailable'); } },
+    });
+    assert.throws(() => definition.observers['options, value'].call({ setData() {} }, [
+      { value: 1, label: 'First' },
+      { value: 1, label: 'Second' },
+    ], 1), /account info unavailable/, tag);
   }
 });
 
@@ -297,7 +347,7 @@ test('controlled option components treat invalid options as an empty safe list',
     assert.doesNotThrow(() => definition.observers['options, value'].call({
       setData(update) { writes.push(update); },
     }, { value: 'not-an-array' }, 'missing'));
-    assert.deepEqual(plainData(writes), [{ options: [], selectedIndex: -1 }], tag);
+    assert.deepEqual(plainData(writes), [{ options: [], viewOptions: [], selectedIndex: -1 }], tag);
     assert.doesNotThrow(() => definition.methods.handleOptionTap.call({
       data: { options: null, value: 'missing', disabled: false },
       triggerEvent(name, detail) { events.push({ name, detail }); },

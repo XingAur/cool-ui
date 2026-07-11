@@ -1,4 +1,5 @@
 const coolBehavior = require('../../behaviors/cool-ui');
+const warnedDuplicateSignatures = new Set();
 
 function isOptionValue(value) {
   return typeof value === 'string' || typeof value === 'number';
@@ -9,7 +10,15 @@ function firstSelectedIndex(options, value) {
   return options.findIndex((option) => option && isOptionValue(option.value) && option.value === value);
 }
 
-function warnForDuplicateValues(options) {
+function createViewOptions(options) {
+  return options.map((option, index) => {
+    const safeOption = option && typeof option === 'object' ? option : {};
+    const value = safeOption.value;
+    return { ...safeOption, _key: typeof value + ':' + String(value) + ':' + index };
+  });
+}
+
+function duplicateValueIdentities(options) {
   const seen = new Set();
   const duplicates = new Set();
   for (const option of options) {
@@ -18,23 +27,32 @@ function warnForDuplicateValues(options) {
     if (seen.has(identity)) duplicates.add(identity);
     seen.add(identity);
   }
-  if (duplicates.size > 0 && typeof console !== 'undefined' && typeof console.warn === 'function') {
-    console.warn('[cooL UI] SegmentedControl options contain duplicate values; the first match is selected.', [...duplicates]);
-  }
+  return [...duplicates].sort();
+}
+
+function warnForDuplicateValues(options) {
+  const duplicates = duplicateValueIdentities(options);
+  if (duplicates.length === 0) return;
+  const envVersion = wx.getAccountInfoSync().miniProgram.envVersion;
+  if (envVersion !== 'develop' && envVersion !== 'trial') return;
+  const signature = duplicates.join('|');
+  if (warnedDuplicateSignatures.has(signature)) return;
+  warnedDuplicateSignatures.add(signature);
+  console.warn('[cooL UI] SegmentedControl options contain duplicate values; the first match is selected.', duplicates);
 }
 
 Component({
   behaviors: [coolBehavior],
   options: { multipleSlots: true, styleIsolation: 'apply-shared' },
-  data: { componentName: 'SegmentedControl', interactive: true, selectedIndex: -1 },
+  data: { componentName: 'SegmentedControl', interactive: true, viewOptions: [], selectedIndex: -1 },
   observers: {
     'options, value': function validateOptions(options, value) {
       if (!Array.isArray(options)) {
-        this.setData({ options: [], selectedIndex: -1 });
+        this.setData({ options: [], viewOptions: [], selectedIndex: -1 });
         return;
       }
       warnForDuplicateValues(options);
-      this.setData({ selectedIndex: firstSelectedIndex(options, value) });
+      this.setData({ viewOptions: createViewOptions(options), selectedIndex: firstSelectedIndex(options, value) });
     },
   },
   methods: {

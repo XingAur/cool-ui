@@ -1,6 +1,6 @@
 <scroll-view class="cool-component cool-glass cool-tab-bar cool-material-{{resolvedMaterial}} cool-tone-{{tone}} cool-size-{{size}} {{disabled ? 'is-disabled' : ''}}" data-component="TabBar" scroll-x="{{true}}" enhanced="{{true}}" show-scrollbar="{{false}}" role="tablist" aria-label="{{resolvedAccessibilityLabel}}">
   <view class="cool-tab-track">
-    <view wx:for="{{options}}" wx:key="value" class="cool-page-tab {{index === selectedIndex ? 'is-active' : ''}} {{item.disabled || disabled ? 'is-disabled' : ''}}" data-index="{{index}}" role="tab" aria-selected="{{index === selectedIndex}}" aria-disabled="{{item.disabled || disabled}}" bindtap="handleOptionTap">
+    <view wx:for="{{viewOptions}}" wx:key="_key" class="cool-page-tab {{index === selectedIndex ? 'is-active' : ''}} {{item.disabled || disabled ? 'is-disabled' : ''}}" data-index="{{index}}" role="tab" aria-selected="{{index === selectedIndex}}" aria-disabled="{{item.disabled || disabled}}" bindtap="handleOptionTap">
       <text class="cool-option-label">{{item.label}}</text>
       <text wx:if="{{item.badge || item.badge === 0}}" class="cool-option-badge">{{item.badge}}</text>
     </view>
