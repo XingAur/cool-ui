@@ -25,6 +25,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import dev.coolui.compose.*
+import dev.coolui.tokens.CoolTokens
 import java.time.LocalDate
 import java.time.LocalTime
 
@@ -52,7 +53,7 @@ private fun Catalog() {
     background = { Box(Modifier.fillMaxSize().background(Brush.linearGradient(listOf(Color(0xFF071018), Color(0xFF173548))))) },
   ) {
     LazyColumn(Modifier.fillMaxSize().padding(24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-      item { Text("cooL UI / COMPOSE", color = Color(0xFF64D2FF)); Text("Native component catalog", color = Color.White) }
+      item { Text("cooL UI ${CoolTokens.metaVersion} / COMPOSE", color = Color(0xFF64D2FF)); Text("Native component catalog", color = Color.White) }
       item { CoolGlassSurface { Column { Text("GlassSurface"); CoolDivider() } } }
       item { CoolGlassGroup { CoolButton("Button", {}); CoolIconButton("Add", {}, icon = { Text("+") }); CoolFloatingActionButton({}, content = { Text("+") }); CoolChip("Chip", enabled, { enabled = it }) } }
       item { CoolTextField(text, { text = it }, "Text field"); CoolTextArea(text, { text = it }, "Text area"); CoolSearchField(text, { text = it }); CoolToggle(enabled, { enabled = it }, "Toggle"); CoolCheckbox(enabled, { enabled = it }, "Checkbox") }

@@ -1,6 +1,7 @@
 {
   "name": "@cool-ui/arkui",
   "version": "0.2.0",
+  "private": true,
   "description": "cooL UI native ArkUI components for HarmonyOS 6.",
   "main": "Index.ets",
   "author": "cooL UI contributors",

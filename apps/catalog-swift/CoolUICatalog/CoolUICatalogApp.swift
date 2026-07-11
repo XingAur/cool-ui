@@ -63,7 +63,7 @@ struct CatalogView: View {
       } content: {
         ScrollView {
           VStack(alignment: .leading, spacing: 18) {
-            Text("cooL UI / SWIFTUI")
+            Text("cooL UI \(CoolTokens.metaVersion) / SWIFTUI")
               .font(.caption.monospaced())
               .foregroundStyle(.secondary)
             Text("Native glass foundations")

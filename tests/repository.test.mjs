@@ -18,7 +18,6 @@ test('root workspace pins the approved toolchain and release policy', async () =
 
   assert.match(await read('pnpm-workspace.yaml'), /packages\/\*/);
   assert.match(await read('turbo.json'), /docs:build/);
-  assert.match(await read('.changeset/config.json'), /0\.1\.0|access/);
 });
 
 test('repository governance is Apache-2.0 and protects unpublished packages', async () => {
@@ -43,18 +42,46 @@ test('docs have bilingual entry points and API/state/accessibility sections', as
   assert.match(zh, /可访问性/);
 });
 
-test('every publishing unit uses the canonical release version', async () => {
+test('every package is version-aligned and local-only', async () => {
+  const versionedPackagePaths = [
+    'package.json',
+    'docs/package.json',
+    'packages/tokens/package.json',
+    'packages/wechat/package.json',
+    'packages/arkui/package.json',
+    'packages/arkui/oh-package.json5',
+    'apps/catalog-arkui/entry/oh-package.json5',
+  ];
+  const privatePackagePaths = [...versionedPackagePaths, 'examples/npm-consumer/package.json'];
+  for (const path of privatePackagePaths) {
+    const pkg = JSON.parse(await read(path));
+    assert.equal(pkg.private, true, `${path} must be private`);
+    assert.equal(pkg.publishConfig, undefined, `${path} must not configure public publishing`);
+  }
+  for (const path of versionedPackagePaths) {
+    assert.equal(JSON.parse(await read(path)).version, releaseVersion, `${path} version`);
+  }
+
   const tokens = JSON.parse(await read('packages/tokens/package.json'));
   const wechat = JSON.parse(await read('packages/wechat/package.json'));
-  const arkuiWorkspace = JSON.parse(await read('packages/arkui/package.json'));
   const harmony = JSON.parse(await read('packages/arkui/oh-package.json5').then((value) => value.replace(/^\s*\/\/.*$/gm, '').replace(/,\s*([}\]])/g, '$1')));
   assert.deepEqual([tokens.name, tokens.version], ['@cool-ui/tokens', releaseVersion]);
   assert.deepEqual([wechat.name, wechat.version], ['@cool-ui/wechat', releaseVersion]);
-  assert.equal(arkuiWorkspace.version, releaseVersion);
   assert.equal(harmony.name, '@cool-ui/arkui');
-  assert.equal(harmony.version, releaseVersion);
-  assert.equal(tokens.publishConfig.access, 'public');
-  assert.equal(wechat.publishConfig.access, 'public');
+
+  const changesets = JSON.parse(await read('.changeset/config.json'));
+  assert.equal(changesets.access, 'restricted');
+  assert.doesNotMatch(await read('.npmrc'), /(^|\n)\s*(registry|@[^:]+:registry)\s*=/i);
+
+  const releaseAutomation = [
+    JSON.stringify(JSON.parse(await read('package.json')).scripts),
+    await read('scripts/pack-local.mjs'),
+    await read('scripts/build-artifacts.mjs'),
+    await read('.github/workflows/ci.yml'),
+    await read('.github/workflows/apple.yml'),
+    await read('.github/workflows/harmony.yml'),
+  ].join('\n');
+  assert.doesNotMatch(releaseAutomation, /(?:npm|pnpm|yarn|ohpm)\s+publish|mavenCentral|publishing\.sonatype|registry\.npmjs/i);
 
   const android = await read('packages/android/build.gradle.kts');
   assert.match(android, /contracts[\\/]release\.json/);

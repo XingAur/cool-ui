@@ -45,12 +45,19 @@ test('each component has complete bilingual generated documentation', async () =
   assert.equal(zh.length, contract.components.length);
 });
 
-test('golden, accessibility and consumer verification contracts are versioned', async () => {
+test('golden manifests and local consumer packages use the release version', async () => {
   for (const path of [
-    'goldens/swiftui/manifest.json', 'goldens/compose/manifest.json', 'goldens/arkui/manifest.json', 'goldens/wechat/manifest.json',
-    'contracts/accessibility.json', 'contracts/performance.json', 'examples/npm-consumer/package.json',
-    'apps/catalog-arkui/entry/oh-package.json5',
-  ]) await access(new URL(path, root));
+    'goldens/swiftui/manifest.json',
+    'goldens/compose/manifest.json',
+    'goldens/arkui/manifest.json',
+    'goldens/wechat/manifest.json',
+  ]) {
+    const manifest = JSON.parse(await read(path));
+    assert.equal(manifest.version, releaseVersion, path);
+  }
+
+  assert.equal(JSON.parse(await read('docs/package.json')).version, releaseVersion);
+  assert.equal(JSON.parse(await read('apps/catalog-arkui/entry/oh-package.json5')).version, releaseVersion);
 });
 
 test('local consumer installs the final cooL UI tarball names', async () => {
@@ -72,7 +79,7 @@ test('local consumer installs the final cooL UI tarball names', async () => {
   assert.ok(sbom.components.every(({ version }) => version === releaseVersion));
 });
 
-test('generators derive release metadata from the canonical release contract', async () => {
+test('generators and all four Catalogs derive release metadata from canonical sources', async () => {
   for (const path of [
     'packages/tokens/scripts/generate.mjs',
     'scripts/generate-components.mjs',
@@ -82,9 +89,24 @@ test('generators derive release metadata from the canonical release contract', a
     assert.match(await read(path), /contracts[\\/]release\.json/, path);
   }
 
-  assert.match(await read('apps/catalog-wechat/app.js'), new RegExp(`catalogVersion: '${releaseVersion.replaceAll('.', '\\.')}'`));
+  assert.ok((await read('apps/catalog-swift/CoolUICatalog/CoolUICatalogApp.swift')).includes('cooL UI \\(CoolTokens.metaVersion) / SWIFTUI'));
+  assert.ok((await read('apps/catalog-android/src/main/kotlin/dev/coolui/catalog/MainActivity.kt')).includes('cooL UI ${CoolTokens.metaVersion} / COMPOSE'));
+  assert.ok((await read('apps/catalog-arkui/entry/src/main/ets/pages/Index.ets')).includes('cooL UI ${CoolTokens.metaVersion} / ARKUI'));
   assert.match(await read('apps/catalog-wechat/pages/index/index.js'), new RegExp(`version: '${releaseVersion.replaceAll('.', '\\.')}'`));
-  assert.match(await read('apps/catalog-wechat/pages/index/index.wxml'), new RegExp(`cooL UI ${releaseVersion.replaceAll('.', '\\.')}`));
+  assert.ok((await read('apps/catalog-wechat/pages/index/index.wxml')).includes('cooL UI {{version}} / WECHAT'));
+});
+
+test('Android Catalog and Maven publication consume the canonical release version locally', async () => {
+  const catalog = await read('apps/catalog-android/build.gradle.kts');
+  assert.match(catalog, /contracts[\\/]release\.json/);
+  assert.match(catalog, /versionName\s*=\s*releaseVersion/);
+
+  const maven = await read('packages/android/build.gradle.kts');
+  assert.match(maven, /contracts[\\/]release\.json/);
+  assert.match(maven, /version\s*=\s*releaseVersion/);
+  assert.match(maven, /version\s*=\s*project\.version\.toString\(\)/);
+  assert.match(maven, /name\s*=\s*"localArtifacts"/);
+  assert.doesNotMatch(maven, /mavenCentral|publishing\.sonatype/i);
 });
 
 test('repository root is directly consumable by Swift Package Manager', async () => {

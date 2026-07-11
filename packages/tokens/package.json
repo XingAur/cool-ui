@@ -1,6 +1,7 @@
 {
   "name": "@cool-ui/tokens",
   "version": "0.2.0",
+  "private": true,
   "description": "DTCG design tokens for cooL UI.",
   "license": "Apache-2.0",
   "type": "module",
@@ -15,6 +16,5 @@
     "test": "node ../../tests/tokens.test.mjs",
     "lint": "node scripts/generate.mjs",
     "typecheck": "node scripts/generate.mjs"
-  },
-  "publishConfig": {"access": "public"}
+  }
 }

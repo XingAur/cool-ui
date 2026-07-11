@@ -141,7 +141,7 @@ await output('apps/catalog-wechat/pages/index/index.js', `Page({ data: { version
 await output('apps/catalog-wechat/pages/index/index.wxml', `
 <view class="catalog-shell cool-theme">
   <view class="catalog-orb catalog-orb-cyan"></view><view class="catalog-orb catalog-orb-amber"></view>
-  <view class="catalog-header"><text class="catalog-eyebrow">cooL UI ${release.version} / WECHAT</text><text class="catalog-title">Native glass catalog</text><text class="catalog-copy">42 components · 7 interaction states · semantic fallbacks</text></view>
+  <view class="catalog-header"><text class="catalog-eyebrow">cooL UI {{version}} / WECHAT</text><text class="catalog-title">Native glass catalog</text><text class="catalog-copy">42 components · 7 interaction states · semantic fallbacks</text></view>
 ${['foundations', 'actions-inputs', 'navigation', 'content', 'feedback-overlays'].map((category) => `
   <view class="catalog-section"><text class="catalog-section-title">${category}</text><view class="catalog-grid">
     ${components.filter((component) => component.category === category).map(({ name }) => `<cool-${kebab(name)} label="${name}" accessibility-label="${name} example" />`).join('\n    ')}

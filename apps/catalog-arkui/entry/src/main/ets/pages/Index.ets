@@ -2,6 +2,7 @@ import {
   CoolButton,
   CoolCard,
   CoolComponentConfig,
+  CoolTokens,
   CoolSlider,
   CoolTextField,
   CoolToggle
@@ -13,7 +14,7 @@ struct Index {
   build() {
     Scroll() {
       Column({ space: 12 }) {
-        Text('cooL UI / ARKUI').fontSize(12)
+        Text(`cooL UI ${CoolTokens.metaVersion} / ARKUI`).fontSize(12)
         Text('Native component catalog').fontSize(34).fontWeight(FontWeight.Medium)
         CoolButton({ config: new CoolComponentConfig('Button') })
         CoolTextField({ config: new CoolComponentConfig('TextField') })

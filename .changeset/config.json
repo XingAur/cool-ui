@@ -4,7 +4,7 @@
   "commit": false,
   "fixed": [["@cool-ui/tokens", "@cool-ui/wechat"]],
   "linked": [],
-  "access": "public",
+  "access": "restricted",
   "baseBranch": "main",
   "updateInternalDependencies": "patch",
   "ignore": []

@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { access, readFile } from 'node:fs/promises';
+import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 import { releaseVersion } from './release-fixture.mjs';
 
@@ -37,13 +37,22 @@ test('all DTCG aliases resolve to a declared token', async () => {
 });
 
 test('generator emits stable artifacts for all four platforms and CSS', async () => {
-  for (const file of [
-    'packages/tokens/generated/swift/CoolTokens.swift',
-    'packages/tokens/generated/kotlin/CoolTokens.kt',
-    'packages/tokens/generated/arkts/CoolTokens.ets',
-    'packages/tokens/generated/wechat/cool-ui-tokens.wxss',
-    'packages/tokens/generated/css/cool-ui-tokens.css',
-  ]) await access(new URL(file, root));
+  const versionedOutputs = [
+    ['packages/tokens/generated/swift/CoolTokens.swift', /metaVersion\s*=\s*"([^"]+)"/],
+    ['packages/tokens/generated/kotlin/CoolTokens.kt', /metaVersion:\s*String\s*=\s*"([^"]+)"/],
+    ['packages/tokens/generated/arkts/CoolTokens.ets', /metaVersion:\s*"([^"]+)"/],
+    ['packages/tokens/generated/wechat/cool-ui-tokens.wxss', /--cool-meta-version:\s*([^;]+);/],
+    ['packages/tokens/generated/css/cool-ui-tokens.css', /--cool-meta-version:\s*([^;]+);/],
+    ['packages/swift/Sources/CoolUI/CoolTokens.swift', /metaVersion\s*=\s*"([^"]+)"/],
+    ['packages/android/src/main/kotlin/dev/coolui/tokens/CoolTokens.kt', /metaVersion:\s*String\s*=\s*"([^"]+)"/],
+    ['packages/arkui/src/main/ets/tokens/CoolTokens.ets', /metaVersion:\s*"([^"]+)"/],
+    ['packages/wechat/src/styles/tokens.wxss', /--cool-meta-version:\s*([^;]+);/],
+  ];
+  for (const [file, pattern] of versionedOutputs) {
+    const contents = await readFile(new URL(file, root), 'utf8');
+    const version = contents.match(pattern)?.[1];
+    assert.equal(version, releaseVersion, file);
+  }
 
   const manifest = JSON.parse(await readFile(new URL('packages/tokens/generated/manifest.json', root), 'utf8'));
   assert.equal(manifest.version, releaseVersion);

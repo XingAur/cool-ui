@@ -33,6 +33,7 @@ const expectedTypes = {
 };
 
 test('release contract is the canonical 0.2 release policy', () => {
+  assert.equal(release.$schema, 'https://json-schema.org/draft/2020-12/schema');
   assert.equal(release.version, '0.2.0');
   assert.equal(release.publicRegistryPublishing, false);
 });
