@@ -237,7 +237,7 @@ private fun CoolMonthCalendarDayButton(
   }
   val contentColor = if (day.isSelected) Color.White else MaterialTheme.colorScheme.onSurface
   val borderColor = if (day.isToday || day.isSelected) day.tone.tokenColor() else Color.Transparent
-  val semanticsModifier = Modifier.clearAndSetSemantics {
+  val semanticsModifier = Modifier.semantics {
     contentDescription = day.resolvedAccessibilityLabel(labels)
     selected = day.isSelected
     if (day.isDisabled) disabled()
@@ -259,6 +259,7 @@ private fun CoolMonthCalendarDayButton(
     contentPadding = PaddingValues(4.dp),
   ) {
     Column(
+      modifier = Modifier.clearAndSetSemantics {},
       horizontalAlignment = Alignment.CenterHorizontally,
       verticalArrangement = Arrangement.spacedBy(2.dp),
     ) {

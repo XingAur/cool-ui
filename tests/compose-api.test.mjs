@@ -86,12 +86,16 @@ test('Compose MonthCalendar routes custom day and marker slots independently', a
   assert.match(calendar, /private fun CoolMonthCalendarMarkerRow\([\s\S]*markers: List<CoolCalendarMarker>[\s\S]*markerContent:/);
 });
 
-test('Compose MonthCalendar uses locale-natural month order and one day semantics node', async () => {
+test('Compose MonthCalendar preserves native button semantics while clearing visual child semantics', async () => {
   const calendar = await read('packages/android/src/main/kotlin/dev/coolui/compose/CoolMonthCalendar.kt');
   assert.match(calendar, /DateTimePatternGenerator\.getInstance\(locale\)\.getBestPattern\("yMMMM"\)/);
   assert.match(calendar, /DateTimeFormatter\.ofPattern\(monthPattern, locale\)/);
   assert.doesNotMatch(calendar, /"LLLL yyyy"/);
-  assert.match(calendar, /Modifier\.clearAndSetSemantics\s*\{[\s\S]*contentDescription = day\.resolvedAccessibilityLabel\(labels\)[\s\S]*selected = day\.isSelected[\s\S]*disabled\(\)/);
+  const dayButton = calendar.match(/private fun CoolMonthCalendarDayButton\([\s\S]*?(?=\n@Composable\s*\nprivate fun DefaultCoolMonthCalendarDay)/)?.[0];
+  assert.ok(dayButton, 'day button implementation');
+  assert.match(dayButton, /val semanticsModifier = Modifier\.semantics\s*\{[\s\S]*contentDescription = day\.resolvedAccessibilityLabel\(labels\)[\s\S]*selected = day\.isSelected[\s\S]*disabled\(\)/);
+  assert.doesNotMatch(dayButton, /val semanticsModifier = Modifier\.clearAndSetSemantics/);
+  assert.match(dayButton, /Button\(\s*onClick = \{ dispatchCoolCalendarDaySelection\([\s\S]*modifier = semanticsModifier[\s\S]*\)\s*\{\s*Column\(\s*modifier = Modifier\.clearAndSetSemantics\s*\{\s*\}/);
   const markerRow = calendar.match(/private fun CoolMonthCalendarMarkerRow\([\s\S]*?(?=\n@Composable|$)/)?.[0];
   assert.ok(markerRow, 'marker row implementation');
   assert.doesNotMatch(markerRow, /contentDescription|semantics/, 'marker visuals must not duplicate parent day semantics');
