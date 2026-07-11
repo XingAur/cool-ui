@@ -325,16 +325,41 @@ test('duplicate option warnings are silent in release and once per signature in 
   }
 });
 
-test('duplicate option validation does not swallow account environment errors', async () => {
+test('duplicate option validation keeps rendering when account environment lookup fails', async () => {
   for (const tag of controlledOptionTags) {
-    const { definition } = await loadGeneratedComponent(tag, {
-      console: { warn() {} },
+    const warnings = [];
+    const { definition, source } = await loadGeneratedComponent(tag, {
+      console: { warn(...args) { warnings.push(args); } },
       wx: { getAccountInfoSync() { throw new Error('account info unavailable'); } },
     });
-    assert.throws(() => definition.observers['options, value'].call({ setData() {} }, [
+    const writes = [];
+    assert.match(source, /function isReleaseEnvironment\(\)/, tag);
+    assert.doesNotThrow(() => definition.observers['options, value'].call({
+      setData(update) { writes.push(update); },
+    }, [
       { value: 1, label: 'First' },
       { value: 1, label: 'Second' },
-    ], 1), /account info unavailable/, tag);
+    ], 1), tag);
+    assert.deepEqual(plainData(writes), [{
+      viewOptions: [
+        { value: 1, label: 'First', _key: 'number:1:0' },
+        { value: 1, label: 'Second', _key: 'number:1:1' },
+      ],
+      selectedIndex: 0,
+    }], tag);
+
+    const fieldWrites = [];
+    const { definition: fieldDefinition } = await loadGeneratedComponent(tag, {
+      console: { warn() {} },
+      wx: { getAccountInfoSync() { return { get miniProgram() { throw new Error('field unavailable'); } }; } },
+    });
+    assert.doesNotThrow(() => fieldDefinition.observers['options, value'].call({
+      setData(update) { fieldWrites.push(update); },
+    }, [
+      { value: 'ready', label: 'First' },
+      { value: 'ready', label: 'Second' },
+    ], 'ready'), `${tag} field read`);
+    assert.equal(plainData(fieldWrites)[0].selectedIndex, 0, `${tag} field read selection`);
   }
 });
 

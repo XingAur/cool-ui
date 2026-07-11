@@ -54,11 +54,18 @@ function duplicateValueIdentities(options) {
   return [...duplicates].sort();
 }
 
+function isReleaseEnvironment() {
+  try {
+    return wx.getAccountInfoSync().miniProgram.envVersion === 'release';
+  } catch {
+    return false;
+  }
+}
+
 function warnForDuplicateValues(options) {
   const duplicates = duplicateValueIdentities(options);
   if (duplicates.length === 0) return;
-  const envVersion = wx.getAccountInfoSync().miniProgram.envVersion;
-  if (envVersion !== 'develop' && envVersion !== 'trial') return;
+  if (isReleaseEnvironment()) return;
   const signature = duplicates.join('|');
   if (warnedDuplicateSignatures.has(signature)) return;
   warnedDuplicateSignatures.add(signature);
@@ -75,8 +82,8 @@ Component({
         this.setData({ options: [], viewOptions: [], selectedIndex: -1 });
         return;
       }
-      warnForDuplicateValues(options);
       this.setData({ viewOptions: createViewOptions(options), selectedIndex: firstSelectedIndex(options, value) });
+      warnForDuplicateValues(options);
     },
   },
   methods: {
