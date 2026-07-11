@@ -1,0 +1,61 @@
+<view class="catalog-shell cool-theme">
+  <view class="catalog-orb catalog-orb-cyan"></view><view class="catalog-orb catalog-orb-amber"></view>
+  <view class="catalog-header"><text class="catalog-eyebrow">cooL UI / WECHAT</text><text class="catalog-title">Native glass catalog</text><text class="catalog-copy">42 components · 7 interaction states · semantic fallbacks</text></view>
+
+  <view class="catalog-section"><text class="catalog-section-title">foundations</text><view class="catalog-grid">
+    <cool-theme-provider label="ThemeProvider" accessibility-label="ThemeProvider example" />
+    <cool-backdrop label="Backdrop" accessibility-label="Backdrop example" />
+    <cool-glass-surface label="GlassSurface" accessibility-label="GlassSurface example" />
+    <cool-glass-group label="GlassGroup" accessibility-label="GlassGroup example" />
+    <cool-divider label="Divider" accessibility-label="Divider example" />
+  </view></view>
+
+  <view class="catalog-section"><text class="catalog-section-title">actions-inputs</text><view class="catalog-grid">
+    <cool-button label="Button" accessibility-label="Button example" />
+    <cool-icon-button label="IconButton" accessibility-label="IconButton example" />
+    <cool-floating-action-button label="FloatingActionButton" accessibility-label="FloatingActionButton example" />
+    <cool-chip label="Chip" accessibility-label="Chip example" />
+    <cool-text-field label="TextField" accessibility-label="TextField example" />
+    <cool-text-area label="TextArea" accessibility-label="TextArea example" />
+    <cool-search-field label="SearchField" accessibility-label="SearchField example" />
+    <cool-toggle label="Toggle" accessibility-label="Toggle example" />
+    <cool-checkbox label="Checkbox" accessibility-label="Checkbox example" />
+    <cool-radio-group label="RadioGroup" accessibility-label="RadioGroup example" />
+    <cool-slider label="Slider" accessibility-label="Slider example" />
+    <cool-stepper label="Stepper" accessibility-label="Stepper example" />
+    <cool-select label="Select" accessibility-label="Select example" />
+    <cool-date-picker label="DatePicker" accessibility-label="DatePicker example" />
+    <cool-time-picker label="TimePicker" accessibility-label="TimePicker example" />
+  </view></view>
+
+  <view class="catalog-section"><text class="catalog-section-title">navigation</text><view class="catalog-grid">
+    <cool-top-bar label="TopBar" accessibility-label="TopBar example" />
+    <cool-bottom-navigation label="BottomNavigation" accessibility-label="BottomNavigation example" />
+    <cool-tab-bar label="TabBar" accessibility-label="TabBar example" />
+    <cool-segmented-control label="SegmentedControl" accessibility-label="SegmentedControl example" />
+    <cool-navigation-rail label="NavigationRail" accessibility-label="NavigationRail example" />
+  </view></view>
+
+  <view class="catalog-section"><text class="catalog-section-title">content</text><view class="catalog-grid">
+    <cool-card label="Card" accessibility-label="Card example" />
+    <cool-list label="List" accessibility-label="List example" />
+    <cool-list-item label="ListItem" accessibility-label="ListItem example" />
+    <cool-badge label="Badge" accessibility-label="Badge example" />
+    <cool-avatar label="Avatar" accessibility-label="Avatar example" />
+    <cool-progress label="Progress" accessibility-label="Progress example" />
+    <cool-circular-progress label="CircularProgress" accessibility-label="CircularProgress example" />
+    <cool-skeleton label="Skeleton" accessibility-label="Skeleton example" />
+    <cool-stat-tile label="StatTile" accessibility-label="StatTile example" />
+    <cool-empty-state label="EmptyState" accessibility-label="EmptyState example" />
+  </view></view>
+
+  <view class="catalog-section"><text class="catalog-section-title">feedback-overlays</text><view class="catalog-grid">
+    <cool-toast label="Toast" accessibility-label="Toast example" />
+    <cool-banner label="Banner" accessibility-label="Banner example" />
+    <cool-alert-dialog label="AlertDialog" accessibility-label="AlertDialog example" />
+    <cool-bottom-sheet label="BottomSheet" accessibility-label="BottomSheet example" />
+    <cool-popover label="Popover" accessibility-label="Popover example" />
+    <cool-tooltip label="Tooltip" accessibility-label="Tooltip example" />
+    <cool-loading-overlay label="LoadingOverlay" accessibility-label="LoadingOverlay example" />
+  </view></view>
+</view>

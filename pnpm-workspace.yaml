@@ -1,0 +1,7 @@
+packages:
+  - packages/*
+  - apps/*
+  - docs
+
+catalog:
+  vitepress: ^1.6.3

@@ -1,0 +1,6 @@
+{
+  "version": "0.1.0",
+  "targetFps": 60,
+  "rules": ["surfaces-share-backdrop", "glass-nodes-share-group", "no-nested-live-blur", "solid-fallback-on-budget-failure"],
+  "catalogScenarios": ["continuous-scroll", "rapid-press", "overlay-presentation", "reduced-transparency"]
+}

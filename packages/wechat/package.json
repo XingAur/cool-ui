@@ -1,0 +1,16 @@
+{
+  "name": "@cool-ui/wechat",
+  "version": "0.1.0",
+  "description": "cooL UI native components for WeChat Mini Programs.",
+  "license": "Apache-2.0",
+  "miniprogram": "dist",
+  "files": ["dist", "README.md"],
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "test": "node --test tests/*.test.mjs",
+    "lint": "node scripts/validate.mjs",
+    "typecheck": "node scripts/validate.mjs"
+  },
+  "publishConfig": {"access": "public"},
+  "engines": {"wechat": ">=3.14.3"}
+}

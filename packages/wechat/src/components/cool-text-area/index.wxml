@@ -1,0 +1,6 @@
+<view class="cool-component cool-glass cool-text-area cool-material-{{resolvedMaterial}} cool-tone-{{tone}} cool-size-{{size}} {{selected ? 'is-selected' : ''}} {{disabled ? 'is-disabled' : ''}} {{error ? 'is-error' : ''}}" data-component="TextArea">
+  <view wx:if="{{loading}}" class="cool-loading" aria-label="loading"></view>
+  <slot name="icon"/>
+  <textarea class="cool-native-input cool-native-textarea" value="{{value}}" placeholder="{{placeholder}}" disabled="{{disabled}}" bindinput="handleInput" aria-label="{{accessibilityLabel}}" />
+  <text wx:if="{{errorMessage}}" class="cool-error" role="alert">{{errorMessage}}</text>
+</view>

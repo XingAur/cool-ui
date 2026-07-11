@@ -1,0 +1,48 @@
+@import "../../../packages/tokens/generated/css/cool-ui-tokens.css";
+
+:root {
+  --vp-c-brand-1: var(--cool-color-light-accent);
+  --vp-c-brand-2: var(--cool-color-primitive-cyan300);
+  --vp-c-bg: var(--cool-color-light-background);
+  --vp-c-bg-soft: color-mix(in srgb, var(--cool-color-light-surface) 78%, transparent);
+  --vp-custom-block-tip-border: var(--cool-color-light-accent);
+  --vp-font-family-base: -apple-system, BlinkMacSystemFont, "Segoe UI", "HarmonyOS Sans", sans-serif;
+  --vp-font-family-mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+}
+
+.dark {
+  --vp-c-bg: var(--cool-color-dark-background);
+  --vp-c-bg-soft: color-mix(in srgb, var(--cool-color-dark-surface) 74%, transparent);
+  --vp-c-text-1: var(--cool-color-dark-text);
+  --vp-c-text-2: var(--cool-color-dark-textSecondary);
+}
+
+body {
+  background-image:
+    radial-gradient(circle at 82% 4%, color-mix(in srgb, var(--cool-color-primitive-cyan300) 18%, transparent), transparent 30rem),
+    radial-gradient(circle at 8% 72%, color-mix(in srgb, var(--cool-color-primitive-amber500) 10%, transparent), transparent 26rem);
+  background-attachment: fixed;
+}
+
+.VPNavBar:not(.has-sidebar) .content-body,
+.VPNavBar.has-sidebar .content-body,
+.VPDoc .container > .content,
+.VPHomeFeatures .item {
+  border-color: color-mix(in srgb, var(--vp-c-brand-1) 18%, transparent);
+  background: color-mix(in srgb, var(--vp-c-bg-soft) 76%, transparent);
+  -webkit-backdrop-filter: blur(var(--cool-blur-regular)) saturate(var(--cool-saturation-regular));
+  backdrop-filter: blur(var(--cool-blur-regular)) saturate(var(--cool-saturation-regular));
+}
+
+.VPHero .name { letter-spacing: -0.045em; }
+.VPHero .text { max-width: 760px; letter-spacing: -0.035em; }
+.VPButton { min-height: var(--cool-size-controlMedium); border-radius: var(--cool-radius-pill) !important; }
+:focus-visible { outline: var(--cool-border-focus) solid var(--vp-c-brand-1); outline-offset: var(--cool-space-xs); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; transition-duration: 0ms !important; animation-duration: 0ms !important; }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .VPNavBar .content-body, .VPDoc .container > .content, .VPHomeFeatures .item { -webkit-backdrop-filter: none; backdrop-filter: none; background: var(--vp-c-bg-soft); }
+}

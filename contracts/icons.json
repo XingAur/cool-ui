@@ -1,0 +1,20 @@
+{
+  "add": {"sfSymbol":"plus","materialSymbol":"add","harmonySymbol":"plus","lucide":"plus"},
+  "close": {"sfSymbol":"xmark","materialSymbol":"close","harmonySymbol":"xmark","lucide":"x"},
+  "search": {"sfSymbol":"magnifyingglass","materialSymbol":"search","harmonySymbol":"magnifyingglass","lucide":"search"},
+  "back": {"sfSymbol":"chevron.backward","materialSymbol":"arrow_back","harmonySymbol":"chevron_backward","lucide":"chevron-left"},
+  "forward": {"sfSymbol":"chevron.forward","materialSymbol":"arrow_forward","harmonySymbol":"chevron_forward","lucide":"chevron-right"},
+  "check": {"sfSymbol":"checkmark","materialSymbol":"check","harmonySymbol":"checkmark","lucide":"check"},
+  "warning": {"sfSymbol":"exclamationmark.triangle","materialSymbol":"warning","harmonySymbol":"warning","lucide":"triangle-alert"},
+  "error": {"sfSymbol":"xmark.octagon","materialSymbol":"error","harmonySymbol":"error_circle","lucide":"circle-x"},
+  "info": {"sfSymbol":"info.circle","materialSymbol":"info","harmonySymbol":"info_circle","lucide":"info"},
+  "calendar": {"sfSymbol":"calendar","materialSymbol":"calendar_month","harmonySymbol":"calendar","lucide":"calendar"},
+  "clock": {"sfSymbol":"clock","materialSymbol":"schedule","harmonySymbol":"clock","lucide":"clock"},
+  "menu": {"sfSymbol":"line.3.horizontal","materialSymbol":"menu","harmonySymbol":"menu","lucide":"menu"},
+  "more": {"sfSymbol":"ellipsis","materialSymbol":"more_horiz","harmonySymbol":"ellipsis","lucide":"ellipsis"},
+  "share": {"sfSymbol":"square.and.arrow.up","materialSymbol":"share","harmonySymbol":"share","lucide":"share-2"},
+  "settings": {"sfSymbol":"gearshape","materialSymbol":"settings","harmonySymbol":"settings","lucide":"settings"},
+  "favorite": {"sfSymbol":"heart","materialSymbol":"favorite","harmonySymbol":"heart","lucide":"heart"},
+  "delete": {"sfSymbol":"trash","materialSymbol":"delete","harmonySymbol":"delete","lucide":"trash-2"},
+  "edit": {"sfSymbol":"pencil","materialSymbol":"edit","harmonySymbol":"edit","lucide":"pencil"}
+}

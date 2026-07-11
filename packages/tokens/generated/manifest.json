@@ -1,0 +1,11 @@
+{
+  "version": "0.1.0",
+  "source": "src/tokens.json",
+  "outputs": {
+    "swift/CoolTokens.swift": "30ee112e46aa43cc8af2074bd264c0cd8e08b17154abdf17bb847e6d31e2299b",
+    "kotlin/CoolTokens.kt": "a49c2dc0b7dda945a30da40f298d488dd9b02d2c52800e0620d66ce271681e47",
+    "arkts/CoolTokens.ets": "a8640abfe25beb54bc583f6a1e3a4ccd3dad2310be3889335573f5e18eefc4ae",
+    "wechat/cool-ui-tokens.wxss": "f85c68b4df158ffea258ad2319e2083e065e1540faa6198e1695a518bcbf0f83",
+    "css/cool-ui-tokens.css": "45f0c93bb0be14288196eeb8a5a935d9d2438cbac318c1bd94b7b11b46f35f26"
+  }
+}

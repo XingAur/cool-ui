@@ -1,0 +1,31 @@
+{
+  "name": "cool-ui-monorepo",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Perceptually consistent, platform-native glass UI components.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "packageManager": "pnpm@10.13.1",
+  "engines": {"node": ">=22.0.0"},
+  "scripts": {
+    "build": "pnpm generate && turbo run build",
+    "test": "node --test tests/*.test.mjs && turbo run test",
+    "test:contracts": "node --test tests/*.test.mjs",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "docs:dev": "pnpm --dir docs dev",
+    "docs:build": "pnpm --dir docs build",
+    "generate": "pnpm tokens:generate && node scripts/generate-components.mjs",
+    "tokens:generate": "node packages/tokens/scripts/generate.mjs",
+    "tokens:check": "pnpm generate && git diff --exit-code -- packages/tokens/generated packages/swift/Sources/CoolUI/CoolTokens.swift packages/android/src/main/kotlin/dev/coolui/tokens packages/arkui/src/main/ets/tokens packages/wechat/src/styles/tokens.wxss",
+    "pack:local": "node scripts/pack-local.mjs",
+    "artifacts": "node scripts/build-artifacts.mjs",
+    "changeset": "changeset",
+    "version-packages": "changeset version"
+  },
+  "devDependencies": {
+    "@changesets/cli": "^2.29.5",
+    "turbo": "^2.5.4",
+    "vitepress": "^1.6.3"
+  }
+}

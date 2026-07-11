@@ -1,0 +1,6 @@
+<view class="cool-component cool-glass cool-date-picker cool-material-{{resolvedMaterial}} cool-tone-{{tone}} cool-size-{{size}} {{selected ? 'is-selected' : ''}} {{disabled ? 'is-disabled' : ''}} {{error ? 'is-error' : ''}}" data-component="DatePicker">
+  <view wx:if="{{loading}}" class="cool-loading" aria-label="loading"></view>
+  <slot name="icon"/>
+  <picker mode="date" range="{{options}}" value="{{value}}" disabled="{{disabled}}" bindchange="handleNativeChange"><view class="cool-picker-value">{{displayValue || label}}</view></picker>
+  <text wx:if="{{errorMessage}}" class="cool-error" role="alert">{{errorMessage}}</text>
+</view>

@@ -1,0 +1,6 @@
+<view class="cool-component cool-glass cool-alert-dialog cool-material-{{resolvedMaterial}} cool-tone-{{tone}} cool-size-{{size}} {{selected ? 'is-selected' : ''}} {{disabled ? 'is-disabled' : ''}} {{error ? 'is-error' : ''}}" data-component="AlertDialog">
+  <view wx:if="{{loading}}" class="cool-loading" aria-label="loading"></view>
+  <slot name="icon"/>
+  <view class="cool-content" role="button" aria-label="{{accessibilityLabel}}" bindtap="handleTap"><text wx:if="{{label}}" class="cool-label">{{label}}</text><slot/></view>
+  <text wx:if="{{errorMessage}}" class="cool-error" role="alert">{{errorMessage}}</text>
+</view>

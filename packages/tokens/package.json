@@ -1,0 +1,20 @@
+{
+  "name": "@cool-ui/tokens",
+  "version": "0.1.0",
+  "description": "DTCG design tokens for cooL UI.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "files": ["src", "generated", "README.md"],
+  "exports": {
+    "./tokens.json": "./src/tokens.json",
+    "./css": "./generated/css/cool-ui-tokens.css",
+    "./wechat": "./generated/wechat/cool-ui-tokens.wxss"
+  },
+  "scripts": {
+    "build": "node scripts/generate.mjs",
+    "test": "node ../../tests/tokens.test.mjs",
+    "lint": "node scripts/generate.mjs",
+    "typecheck": "node scripts/generate.mjs"
+  },
+  "publishConfig": {"access": "public"}
+}

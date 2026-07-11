@@ -1,0 +1,8 @@
+{
+  "version": "0.1.0",
+  "bodyTextContrast": 4.5,
+  "largeTextContrast": 3.0,
+  "geometryToleranceDp": 2,
+  "capabilities": ["dynamicType", "screenReader", "keyboardFocus", "reducedMotion", "reducedTransparency", "highContrast"],
+  "touchTargets": {"swiftui": 44, "compose": 48, "arkui": 48, "wechat": 44}
+}

@@ -1,0 +1,7 @@
+{
+  "name": "coolui-arkui-catalog-entry",
+  "version": "0.1.0",
+  "description": "Local consumer Catalog for @cool-ui/arkui",
+  "main": "Index.ets",
+  "dependencies": {"@cool-ui/arkui": "file:../../../../packages/arkui"}
+}

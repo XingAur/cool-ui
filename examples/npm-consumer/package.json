@@ -1,0 +1,9 @@
+{
+  "name": "cool-ui-npm-consumer",
+  "version": "0.0.0",
+  "private": true,
+  "dependencies": {
+    "@cool-ui/tokens": "file:../../artifacts/npm/cool-ui-tokens-0.1.0.tgz",
+    "@cool-ui/wechat": "file:../../artifacts/npm/cool-ui-wechat-0.1.0.tgz"
+  }
+}

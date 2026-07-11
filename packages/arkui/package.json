@@ -1,0 +1,13 @@
+{
+  "name": "@cool-ui/arkui-workspace",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/validate.mjs",
+    "test": "node scripts/validate.mjs",
+    "lint": "node scripts/validate.mjs",
+    "typecheck": "node scripts/validate.mjs",
+    "build:native": "hvigorw assembleHar --mode module -p product=default"
+  }
+}

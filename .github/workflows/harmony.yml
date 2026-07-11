@@ -1,0 +1,26 @@
+name: HarmonyOS CI
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths: ["packages/arkui/**", "apps/catalog-arkui/**", "contracts/**", "packages/tokens/**"]
+
+permissions:
+  contents: read
+
+jobs:
+  har:
+    runs-on: [self-hosted, Windows, harmonyos-6, deveco]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with: { version: 10.13.1 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --dir packages/arkui test
+      - name: Build HAR
+        working-directory: packages/arkui
+        run: hvigorw assembleHar --mode module -p product=default
+      - uses: actions/upload-artifact@v4
+        with: { name: coolui-arkui-har, path: packages/arkui/build/**/outputs/**/*.har }

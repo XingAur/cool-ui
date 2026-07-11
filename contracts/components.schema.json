@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://coolui.dev/schemas/components.schema.json",
+  "type": "object",
+  "required": ["version", "packages", "semanticTypes", "components"],
+  "properties": {
+    "version": {"const": "0.1.0"},
+    "packages": {"type": "object"},
+    "semanticTypes": {"type": "object"},
+    "components": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "category", "platforms", "interactive"],
+        "properties": {
+          "name": {"type": "string"},
+          "category": {"type": "string"},
+          "platforms": {"const": ["swiftui", "compose", "arkui", "wechat"]},
+          "interactive": {"type": "boolean"},
+          "states": {"type": "array"},
+          "capabilities": {"type": "array"}
+        }
+      }
+    }
+  }
+}

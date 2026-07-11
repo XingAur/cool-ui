@@ -1,0 +1,18 @@
+name: CoolUICatalog
+options:
+  bundleIdPrefix: dev.coolui
+targets:
+  CoolUICatalog:
+    type: application
+    platform: iOS
+    deploymentTarget: "26.0"
+    sources: [CoolUICatalog]
+    dependencies:
+      - package: CoolUI
+packages:
+  CoolUI:
+    path: ../../packages/swift
+settings:
+  base:
+    SWIFT_VERSION: 6.0
+    PRODUCT_BUNDLE_IDENTIFIER: dev.coolui.catalog

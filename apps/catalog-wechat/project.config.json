@@ -1,0 +1,9 @@
+{
+  "description": "cooL UI WeChat Catalog",
+  "miniprogramRoot": "./",
+  "compileType": "miniprogram",
+  "setting": {"es6": true, "minified": false, "postcss": true, "enhance": true},
+  "libVersion": "3.14.3",
+  "appid": "touristappid",
+  "projectname": "coolui-catalog"
+}

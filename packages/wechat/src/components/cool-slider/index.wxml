@@ -1,0 +1,6 @@
+<view class="cool-component cool-glass cool-slider cool-material-{{resolvedMaterial}} cool-tone-{{tone}} cool-size-{{size}} {{selected ? 'is-selected' : ''}} {{disabled ? 'is-disabled' : ''}} {{error ? 'is-error' : ''}}" data-component="Slider">
+  <view wx:if="{{loading}}" class="cool-loading" aria-label="loading"></view>
+  <slot name="icon"/>
+  <slider value="{{value}}" min="{{min}}" max="{{max}}" disabled="{{disabled}}" bindchange="handleNativeChange" aria-label="{{accessibilityLabel}}" />
+  <text wx:if="{{errorMessage}}" class="cool-error" role="alert">{{errorMessage}}</text>
+</view>
