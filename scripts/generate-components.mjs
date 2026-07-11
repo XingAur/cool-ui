@@ -101,6 +101,89 @@ Component({
     await output(`${dir}/index.wxss`, `@import "../../styles/glass.wxss";`);
     continue;
   }
+  if (component.name === 'Button') {
+    await output(`${dir}/index.js`, `
+const coolBehavior = require('../../behaviors/cool-ui');
+
+Component({
+  behaviors: [coolBehavior],
+  options: { multipleSlots: true, styleIsolation: 'apply-shared' },
+  properties: {
+    openType: { type: String, value: '' },
+    formType: { type: String, value: '' },
+  },
+  data: { componentName: 'Button', interactive: true },
+  methods: {
+    handleButtonTap() {
+      if (this.data.disabled || this.data.loading) return;
+      this.triggerEvent('tap', { value: this.data.value });
+    },
+    forwardNativeEvent(event) {
+      this.triggerEvent(event.type, event.detail);
+    },
+  },
+});`);
+    await output(`${dir}/index.json`, JSON.stringify({ component: true, styleIsolation: 'apply-shared' }, null, 2));
+    await output(`${dir}/index.wxml`, `
+<button
+  class="cool-component cool-glass cool-button-native cool-button cool-material-{{resolvedMaterial}} cool-tone-{{tone}} cool-size-{{size}} {{selected ? 'is-selected' : ''}} {{disabled || loading ? 'is-disabled' : ''}} {{error ? 'is-error' : ''}}"
+  data-component="Button"
+  open-type="{{openType}}"
+  form-type="{{formType}}"
+  disabled="{{disabled || loading}}"
+  loading="{{loading}}"
+  aria-label="{{resolvedAccessibilityLabel}}"
+  hover-class="is-pressed"
+  bindtap="handleButtonTap"
+  bindgetuserinfo="forwardNativeEvent"
+  bindcontact="forwardNativeEvent"
+  bindgetphonenumber="forwardNativeEvent"
+  binderror="forwardNativeEvent"
+  bindopensetting="forwardNativeEvent"
+  bindlaunchapp="forwardNativeEvent"
+  bindchooseavatar="forwardNativeEvent"
+  bindagreeprivacyauthorization="forwardNativeEvent"
+>
+  <view class="cool-button-content">
+    <slot name="icon"/>
+    <text wx:if="{{label}}" class="cool-label">{{label}}</text>
+    <slot/>
+  </view>
+  <text wx:if="{{errorMessage}}" class="cool-error" role="alert">{{errorMessage}}</text>
+</button>`);
+    await output(`${dir}/index.wxss`, `
+@import "../../styles/glass.wxss";
+
+.cool-button-native {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  margin: 0;
+  color: var(--cool-color-light-text);
+  font-size: var(--cool-typography-body);
+  line-height: normal;
+  text-align: center;
+}
+
+.cool-button-native::after { border: 0; }
+.cool-button-native.cool-size-medium { min-height: var(--cool-size-controlMedium); }
+.cool-button-native.is-pressed { background: var(--cool-color-light-surface); }
+.cool-button-native.is-disabled { opacity: var(--cool-opacity-disabled); }
+.cool-button-native:focus {
+  border-width: var(--cool-border-focus);
+  border-color: var(--cool-color-light-accent);
+}
+
+.cool-button-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--cool-space-sm);
+  min-height: inherit;
+}`);
+    continue;
+  }
   const role = /Button|Chip|Item|Card|Navigation|TabBar|Segmented|Banner|Dialog|Sheet|Popover/.test(component.name) ? 'button' : 'none';
   const inputType = /TextField|SearchField/.test(component.name) ? 'input'
     : component.name === 'TextArea' ? 'textarea'
@@ -158,11 +241,24 @@ const usingComponents = Object.fromEntries(Object.keys(manifest).map((tag) => [t
 await output('apps/catalog-wechat/app.json', JSON.stringify({ pages: ['pages/index/index'], window: { navigationStyle: 'custom', backgroundColor: '#071018' }, style: 'v2', lazyCodeLoading: 'requiredComponents' }, null, 2));
 await output('apps/catalog-wechat/app.js', `App({ globalData: { catalogVersion: '${release.version}' } });`);
 await output('apps/catalog-wechat/pages/index/index.json', JSON.stringify({ usingComponents }, null, 2));
-await output('apps/catalog-wechat/pages/index/index.js', `Page({ data: { version: '${release.version}' } });`);
+await output('apps/catalog-wechat/pages/index/index.js', `
+Page({
+  data: { version: '${release.version}' },
+  handleButtonSubmit() {},
+});`);
 await output('apps/catalog-wechat/pages/index/index.wxml', `
 <view class="catalog-shell cool-theme">
   <view class="catalog-orb catalog-orb-cyan"></view><view class="catalog-orb catalog-orb-amber"></view>
   <view class="catalog-header"><text class="catalog-eyebrow">cooL UI {{version}} / WECHAT</text><text class="catalog-title">Native glass catalog</text><text class="catalog-copy">${components.length} components · 7 interaction states · semantic fallbacks</text></view>
+  <view class="catalog-section"><text class="catalog-section-title">Button native capabilities</text><view class="catalog-grid">
+    <cool-button label="Default" accessibility-label="Default button example" />
+    <cool-button label="Loading" loading="{{true}}" accessibility-label="Loading button example" />
+    <cool-button label="Disabled" disabled="{{true}}" accessibility-label="Disabled button example" />
+    <cool-button label="Share" open-type="share" accessibility-label="Share button example" />
+    <form bindsubmit="handleButtonSubmit">
+      <cool-button label="Submit" form-type="submit" accessibility-label="Submit button example" />
+    </form>
+  </view></view>
 ${['foundations', 'actions-inputs', 'navigation', 'content', 'feedback-overlays'].map((category) => `
   <view class="catalog-section"><text class="catalog-section-title">${category}</text><view class="catalog-grid">
     ${components.filter((component) => component.category === category).map(({ name }) => `<cool-${kebab(name)} label="${name}" accessibility-label="${name} example" />`).join('\n    ')}

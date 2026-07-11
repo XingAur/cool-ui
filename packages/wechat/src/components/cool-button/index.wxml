@@ -1,6 +1,26 @@
-<view class="cool-component cool-glass cool-button cool-material-{{resolvedMaterial}} cool-tone-{{tone}} cool-size-{{size}} {{selected ? 'is-selected' : ''}} {{disabled ? 'is-disabled' : ''}} {{error ? 'is-error' : ''}}" data-component="Button">
-  <view wx:if="{{loading}}" class="cool-loading" aria-label="loading"></view>
-  <slot name="icon"/>
-  <view class="cool-content" role="button" aria-label="{{accessibilityLabel}}" bindtap="handleTap"><text wx:if="{{label}}" class="cool-label">{{label}}</text><slot/></view>
+<button
+  class="cool-component cool-glass cool-button-native cool-button cool-material-{{resolvedMaterial}} cool-tone-{{tone}} cool-size-{{size}} {{selected ? 'is-selected' : ''}} {{disabled || loading ? 'is-disabled' : ''}} {{error ? 'is-error' : ''}}"
+  data-component="Button"
+  open-type="{{openType}}"
+  form-type="{{formType}}"
+  disabled="{{disabled || loading}}"
+  loading="{{loading}}"
+  aria-label="{{resolvedAccessibilityLabel}}"
+  hover-class="is-pressed"
+  bindtap="handleButtonTap"
+  bindgetuserinfo="forwardNativeEvent"
+  bindcontact="forwardNativeEvent"
+  bindgetphonenumber="forwardNativeEvent"
+  binderror="forwardNativeEvent"
+  bindopensetting="forwardNativeEvent"
+  bindlaunchapp="forwardNativeEvent"
+  bindchooseavatar="forwardNativeEvent"
+  bindagreeprivacyauthorization="forwardNativeEvent"
+>
+  <view class="cool-button-content">
+    <slot name="icon"/>
+    <text wx:if="{{label}}" class="cool-label">{{label}}</text>
+    <slot/>
+  </view>
   <text wx:if="{{errorMessage}}" class="cool-error" role="alert">{{errorMessage}}</text>
-</view>
+</button>

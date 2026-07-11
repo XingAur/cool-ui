@@ -1,1 +1,30 @@
 @import "../../styles/glass.wxss";
+
+.cool-button-native {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  margin: 0;
+  color: var(--cool-color-light-text);
+  font-size: var(--cool-typography-body);
+  line-height: normal;
+  text-align: center;
+}
+
+.cool-button-native::after { border: 0; }
+.cool-button-native.cool-size-medium { min-height: var(--cool-size-controlMedium); }
+.cool-button-native.is-pressed { background: var(--cool-color-light-surface); }
+.cool-button-native.is-disabled { opacity: var(--cool-opacity-disabled); }
+.cool-button-native:focus {
+  border-width: var(--cool-border-focus);
+  border-color: var(--cool-color-light-accent);
+}
+
+.cool-button-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--cool-space-sm);
+  min-height: inherit;
+}

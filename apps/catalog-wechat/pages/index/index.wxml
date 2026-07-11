@@ -1,6 +1,15 @@
 <view class="catalog-shell cool-theme">
   <view class="catalog-orb catalog-orb-cyan"></view><view class="catalog-orb catalog-orb-amber"></view>
   <view class="catalog-header"><text class="catalog-eyebrow">cooL UI {{version}} / WECHAT</text><text class="catalog-title">Native glass catalog</text><text class="catalog-copy">43 components · 7 interaction states · semantic fallbacks</text></view>
+  <view class="catalog-section"><text class="catalog-section-title">Button native capabilities</text><view class="catalog-grid">
+    <cool-button label="Default" accessibility-label="Default button example" />
+    <cool-button label="Loading" loading="{{true}}" accessibility-label="Loading button example" />
+    <cool-button label="Disabled" disabled="{{true}}" accessibility-label="Disabled button example" />
+    <cool-button label="Share" open-type="share" accessibility-label="Share button example" />
+    <form bindsubmit="handleButtonSubmit">
+      <cool-button label="Submit" form-type="submit" accessibility-label="Submit button example" />
+    </form>
+  </view></view>
 
   <view class="catalog-section"><text class="catalog-section-title">foundations</text><view class="catalog-grid">
     <cool-theme-provider label="ThemeProvider" accessibility-label="ThemeProvider example" />
