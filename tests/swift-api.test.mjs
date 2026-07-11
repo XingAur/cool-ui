@@ -72,15 +72,19 @@ test('SwiftUI MonthCalendar exposes controlled models and native grid compositio
   assert.match(calendar, /public struct CoolCalendarMarker: Hashable, Sendable/);
   assert.match(calendar, /public struct CoolCalendarDay: Identifiable, Hashable, Sendable/);
   assert.match(calendar, /Array\(markers\.prefix\(3\)\)/);
+  assert.match(calendar, /public struct CoolMonthCalendarHeaderContext/);
   assert.match(calendar, /public struct CoolMonthCalendar<Header: View, DayContent: View, MarkerContent: View>: View/);
-  assert.match(calendar, /\(Date, @escaping \(CoolMonthDirection\) -> Void\) -> Header/);
+  assert.match(calendar, /header: @escaping \(CoolMonthCalendarHeaderContext\) -> Header/);
   assert.match(calendar, /@Binding private var selection: Date/);
   assert.match(calendar, /@Binding private var displayedMonth: Date/);
   assert.match(calendar, /LazyVGrid\(columns:/);
   assert.match(calendar, /CoolGlassSurface/);
   assert.match(calendar, /CoolSemanticIcons\.sfSymbol\(for:/);
-  assert.match(calendar, /selection = \w+\.date/);
+  assert.match(calendar, /\n  func requestSelection\(_ model: CoolCalendarDay\)/);
+  assert.match(calendar, /\n  func requestMonthChange\(_ direction: CoolMonthDirection\)/);
+  assert.doesNotMatch(calendar, /selection\s*=\s*\w+\.date/, 'the strictly controlled component must not write selection');
   assert.match(calendar, /onMonthChange\(direction\)/);
+  assert.doesNotMatch(calendar, /\(Date, @escaping \(CoolMonthDirection\) -> Void\) -> Header/);
   assert.match(accessibilityHelper, /model\.secondaryText/);
   assert.match(accessibilityHelper, /model\.badge/);
   assert.doesNotMatch(calendar, /date\(byAdding:\s*\.month/, 'the controlled component must not calculate a new month');
@@ -89,7 +93,10 @@ test('SwiftUI MonthCalendar exposes controlled models and native grid compositio
 
 test('Swift Catalog owns a controlled 42-cell MonthCalendar fixture', async () => {
   const catalog = await read('apps/catalog-swift/CoolUICatalog/CoolUICatalogApp.swift');
+  const selectionFixture = catalog.match(/@State private var calendarSelection = CatalogView\.(\w+)/)?.[1];
+  const todayFixture = catalog.match(/isToday: calendar\.isDate\(fixtureDate, inSameDayAs: Self\.(\w+)\)/)?.[1];
 
+  assert.match(catalog, /private static let calendarToday = catalogDate\(year: 2026, month: 7, day: 12\)/);
   assert.match(catalog, /@State private var calendarSelection/);
   assert.match(catalog, /@State private var displayedMonth/);
   assert.match(catalog, /0\.\.<42/);
@@ -102,4 +109,6 @@ test('Swift Catalog owns a controlled 42-cell MonthCalendar fixture', async () =
   assert.match(catalog, /isSelected:/);
   assert.match(catalog, /badge:/);
   assert.match(catalog, /markers:/);
+  assert.equal(selectionFixture, 'calendarToday');
+  assert.equal(todayFixture, selectionFixture);
 });

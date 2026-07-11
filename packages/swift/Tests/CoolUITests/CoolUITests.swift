@@ -93,10 +93,58 @@ import SwiftUI
     selection: .constant(date),
     displayedMonth: .constant(date),
     days: [day],
-    header: { month, changeMonth in
-      Button(month.formatted(.dateTime.year().month())) { changeMonth(.next) }
+    header: { context in
+      Button(context.displayedMonth.formatted(.dateTime.year().month())) { context.requestMonthChange(.next) }
     },
     day: { model in Text(String(model.day)) },
     marker: { model in Circle().accessibilityLabel(model.accessibilityLabel ?? model.tone.rawValue) }
   )
+}
+
+@Test @MainActor func monthCalendarRequestsSelectionWithoutWritingBinding() {
+  let initialSelection = Date(timeIntervalSince1970: 0)
+  let requestedDate = Date(timeIntervalSince1970: 86_400)
+  var boundSelection = initialSelection
+  var selectedDay: CoolCalendarDay?
+  let enabledDay = CoolCalendarDay(date: requestedDate, day: 2)
+  let disabledDay = CoolCalendarDay(date: requestedDate, day: 2, isDisabled: true)
+  let selection = Binding(
+    get: { boundSelection },
+    set: { boundSelection = $0 }
+  )
+  let calendar = CoolMonthCalendar(
+    selection: selection,
+    displayedMonth: .constant(initialSelection),
+    days: [enabledDay, disabledDay],
+    onSelect: { selectedDay = $0 }
+  )
+
+  calendar.requestSelection(enabledDay)
+  #expect(boundSelection == initialSelection)
+  #expect(selectedDay == enabledDay)
+
+  selectedDay = nil
+  calendar.requestSelection(disabledDay)
+  #expect(boundSelection == initialSelection)
+  #expect(selectedDay == nil)
+}
+
+@Test @MainActor func monthCalendarRequestsMonthChangeWithoutWritingDisplayedMonth() {
+  let initialMonth = Date(timeIntervalSince1970: 0)
+  var boundMonth = initialMonth
+  var requestedDirection: CoolMonthDirection?
+  let displayedMonth = Binding(
+    get: { boundMonth },
+    set: { boundMonth = $0 }
+  )
+  let calendar = CoolMonthCalendar(
+    selection: .constant(initialMonth),
+    displayedMonth: displayedMonth,
+    days: [],
+    onMonthChange: { requestedDirection = $0 }
+  )
+
+  calendar.requestMonthChange(.next)
+  #expect(boundMonth == initialMonth)
+  #expect(requestedDirection == .next)
 }

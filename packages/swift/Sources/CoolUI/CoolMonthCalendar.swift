@@ -5,6 +5,20 @@ public enum CoolMonthDirection: String, CaseIterable, Hashable, Sendable {
   case next
 }
 
+public struct CoolMonthCalendarHeaderContext {
+  public let displayedMonth: Date
+  private let onMonthChange: (CoolMonthDirection) -> Void
+
+  init(displayedMonth: Date, onMonthChange: @escaping (CoolMonthDirection) -> Void) {
+    self.displayedMonth = displayedMonth
+    self.onMonthChange = onMonthChange
+  }
+
+  public func requestMonthChange(_ direction: CoolMonthDirection) {
+    onMonthChange(direction)
+  }
+}
+
 public struct CoolCalendarMarker: Hashable, Sendable {
   public let tone: CoolTone
   public let accessibilityLabel: String?
@@ -67,7 +81,7 @@ public struct CoolMonthCalendar<Header: View, DayContent: View, MarkerContent: V
   private let tone: CoolTone
   private let onSelect: (CoolCalendarDay) -> Void
   private let onMonthChange: (CoolMonthDirection) -> Void
-  private let header: (Date, @escaping (CoolMonthDirection) -> Void) -> Header
+  private let header: (CoolMonthCalendarHeaderContext) -> Header
   private let day: (CoolCalendarDay) -> DayContent
   private let marker: (CoolCalendarMarker) -> MarkerContent
   private let usesDefaultSlots: Bool
@@ -82,7 +96,7 @@ public struct CoolMonthCalendar<Header: View, DayContent: View, MarkerContent: V
     tone: CoolTone = .neutral,
     onSelect: @escaping (CoolCalendarDay) -> Void = { _ in },
     onMonthChange: @escaping (CoolMonthDirection) -> Void = { _ in },
-    @ViewBuilder header: @escaping (Date, @escaping (CoolMonthDirection) -> Void) -> Header,
+    @ViewBuilder header: @escaping (CoolMonthCalendarHeaderContext) -> Header,
     @ViewBuilder day: @escaping (CoolCalendarDay) -> DayContent,
     @ViewBuilder marker: @escaping (CoolCalendarMarker) -> MarkerContent
   ) {
@@ -155,7 +169,12 @@ public struct CoolMonthCalendar<Header: View, DayContent: View, MarkerContent: V
     return details.joined(separator: ", ")
   }
 
-  private func requestMonthChange(_ direction: CoolMonthDirection) {
+  func requestSelection(_ model: CoolCalendarDay) {
+    guard !model.isDisabled else { return }
+    onSelect(model)
+  }
+
+  func requestMonthChange(_ direction: CoolMonthDirection) {
     onMonthChange(direction)
   }
 
@@ -190,7 +209,10 @@ public struct CoolMonthCalendar<Header: View, DayContent: View, MarkerContent: V
       }
       .buttonStyle(.plain)
     } else {
-      header(displayedMonth) { direction in requestMonthChange(direction) }
+      header(CoolMonthCalendarHeaderContext(
+        displayedMonth: displayedMonth,
+        onMonthChange: requestMonthChange
+      ))
     }
   }
 
@@ -250,9 +272,7 @@ public struct CoolMonthCalendar<Header: View, DayContent: View, MarkerContent: V
 
   private func dayCell(_ model: CoolCalendarDay) -> some View {
     Button {
-      guard !model.isDisabled else { return }
-      selection = model.date
-      onSelect(model)
+      requestSelection(model)
     } label: {
       VStack(spacing: spacingExtraSmall) {
         daySlot(model)
@@ -321,7 +341,7 @@ public extension CoolMonthCalendar where Header == EmptyView, DayContent == Empt
     self.tone = tone
     self.onSelect = onSelect
     self.onMonthChange = onMonthChange
-    self.header = { _, _ in EmptyView() }
+    self.header = { _ in EmptyView() }
     self.day = { _ in EmptyView() }
     self.marker = { _ in EmptyView() }
     self.usesDefaultSlots = true

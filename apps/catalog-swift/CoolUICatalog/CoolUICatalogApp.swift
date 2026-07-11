@@ -9,6 +9,8 @@ struct CoolUICatalogApp: App {
 }
 
 struct CatalogView: View {
+  private static let calendarToday = catalogDate(year: 2026, month: 7, day: 12)
+
   @State private var themeMode: CoolThemeMode = .system
   @State private var contrastMode: CoolContrastMode = .standard
   @State private var motionMode: CoolMotionMode = .full
@@ -23,7 +25,7 @@ struct CatalogView: View {
   @State private var sliderValue = 64.0
   @State private var stepperValue = 3.0
   @State private var date = Date()
-  @State private var calendarSelection = CatalogView.catalogDate(year: 2026, month: 7, day: 12)
+  @State private var calendarSelection = CatalogView.calendarToday
   @State private var displayedMonth = CatalogView.catalogDate(year: 2026, month: 7, day: 1)
   @State private var navigationSelection = "home"
   @State private var showToast = false
@@ -64,7 +66,7 @@ struct CatalogView: View {
         day: calendar.component(.day, from: fixtureDate),
         secondaryText: offset == 17 ? "Quarterly planning sync" : (offset == 19 ? "Festival" : nil),
         accessibilityLabel: fixtureDate.formatted(.dateTime.year().month(.wide).day()),
-        isToday: offset == 18,
+        isToday: calendar.isDate(fixtureDate, inSameDayAs: Self.calendarToday),
         isSelected: calendar.isDate(fixtureDate, inSameDayAs: calendarSelection),
         isDisabled: !belongsToDisplayedMonth || offset == 21,
         tone: offset == 19 ? .success : (offset == 20 ? .warning : .neutral),
