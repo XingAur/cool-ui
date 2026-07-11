@@ -40,5 +40,6 @@
   "cool-bottom-sheet": "./dist/components/cool-bottom-sheet/index",
   "cool-popover": "./dist/components/cool-popover/index",
   "cool-tooltip": "./dist/components/cool-tooltip/index",
-  "cool-loading-overlay": "./dist/components/cool-loading-overlay/index"
+  "cool-loading-overlay": "./dist/components/cool-loading-overlay/index",
+  "cool-month-calendar": "./dist/components/cool-month-calendar/index"
 }

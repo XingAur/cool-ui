@@ -3,11 +3,13 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
 const root = new URL('../', import.meta.url);
+const contract = JSON.parse(await readFile(new URL('../../contracts/components.json', root), 'utf8'));
 
 test('all component tags are generated', async () => {
   const manifest = JSON.parse(await readFile(new URL('component-manifest.json', root), 'utf8'));
-  assert.equal(Object.keys(manifest).length, 42);
+  assert.equal(Object.keys(manifest).length, contract.components.length);
   assert.equal(manifest['cool-button'], './dist/components/cool-button/index');
+  assert.equal(manifest['cool-month-calendar'], './dist/components/cool-month-calendar/index');
 });
 
 test('shared behavior exposes controlled events and accessibility state inputs', async () => {

@@ -43,5 +43,6 @@ public enum CoolComponentRegistry {
     "Popover",
     "Tooltip",
     "LoadingOverlay",
+    "MonthCalendar",
   ]
 }

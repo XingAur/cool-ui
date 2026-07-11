@@ -421,3 +421,13 @@ export struct CoolLoadingOverlay {
     LoadingProgress().accessibilityText(this.config.accessibilityLabel)
   }
 }
+
+@Component
+export struct CoolMonthCalendar {
+  @Prop config: CoolComponentConfig = new CoolComponentConfig("MonthCalendar")
+  onEvent: (event: string) => void = () => {}
+
+  build() {
+    Button(this.config.label).enabled(!this.config.disabled && !this.config.loading).accessibilityText(this.config.accessibilityLabel).onClick(() => this.onEvent('activate'))
+  }
+}

@@ -5,6 +5,7 @@ import { release, releaseVersion } from './release-fixture.mjs';
 
 const root = new URL('../', import.meta.url);
 const contract = JSON.parse(await readFile(new URL('contracts/components.json', root), 'utf8'));
+const capabilities = JSON.parse(await readFile(new URL('contracts/component-capabilities.json', root), 'utf8'));
 const versionedContracts = [
   'contracts/components.json',
   'contracts/component-capabilities.json',
@@ -20,6 +21,7 @@ const expectedComponents = [
   'SegmentedControl', 'NavigationRail', 'Card', 'List', 'ListItem', 'Badge', 'Avatar',
   'Progress', 'CircularProgress', 'Skeleton', 'StatTile', 'EmptyState', 'Toast',
   'Banner', 'AlertDialog', 'BottomSheet', 'Popover', 'Tooltip', 'LoadingOverlay',
+  'MonthCalendar',
 ];
 
 const expectedTypes = {
@@ -72,10 +74,43 @@ test('all planned components exist on every platform', () => {
 
 test('interactive components expose state, value, event, icon and accessibility contracts', () => {
   const requiredStates = ['default', 'pressed', 'focused', 'selected', 'disabled', 'loading', 'error'];
-  for (const component of contract.components.filter(({ interactive }) => interactive)) {
+  for (const component of contract.components.filter(({ interactive, name }) => interactive && name !== 'MonthCalendar')) {
     assert.deepEqual(component.states, requiredStates, component.name);
     assert.deepEqual(component.capabilities, ['controlledValue', 'event', 'accessibilityLabel', 'semanticIconSlot'], component.name);
   }
+});
+
+test('MonthCalendar is the 43rd controlled date component', () => {
+  assert.equal(contract.components.length, 43);
+  const calendar = contract.components.find(({ name }) => name === 'MonthCalendar');
+  assert.ok(calendar, 'MonthCalendar contract');
+  assert.equal(calendar.category, 'content');
+  assert.equal(calendar.interactive, true);
+  assert.deepEqual(calendar.states, ['default', 'pressed', 'focused', 'selected', 'disabled']);
+  assert.deepEqual(calendar.api, {
+    kind: 'dateInput',
+    valueType: 'date',
+    events: ['select', 'monthChange'],
+    slots: ['header', 'day', 'marker'],
+  });
+  assert.deepEqual(calendar.maturity, {
+    swiftui: 'planned',
+    compose: 'planned',
+    arkui: 'planned',
+    wechat: 'planned',
+  });
+});
+
+test('MonthCalendar shares one bounded calendar day model', () => {
+  assert.deepEqual(capabilities.sharedModels?.CalendarDay, {
+    fields: [
+      'date', 'day', 'secondaryText', 'accessibilityLabel', 'isToday',
+      'isSelected', 'isDisabled', 'tone', 'badge', 'markers',
+    ],
+    constraints: {
+      markers: { maxItems: 3 },
+    },
+  });
 });
 
 test('every component declares native API shape and platform maturity', () => {

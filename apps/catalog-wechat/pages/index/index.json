@@ -41,6 +41,7 @@
     "cool-bottom-sheet": "../../../packages/wechat/dist/components/cool-bottom-sheet/index",
     "cool-popover": "../../../packages/wechat/dist/components/cool-popover/index",
     "cool-tooltip": "../../../packages/wechat/dist/components/cool-tooltip/index",
-    "cool-loading-overlay": "../../../packages/wechat/dist/components/cool-loading-overlay/index"
+    "cool-loading-overlay": "../../../packages/wechat/dist/components/cool-loading-overlay/index",
+    "cool-month-calendar": "../../../packages/wechat/dist/components/cool-month-calendar/index"
   }
 }

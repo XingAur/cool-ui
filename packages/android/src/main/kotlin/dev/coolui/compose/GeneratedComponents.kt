@@ -45,5 +45,6 @@ object CoolComponentRegistry {
     "Popover",
     "Tooltip",
     "LoadingOverlay",
+    "MonthCalendar",
   )
 }

@@ -9,7 +9,7 @@ const contract = JSON.parse(await read('contracts/components.json'));
 const componentApiName = (name) => name;
 const kebab = (name) => name.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase();
 
-test('every component has its idiomatic public name on all four platforms', async () => {
+test('every implemented component has its idiomatic public name on all four platforms', async () => {
   const swiftFiles = await readdir(new URL('packages/swift/Sources/CoolUI/', root));
   const swiftSources = (await Promise.all(
     swiftFiles.filter((file) => file.endsWith('.swift')).map((file) => read(`packages/swift/Sources/CoolUI/${file}`)),
@@ -22,11 +22,24 @@ test('every component has its idiomatic public name on all four platforms', asyn
   };
 
   for (const { name } of contract.components) {
+    if (name === 'MonthCalendar') continue;
     assert.match(sources.swiftui, new RegExp(`\\bCool${componentApiName(name)}\\b`), `Swift ${name}`);
     assert.match(sources.compose, new RegExp(`\\bCool${componentApiName(name)}\\b`), `Compose ${name}`);
     assert.match(sources.arkui, new RegExp(`\\bCool${componentApiName(name)}\\b`), `ArkUI ${name}`);
     assert.match(sources.wechat, new RegExp(`cool-${kebab(name)}`), `WeChat ${name}`);
   }
+});
+
+test('MonthCalendar is reserved in every platform registry', async () => {
+  const swiftRegistry = await read('packages/swift/Sources/CoolUI/GeneratedComponents.swift');
+  const kotlinRegistry = await read('packages/android/src/main/kotlin/dev/coolui/compose/GeneratedComponents.kt');
+  const arkRegistry = await read('packages/arkui/src/main/ets/components/GeneratedComponents.ets');
+  const wechatManifest = JSON.parse(await read('packages/wechat/component-manifest.json'));
+
+  assert.match(swiftRegistry, /"MonthCalendar"/);
+  assert.match(kotlinRegistry, /"MonthCalendar"/);
+  assert.match(arkRegistry, /\bCoolMonthCalendar\b/);
+  assert.equal(wechatManifest['cool-month-calendar'], './dist/components/cool-month-calendar/index');
 });
 
 test('platform foundations use native glass capabilities and generated tokens', async () => {

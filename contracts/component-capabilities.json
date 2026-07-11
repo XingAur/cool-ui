@@ -18,5 +18,26 @@
     "stable": "Native implementation, behavioral tests, accessibility checks, Catalog example, and consumer documentation are complete.",
     "beta": "Native behavior exists but at least one acceptance area is incomplete.",
     "planned": "The public contract is reserved but the platform implementation is not production-ready."
+  },
+  "sharedModels": {
+    "CalendarDay": {
+      "fields": [
+        "date",
+        "day",
+        "secondaryText",
+        "accessibilityLabel",
+        "isToday",
+        "isSelected",
+        "isDisabled",
+        "tone",
+        "badge",
+        "markers"
+      ],
+      "constraints": {
+        "markers": {
+          "maxItems": 3
+        }
+      }
+    }
   }
 }
