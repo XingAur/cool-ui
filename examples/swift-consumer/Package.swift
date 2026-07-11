@@ -5,5 +5,5 @@ let package = Package(
   name: "CoolUIConsumer",
   platforms: [.macOS("26.1")],
   dependencies: [.package(path: "../..")],
-  targets: [.executableTarget(name: "Demo", dependencies: [.product(name: "CoolUI", package: "CoolUI")])]
+  targets: [.executableTarget(name: "Demo", dependencies: [.product(name: "CoolUI", package: "cool-ui")])]
 )
