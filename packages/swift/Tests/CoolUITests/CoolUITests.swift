@@ -40,3 +40,27 @@ import SwiftUI
   _ = CoolDatePicker("Date", selection: .constant(Date()))
   _ = CoolTimePicker("Time", selection: .constant(Date()))
 }
+
+@Test @MainActor func navigationContentAndFeedbackUseNativeComposition() {
+  let items = [CoolNavigationItem(id: "home", title: "Home", systemImage: "house")]
+  _ = CoolTopBar("Library")
+  _ = CoolBottomNavigation(selection: .constant("home"), items: items)
+  _ = CoolTabBar(selection: .constant("home"), items: items)
+  _ = CoolSegmentedControl(selection: .constant("home"), options: [CoolSelectionOption(id: "home", title: "Home")])
+  _ = CoolNavigationRail(selection: .constant("home"), items: items)
+  _ = CoolCard { Text("Card content") }
+  _ = CoolList { CoolListItem(title: "Item", action: {}) }
+  _ = CoolBadge("New")
+  _ = CoolAvatar(name: "Ada Lovelace")
+  _ = CoolProgress(value: 0.5)
+  _ = CoolCircularProgress(value: 0.5)
+  _ = CoolSkeleton { Text("Loading") }
+  _ = CoolStatTile(title: "Sessions", value: "24", trend: "+12%")
+  _ = CoolEmptyState(title: "No results", description: "Try another query")
+  _ = Text("Host").coolToast(isPresented: .constant(false)) { Text("Saved") }
+  _ = Text("Host").coolAlertDialog("Delete?", isPresented: .constant(false)) { Button("Delete") {} } message: { Text("This cannot be undone.") }
+  _ = Text("Host").coolBottomSheet(isPresented: .constant(false)) { Text("Sheet") }
+  _ = Text("Host").coolPopover(isPresented: .constant(false)) { Text("Popover") }
+  _ = Text("Host").coolTooltip(isPresented: .constant(false)) { Text("Tooltip") }
+  _ = Text("Host").coolLoadingOverlay(isPresented: true) { ProgressView("Loading") }
+}

@@ -23,11 +23,24 @@ struct CatalogView: View {
   @State private var sliderValue = 64.0
   @State private var stepperValue = 3.0
   @State private var date = Date()
+  @State private var navigationSelection = "home"
+  @State private var showToast = false
+  @State private var showDialog = false
+  @State private var showSheet = false
+  @State private var showPopover = false
+  @State private var showTooltip = false
+  @State private var showLoadingOverlay = false
 
   private let materialOptions = [
     CoolSelectionOption(id: "clear", title: "Clear", systemImage: "sparkles"),
     CoolSelectionOption(id: "regular", title: "Regular", systemImage: "square.on.square"),
     CoolSelectionOption(id: "prominent", title: "Prominent", systemImage: "star.fill"),
+  ]
+
+  private let navigationItems = [
+    CoolNavigationItem(id: "home", title: "Home", systemImage: "home"),
+    CoolNavigationItem(id: "search", title: "Search", systemImage: "search"),
+    CoolNavigationItem(id: "settings", title: "Settings", systemImage: "settings"),
   ]
 
   private var configuration: CoolThemeConfiguration {
@@ -116,8 +129,85 @@ struct CatalogView: View {
             CoolStepper("Layers", value: $stepperValue, in: 0...8)
             CoolDatePicker("Date", selection: $date)
             CoolTimePicker("Time", selection: $date)
+
+            Text("Navigation")
+              .font(.title2.weight(.semibold))
+              .padding(.top, 8)
+            CoolTopBar("Library")
+            CoolBottomNavigation(selection: $navigationSelection, items: navigationItems)
+            CoolSegmentedControl(
+              selection: $navigationSelection,
+              options: navigationItems.map { CoolSelectionOption(id: $0.id, title: $0.title) },
+              accessibilityLabel: "Catalog section"
+            )
+            HStack(alignment: .top, spacing: 12) {
+              CoolNavigationRail(selection: $navigationSelection, items: navigationItems)
+              CoolTabBar(selection: $navigationSelection, items: navigationItems) { item in
+                CoolCard { Text("Native tab content: \(item)") }
+                  .padding()
+              }
+              .frame(height: 180)
+            }
+
+            Text("Content")
+              .font(.title2.weight(.semibold))
+              .padding(.top, 8)
+            CoolCard { Text("Composable card content").font(.headline) }
+            CoolList {
+              CoolListItem(title: "Account", subtitle: "Profile and security", systemImage: "settings", action: {})
+              CoolListItem(title: "Storage", trailingText: "64 GB")
+            }
+            HStack(spacing: 12) {
+              CoolBadge("New")
+              CoolAvatar(name: "Ada Lovelace")
+              CoolCircularProgress(value: sliderValue, total: 100)
+            }
+            CoolProgress(value: sliderValue, total: 100, label: "Catalog progress")
+            CoolSkeleton { CoolCard { Text("Loading content") } }
+            CoolStatTile(title: "Sessions", value: "24", trend: "+12%")
+            CoolEmptyState(title: "No results", description: "Try another query", actionTitle: "Clear", action: { search = "" })
+
+            Text("Feedback and presentations")
+              .font(.title2.weight(.semibold))
+              .padding(.top, 8)
+            CoolBanner(onDismiss: { showToast = false }) {
+              Label("A native glass banner", systemImage: "info.circle")
+            }
+            HStack {
+              CoolButton("Toast", action: { showToast = true })
+              CoolButton("Alert", action: { showDialog = true })
+              CoolButton("Sheet", action: { showSheet = true })
+            }
+            HStack {
+              CoolButton("Popover", action: { showPopover = true })
+              CoolButton("Tooltip", action: { showTooltip.toggle() })
+              CoolButton("Loading", action: { showLoadingOverlay.toggle() })
+            }
           }
           .padding(24)
+        }
+        .coolToast(isPresented: $showToast) { Label("Saved", systemImage: "checkmark.circle.fill") }
+        .coolAlertDialog("Delete item?", isPresented: $showDialog) {
+          Button("Delete", role: .destructive) {}
+          Button("Cancel", role: .cancel) {}
+        } message: {
+          Text("This action uses SwiftUI's native alert presentation.")
+        }
+        .coolBottomSheet(isPresented: $showSheet) {
+          VStack(spacing: 16) {
+            Text("Native bottom sheet").font(.title2.bold())
+            Text("Presentation and dismissal remain platform-owned.")
+          }
+          .padding()
+        }
+        .coolPopover(isPresented: $showPopover) {
+          Text("Native popover").padding()
+        }
+        .coolTooltip(isPresented: $showTooltip) {
+          Text("Contextual help")
+        }
+        .coolLoadingOverlay(isPresented: showLoadingOverlay) {
+          ProgressView("Loading catalog")
         }
       }
     }

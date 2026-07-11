@@ -41,3 +41,21 @@ test('SwiftUI actions and inputs expose native typed values', async () => {
   assert.match(numeric, /Binding<Double>/);
   assert.match(dates, /Binding<Date>/);
 });
+
+test('SwiftUI navigation, content, and feedback use composed native APIs', async () => {
+  const navigation = await read('packages/swift/Sources/CoolUI/CoolNavigation.swift');
+  const content = await read('packages/swift/Sources/CoolUI/CoolContent.swift');
+  const feedback = await read('packages/swift/Sources/CoolUI/CoolFeedback.swift');
+
+  assert.match(navigation, /public struct CoolNavigationItem<Value: Hashable/);
+  assert.match(navigation, /public struct CoolTabBar<Value: Hashable/);
+  assert.match(content, /public struct CoolCard<Content: View>/);
+  assert.match(content, /public struct CoolList<Content: View>/);
+  assert.match(feedback, /public struct CoolAlertDialog<Actions: View, Message: View>: ViewModifier/);
+  assert.match(feedback, /\.alert\(/);
+  assert.match(feedback, /public struct CoolBottomSheet<SheetContent: View>: ViewModifier/);
+  assert.match(feedback, /\.sheet\(/);
+  assert.match(feedback, /public struct CoolPopover<PopoverContent: View>: ViewModifier/);
+  assert.match(feedback, /\.popover\(/);
+  assert.match(feedback, /public struct CoolLoadingOverlay<OverlayContent: View>: ViewModifier/);
+});
