@@ -57,5 +57,11 @@ test('generator emits stable artifacts for all four platforms and CSS', async ()
   const manifest = JSON.parse(await readFile(new URL('packages/tokens/generated/manifest.json', root), 'utf8'));
   assert.equal(manifest.version, releaseVersion);
   assert.equal(manifest.source, 'src/tokens.json');
-  assert.equal(Object.keys(manifest.outputs).length, 5);
+  assert.equal(Object.keys(manifest.outputs).length, 6);
+  assert.ok(manifest.outputs['tokens.json']);
+
+  const generatedTokens = JSON.parse(await readFile(new URL('packages/tokens/generated/tokens.json', root), 'utf8'));
+  assert.equal(generatedTokens.meta.version.$value, releaseVersion);
+  const pkg = JSON.parse(await readFile(new URL('packages/tokens/package.json', root), 'utf8'));
+  assert.equal(pkg.exports['./tokens.json'], './generated/tokens.json');
 });

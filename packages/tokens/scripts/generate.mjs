@@ -45,6 +45,7 @@ function numberValue(value) {
 
 const entries = [...tokens.keys()].sort().map((name) => ({ name, id: identifier(name), token: tokens.get(name), value: resolveValue(name) }));
 const outputs = {
+  'tokens.json': `${JSON.stringify(source, null, 2)}\n`,
   'swift/CoolTokens.swift': [
     '// Generated from DTCG tokens. Do not edit.',
     'import Foundation',

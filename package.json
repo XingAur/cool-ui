@@ -17,11 +17,12 @@
     "docs:build": "pnpm --dir docs build",
     "generate": "pnpm tokens:generate && node scripts/generate-components.mjs && node scripts/generate-sbom.mjs",
     "tokens:generate": "node packages/tokens/scripts/generate.mjs",
-    "tokens:check": "pnpm generate && git diff --exit-code -- packages/tokens/generated packages/swift/Sources/CoolUI/CoolTokens.swift packages/android/src/main/kotlin/dev/coolui/tokens packages/arkui/src/main/ets/tokens packages/wechat/src/styles/tokens.wxss",
+    "tokens:check": "node scripts/check-generated.mjs",
     "pack:local": "node scripts/pack-local.mjs",
     "artifacts": "node scripts/build-artifacts.mjs",
     "changeset": "changeset",
-    "version-packages": "changeset version"
+    "version-packages": "node scripts/sync-release-version.mjs && pnpm generate",
+    "prepublishOnly": "node scripts/guard-public-publish.mjs"
   },
   "devDependencies": {
     "@changesets/cli": "^2.29.5",

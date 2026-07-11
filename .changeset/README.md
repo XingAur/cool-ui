@@ -1,3 +1,5 @@
 # Changesets
 
-Every user-visible change requires a changeset. All cooL UI publishing units share one version; native package versions are synchronized by the artifact script before release validation.
+Changesets record user-visible change notes only. They never calculate or apply package versions.
+
+`contracts/release.json` is the sole version authority. Run `pnpm version-packages` to synchronize handwritten manifests from that contract and regenerate derived files.

@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -7,6 +8,14 @@ const release = JSON.parse(await readFile(resolve(root, 'contracts/release.json'
 await mkdir(resolve(root, 'artifacts'), { recursive: true });
 const manifests = ['package.json', 'packages/tokens/package.json', 'packages/wechat/package.json', 'packages/arkui/oh-package.json5'];
 const components = [];
+
+function stableUuid(name) {
+  const bytes = createHash('sha256').update(name).digest().subarray(0, 16);
+  bytes[6] = (bytes[6] & 0x0f) | 0x50;
+  bytes[8] = (bytes[8] & 0x3f) | 0x80;
+  const hex = bytes.toString('hex');
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+}
 
 for (const relative of manifests) {
   const raw = await readFile(resolve(root, relative), 'utf8');
@@ -24,7 +33,7 @@ for (const relative of manifests) {
 const sbom = {
   bomFormat: 'CycloneDX',
   specVersion: '1.6',
-  serialNumber: `urn:uuid:cool-ui-${release.version}`,
+  serialNumber: `urn:uuid:${stableUuid(`cool-ui:${release.version}`)}`,
   version: 1,
   metadata: { component: { type: 'application', name: 'cool-ui', version: release.version } },
   components,

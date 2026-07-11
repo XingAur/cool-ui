@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { access, readFile, readdir } from 'node:fs/promises';
+import { access, mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { releaseVersion } from './release-fixture.mjs';
@@ -73,10 +75,41 @@ test('local consumer installs the final cooL UI tarball names', async () => {
   });
   assert.equal(generated.status, 0, generated.stderr);
   const sbom = JSON.parse(await read('artifacts/sbom.cdx.json'));
-  assert.equal(sbom.serialNumber, `urn:uuid:cool-ui-${releaseVersion}`);
+  assert.match(sbom.serialNumber, /^urn:uuid:[0-9a-f]{8}-[0-9a-f]{4}-5[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
   assert.equal(sbom.metadata.component.name, 'cool-ui');
   assert.equal(sbom.metadata.component.version, releaseVersion);
   assert.ok(sbom.components.every(({ version }) => version === releaseVersion));
+
+  const repeated = spawnSync(process.execPath, ['scripts/generate-sbom.mjs'], {
+    cwd: fileURLToPath(root),
+    encoding: 'utf8',
+  });
+  assert.equal(repeated.status, 0, repeated.stderr);
+  assert.equal(JSON.parse(await read('artifacts/sbom.cdx.json')).serialNumber, sbom.serialNumber);
+});
+
+test('local pack replaces stale tarballs and publishes canonical generated tokens', async () => {
+  const destination = await mkdtemp(join(tmpdir(), 'cool-ui-pack-'));
+  const tokensTarball = join(destination, `cool-ui-tokens-${releaseVersion}.tgz`);
+  try {
+    await writeFile(tokensTarball, 'stale tarball');
+    const packed = spawnSync(process.execPath, ['scripts/pack-local.mjs'], {
+      cwd: fileURLToPath(root),
+      env: { ...process.env, COOL_UI_PACK_DESTINATION: destination },
+      encoding: 'utf8',
+    });
+    assert.equal(packed.status, 0, packed.stderr);
+    assert.notEqual(await readFile(tokensTarball, 'utf8').catch(() => ''), 'stale tarball');
+    assert.match(packed.stdout, new RegExp(`cool-ui-tokens-${releaseVersion.replaceAll('.', '\\.')}\\.tgz`));
+    assert.match(packed.stdout, new RegExp(`cool-ui-wechat-${releaseVersion.replaceAll('.', '\\.')}\\.tgz`));
+
+    const extracted = spawnSync('tar', ['-xOf', tokensTarball, 'package/generated/tokens.json'], { encoding: 'utf8' });
+    assert.equal(extracted.status, 0, extracted.stderr);
+    const tokens = JSON.parse(extracted.stdout);
+    assert.equal(tokens.meta.version.$value, releaseVersion);
+  } finally {
+    await rm(destination, { recursive: true, force: true });
+  }
 });
 
 test('generators and all four Catalogs derive release metadata from canonical sources', async () => {

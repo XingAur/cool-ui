@@ -7,7 +7,7 @@
   "type": "module",
   "files": ["src", "generated", "README.md"],
   "exports": {
-    "./tokens.json": "./src/tokens.json",
+    "./tokens.json": "./generated/tokens.json",
     "./css": "./generated/css/cool-ui-tokens.css",
     "./wechat": "./generated/wechat/cool-ui-tokens.wxss"
   },

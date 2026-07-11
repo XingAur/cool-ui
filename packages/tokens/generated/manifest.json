@@ -2,6 +2,7 @@
   "version": "0.2.0",
   "source": "src/tokens.json",
   "outputs": {
+    "tokens.json": "2c35dba49bbcc2f0911a76734779684c1551e054f80ce7f691299f986ec43093",
     "swift/CoolTokens.swift": "357d0789d3c2662613b029946922a799760926e6aa5c4b0ecc0a07a9bb7548bb",
     "kotlin/CoolTokens.kt": "ea06857fd68ed21169dee13d4203bccb092218b5bad49c1e68c43feab3822d1a",
     "arkts/CoolTokens.ets": "e6edcc389f07a6114b566c9883f3514d0437080e2c5fcd9610084c3aa0e265a9",
