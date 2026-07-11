@@ -8,6 +8,7 @@ const read = (path) => readFile(new URL(path, root), 'utf8').catch(() => '');
 test('SwiftUI foundations are public content-building APIs', async () => {
   const theme = await read('packages/swift/Sources/CoolUI/CoolTheme.swift');
   const glass = await read('packages/swift/Sources/CoolUI/CoolGlass.swift');
+  const content = await read('packages/swift/Sources/CoolUI/CoolContent.swift');
 
   assert.match(theme, /public struct CoolThemeProvider<Content: View>/);
   assert.match(theme, /public struct CoolResolvedEnvironment/);
@@ -15,6 +16,7 @@ test('SwiftUI foundations are public content-building APIs', async () => {
   assert.match(glass, /public struct CoolGlassSurface<Content: View>/);
   assert.match(glass, /public struct CoolGlassGroup<Content: View>/);
   assert.match(glass, /GlassEffectContainer/);
+  assert.doesNotMatch(`${glass}\n${content}`, /= CoolTokenValue\./, 'public defaults cannot reference internal token helpers');
 });
 
 test('Swift Catalog consumes public components instead of the generic renderer', async () => {

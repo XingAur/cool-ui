@@ -63,6 +63,7 @@ test('repository root is directly consumable by Swift Package Manager', async ()
   const manifest = await read('Package.swift');
   assert.match(manifest, /name: "CoolUI"/);
   assert.match(manifest, /path: "packages\/swift\/Sources\/CoolUI"/);
+  assert.match(manifest, /\.macOS\("26\.1"\)/);
   assert.match(await read('examples/swift-consumer/Package.swift'), /\.package\(path: "\.\.\/\.\."\)/);
   assert.match(await read('examples/swift-consumer/Sources/Demo/main.swift'), /import CoolUI/);
 });

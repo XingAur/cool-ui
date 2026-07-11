@@ -3,7 +3,7 @@ import PackageDescription
 
 let package = Package(
   name: "CoolUIConsumer",
-  platforms: [.macOS(.v26)],
+  platforms: [.macOS("26.1")],
   dependencies: [.package(path: "../..")],
   targets: [.executableTarget(name: "Demo", dependencies: [.product(name: "CoolUI", package: "CoolUI")])]
 )

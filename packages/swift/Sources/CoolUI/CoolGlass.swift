@@ -129,10 +129,10 @@ public struct CoolGlassGroup<Content: View>: View {
   private let content: Content
 
   public init(
-    spacing: CGFloat? = CoolTokenValue.points(CoolTokens.spaceSm),
+    spacing: CGFloat? = nil,
     @ViewBuilder content: () -> Content
   ) {
-    self.spacing = spacing
+    self.spacing = spacing ?? CoolTokenValue.points(CoolTokens.spaceSm)
     self.content = content()
   }
 

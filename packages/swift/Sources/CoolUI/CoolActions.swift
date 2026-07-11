@@ -16,15 +16,15 @@ private func coolActionTone(_ tone: CoolTone, colorScheme: ColorScheme) -> Color
   let dark = colorScheme == .dark
   switch tone {
   case .neutral:
-    CoolTokenValue.color(dark ? CoolTokens.colorDarkText : CoolTokens.colorLightText)
+    return CoolTokenValue.color(dark ? CoolTokens.colorDarkText : CoolTokens.colorLightText)
   case .accent:
-    CoolTokenValue.color(dark ? CoolTokens.colorDarkAccent : CoolTokens.colorLightAccent)
+    return CoolTokenValue.color(dark ? CoolTokens.colorDarkAccent : CoolTokens.colorLightAccent)
   case .success:
-    CoolTokenValue.color(dark ? CoolTokens.colorDarkSuccess : CoolTokens.colorLightSuccess)
+    return CoolTokenValue.color(dark ? CoolTokens.colorDarkSuccess : CoolTokens.colorLightSuccess)
   case .warning:
-    CoolTokenValue.color(dark ? CoolTokens.colorDarkWarning : CoolTokens.colorLightWarning)
+    return CoolTokenValue.color(dark ? CoolTokens.colorDarkWarning : CoolTokens.colorLightWarning)
   case .danger:
-    CoolTokenValue.color(dark ? CoolTokens.colorDarkDanger : CoolTokens.colorLightDanger)
+    return CoolTokenValue.color(dark ? CoolTokens.colorDarkDanger : CoolTokens.colorLightDanger)
   }
 }
 

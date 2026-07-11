@@ -40,10 +40,10 @@ public struct CoolList<Content: View>: View {
   private let content: Content
 
   public init(
-    spacing: CGFloat = CoolTokenValue.points(CoolTokens.spaceXs),
+    spacing: CGFloat? = nil,
     @ViewBuilder content: () -> Content
   ) {
-    self.spacing = spacing
+    self.spacing = spacing ?? CoolTokenValue.points(CoolTokens.spaceXs)
     self.content = content()
   }
 
