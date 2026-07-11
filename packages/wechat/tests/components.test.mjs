@@ -214,9 +214,9 @@ test('controlled TabBar and SegmentedControl render option semantics from stable
     const wxml = await readFile(new URL(`src/components/${tag}/index.wxml`, root), 'utf8');
     assert.match(wxml, /wx:for="\{\{viewOptions\}\}"/, tag);
     assert.match(wxml, /wx:key="_key"/, tag);
-    assert.match(wxml, /data-index="\{\{index\}\}"/, tag);
+    assert.match(wxml, /data-index="\{\{item\._index\}\}"/, tag);
     assert.match(wxml, /bindtap="handleOptionTap"/, tag);
-    assert.match(wxml, /index === selectedIndex/, `${tag} first-match active state`);
+    assert.match(wxml, /item\._index === selectedIndex/, `${tag} first-match active state`);
     assert.match(wxml, /item\.disabled \|\| disabled/, `${tag} disabled state`);
     assert.match(wxml, /wx:if="\{\{item\.badge \|\| item\.badge === 0\}\}"/, `${tag} badge`);
     assert.match(wxml, /role="tablist"/, tag);
@@ -229,6 +229,16 @@ test('controlled TabBar and SegmentedControl render option semantics from stable
 
   const segmentWxml = await readFile(new URL('src/components/cool-segmented-control/index.wxml', root), 'utf8');
   assert.match(segmentWxml, /cool-segmented-group/);
+});
+
+test('controlled option components preserve loading and error presentation states', async () => {
+  for (const tag of controlledOptionTags) {
+    const wxml = await readFile(new URL(`src/components/${tag}/index.wxml`, root), 'utf8');
+    assert.match(wxml, /\{\{loading \? 'is-loading' : ''\}\}/, `${tag} loading class`);
+    assert.match(wxml, /\{\{error \? 'is-error' : ''\}\}/, `${tag} error class`);
+    assert.match(wxml, /wx:if="\{\{loading\}\}" class="cool-loading" aria-label="loading"/, `${tag} spinner`);
+    assert.match(wxml, /wx:if="\{\{errorMessage\}\}" class="cool-error" role="alert"/, `${tag} error message`);
+  }
 });
 
 test('controlled option components emit exact change details without writing value', async () => {
@@ -256,6 +266,7 @@ test('controlled option components emit exact change details without writing val
     assert.deepEqual(invoke(0).events, [], `${tag} current selection`);
     assert.deepEqual(invoke(2).events, [], `${tag} disabled option`);
     assert.deepEqual(invoke(1, { disabled: true }).events, [], `${tag} disabled component`);
+    assert.deepEqual(invoke(1, { loading: true }).events, [], `${tag} loading component`);
     assert.deepEqual(invoke(99).events, [], `${tag} out of range`);
     assert.deepEqual(invoke(-1).events, [], `${tag} negative index`);
     assert.deepEqual(invoke(undefined).events, [], `${tag} missing index`);
@@ -263,6 +274,7 @@ test('controlled option components emit exact change details without writing val
 
     const stringResult = invoke(0, { value: 2 });
     assert.deepEqual(plainData(stringResult.events), [{ name: 'change', detail: { value: 'overview', index: 0 } }], `${tag} string value`);
+    assert.deepEqual(plainData(invoke(1, { error: true }).events), [{ name: 'change', detail: { value: 2, index: 1 } }], `${tag} error remains selectable`);
   }
 });
 
@@ -284,10 +296,10 @@ test('controlled option validation gives duplicates unique keys and preserves fi
     }, options, 1);
     const firstUpdate = plainData(writes[0]);
     assert.equal(firstUpdate.selectedIndex, 0, tag);
-    assert.deepEqual(firstUpdate.viewOptions.map(({ _key }) => _key), [
-      'number:1:0',
-      'string:1:1',
-      'number:1:2',
+    assert.deepEqual(firstUpdate.viewOptions.map(({ _key, _index }) => ({ _key, _index })), [
+      { _key: '["number",1,0]', _index: 0 },
+      { _key: '["string","1",0]', _index: 1 },
+      { _key: '["number",1,1]', _index: 2 },
     ], tag);
     assert.equal(new Set(firstUpdate.viewOptions.map(({ _key }) => _key)).size, options.length, tag);
 
@@ -297,11 +309,13 @@ test('controlled option validation gives duplicates unique keys and preserves fi
     }, reordered, 1);
     const secondUpdate = plainData(writes[1]);
     assert.equal(secondUpdate.selectedIndex, 1, `${tag} first numeric match after reorder`);
-    assert.deepEqual(secondUpdate.viewOptions.map(({ _key }) => _key), [
-      'string:1:0',
-      'number:1:1',
-      'number:2:2',
+    assert.deepEqual(secondUpdate.viewOptions.map(({ _key, _index }) => ({ _key, _index })), [
+      { _key: '["string","1",0]', _index: 0 },
+      { _key: '["number",1,0]', _index: 1 },
+      { _key: '["number",2,0]', _index: 2 },
     ], `${tag} refreshed identities`);
+    assert.equal(firstUpdate.viewOptions[0]._key, secondUpdate.viewOptions[1]._key, `${tag} unique numeric key survives reorder`);
+    assert.equal(firstUpdate.viewOptions[1]._key, secondUpdate.viewOptions[0]._key, `${tag} unique string key survives reorder`);
   }
 });
 
@@ -311,7 +325,7 @@ test('duplicate option warnings are silent in release and once per signature in 
       { value: 'same', label: 'First' },
       { value: 'same', label: 'Second' },
     ];
-    for (const [envVersion, expectedWarnings] of [['release', 0], ['develop', 1], ['trial', 1]]) {
+    for (const [envVersion, expectedWarnings] of [['release', 0], ['develop', 1], ['trial', 1], ['unknown', 0]]) {
       const warnings = [];
       const { definition } = await loadGeneratedComponent(tag, {
         console: { warn(...args) { warnings.push(args); } },
@@ -322,6 +336,22 @@ test('duplicate option warnings are silent in release and once per signature in 
       definition.observers['options, value'].call(context, options, 'same');
       assert.equal(warnings.length, expectedWarnings, `${tag} ${envVersion}`);
     }
+
+    const collisionWarnings = [];
+    const { definition: collisionDefinition } = await loadGeneratedComponent(tag, {
+      console: { warn(...args) { collisionWarnings.push(args); } },
+      wx: { getAccountInfoSync() { return { miniProgram: { envVersion: 'develop' } }; } },
+    });
+    const collisionContext = { setData() {} };
+    collisionDefinition.observers['options, value'].call(collisionContext, [
+      { value: 'a', label: 'A1' }, { value: 'a', label: 'A2' },
+      { value: 'b', label: 'B1' }, { value: 'b', label: 'B2' },
+    ], 'a');
+    collisionDefinition.observers['options, value'].call(collisionContext, [
+      { value: 'a|string:b', label: 'Combined 1' },
+      { value: 'a|string:b', label: 'Combined 2' },
+    ], 'a|string:b');
+    assert.equal(collisionWarnings.length, 2, `${tag} structured duplicate signatures do not collide`);
   }
 });
 
@@ -333,7 +363,7 @@ test('duplicate option validation keeps rendering when account environment looku
       wx: { getAccountInfoSync() { throw new Error('account info unavailable'); } },
     });
     const writes = [];
-    assert.match(source, /function isReleaseEnvironment\(\)/, tag);
+    assert.match(source, /function shouldWarnForDuplicateValues\(\)/, tag);
     assert.doesNotThrow(() => definition.observers['options, value'].call({
       setData(update) { writes.push(update); },
     }, [
@@ -342,11 +372,12 @@ test('duplicate option validation keeps rendering when account environment looku
     ], 1), tag);
     assert.deepEqual(plainData(writes), [{
       viewOptions: [
-        { value: 1, label: 'First', _key: 'number:1:0' },
-        { value: 1, label: 'Second', _key: 'number:1:1' },
+        { value: 1, label: 'First', _key: '["number",1,0]', _index: 0 },
+        { value: 1, label: 'Second', _key: '["number",1,1]', _index: 1 },
       ],
       selectedIndex: 0,
     }], tag);
+    assert.equal(warnings.length, 0, `${tag} account lookup failure is silent`);
 
     const fieldWrites = [];
     const { definition: fieldDefinition } = await loadGeneratedComponent(tag, {
@@ -378,6 +409,15 @@ test('controlled option components treat invalid options as an empty safe list',
       triggerEvent(name, detail) { events.push({ name, detail }); },
     }, { currentTarget: { dataset: { index: 0 } } }));
     assert.deepEqual(events, [], tag);
+
+    const mixedWrites = [];
+    definition.observers['options, value'].call({
+      setData(update) { mixedWrites.push(update); },
+    }, [null, { value: { nested: true }, label: 'Invalid object' }, { value: 'ready', label: 'Ready' }, 7], 'ready');
+    assert.deepEqual(plainData(mixedWrites), [{
+      viewOptions: [{ value: 'ready', label: 'Ready', _key: '["string","ready",0]', _index: 2 }],
+      selectedIndex: 2,
+    }], `${tag} filters invalid entries and preserves original index`);
   }
 });
 

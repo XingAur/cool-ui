@@ -11,28 +11,39 @@ function firstSelectedIndex(options, value) {
 }
 
 function createViewOptions(options) {
-  return options.map((option, index) => {
-    const safeOption = option && typeof option === 'object' ? option : {};
-    const value = safeOption.value;
-    return { ...safeOption, _key: typeof value + ':' + String(value) + ':' + index };
+  const occurrences = new Map();
+  const viewOptions = [];
+  options.forEach((option, index) => {
+    if (!option || typeof option !== 'object' || !isOptionValue(option.value)) return;
+    const identity = JSON.stringify([typeof option.value, option.value]);
+    const occurrence = occurrences.get(identity) || 0;
+    occurrences.set(identity, occurrence + 1);
+    viewOptions.push({
+      ...option,
+      _key: JSON.stringify([typeof option.value, option.value, occurrence]),
+      _index: index,
+    });
   });
+  return viewOptions;
 }
 
 function duplicateValueIdentities(options) {
   const seen = new Set();
-  const duplicates = new Set();
+  const duplicates = new Map();
   for (const option of options) {
     if (!option || !isOptionValue(option.value)) continue;
-    const identity = typeof option.value + ':' + String(option.value);
-    if (seen.has(identity)) duplicates.add(identity);
+    const typedValue = [typeof option.value, option.value];
+    const identity = JSON.stringify(typedValue);
+    if (seen.has(identity)) duplicates.set(identity, typedValue);
     seen.add(identity);
   }
-  return [...duplicates].sort();
+  return [...duplicates.values()].sort((left, right) => JSON.stringify(left).localeCompare(JSON.stringify(right)));
 }
 
-function isReleaseEnvironment() {
+function shouldWarnForDuplicateValues() {
   try {
-    return wx.getAccountInfoSync().miniProgram.envVersion === 'release';
+    const envVersion = wx.getAccountInfoSync().miniProgram.envVersion;
+    return envVersion === 'develop' || envVersion === 'trial';
   } catch {
     return false;
   }
@@ -41,8 +52,8 @@ function isReleaseEnvironment() {
 function warnForDuplicateValues(options) {
   const duplicates = duplicateValueIdentities(options);
   if (duplicates.length === 0) return;
-  if (isReleaseEnvironment()) return;
-  const signature = duplicates.join('|');
+  if (!shouldWarnForDuplicateValues()) return;
+  const signature = JSON.stringify(duplicates);
   if (warnedDuplicateSignatures.has(signature)) return;
   warnedDuplicateSignatures.add(signature);
   console.warn('[cooL UI] TabBar options contain duplicate values; the first match is selected.', duplicates);
@@ -64,7 +75,7 @@ Component({
   },
   methods: {
     handleOptionTap(event) {
-      if (this.data.disabled) return;
+      if (this.data.disabled || this.data.loading) return;
       const dataset = event && event.currentTarget && event.currentTarget.dataset;
       const index = dataset ? Number(dataset.index) : Number.NaN;
       const options = Array.isArray(this.data.options) ? this.data.options : [];
