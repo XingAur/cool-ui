@@ -65,7 +65,9 @@ test('all four runnable Catalog entry points exist', async () => {
 });
 
 test('platform package metadata pins the agreed minimums and coordinates', async () => {
-  assert.match(await read('packages/swift/Package.swift'), /\.iOS\(\.v26\)/);
+  const swiftPackage = await read('packages/swift/Package.swift');
+  assert.match(swiftPackage, /swift-tools-version: 6\.2/);
+  assert.match(swiftPackage, /\.iOS\(\.v26\)/);
   const gradle = await read('packages/android/build.gradle.kts');
   assert.match(gradle, /namespace = "dev\.coolui\.compose"/);
   assert.match(gradle, /minSdk = 31/);
