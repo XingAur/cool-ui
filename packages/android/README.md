@@ -4,9 +4,13 @@ Local Maven coordinate: `dev.coolui:coolui-compose:0.1.0`. The module targets An
 
 ```kotlin
 CoolButton(
-  props = CoolComponentProps(label = "Continue", tone = Tone.accent),
-  onEvent = { event -> /* update controlled state */ },
+  label = "Continue",
+  onClick = ::submit,
 )
+
+CoolTextField(value = name, onValueChange = { name = it }, label = "Name")
 ```
 
 Run `gradle -p packages/android publishReleasePublicationToLocalArtifactsRepository` to create the local Maven/AAR repository.
+
+`CoolBackdrop` applies `RenderEffect` to its supplied background layer. `CoolGlassSurface` never blurs its own text or controls.

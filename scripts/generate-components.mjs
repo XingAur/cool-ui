@@ -34,9 +34,28 @@ ${components.map(({ name }) => `    "${name}",`).join('\n')}
 }
 `;
 
+function arkBuild({ name, interactive }) {
+  if (name === 'TextField' || name === 'SearchField') return `TextInput({ text: this.config.value, placeholder: this.config.placeholder }).enabled(!this.config.disabled).onChange((value: string) => this.onEvent(\`valueChanged:\${value}\`))`;
+  if (name === 'TextArea') return `TextArea({ text: this.config.value, placeholder: this.config.placeholder }).enabled(!this.config.disabled).onChange((value: string) => this.onEvent(\`valueChanged:\${value}\`))`;
+  if (name === 'Toggle') return `Toggle({ type: ToggleType.Switch, isOn: this.config.selected }).enabled(!this.config.disabled).onChange((value: boolean) => this.onEvent(\`valueChanged:\${value}\`))`;
+  if (name === 'Checkbox') return `Checkbox({ name: this.config.label, group: 'coolui' }).select(this.config.selected).enabled(!this.config.disabled).onChange((value: boolean) => this.onEvent(\`valueChanged:\${value}\`))`;
+  if (name === 'RadioGroup') return `Radio({ value: this.config.value, group: 'coolui' }).checked(this.config.selected).enabled(!this.config.disabled).onChange((value: boolean) => this.onEvent(\`valueChanged:\${value}\`))`;
+  if (name === 'Slider') return `Slider({ value: Number(this.config.value), min: this.config.minimumValue, max: this.config.maximumValue }).enabled(!this.config.disabled).onChange((value: number) => this.onEvent(\`valueChanged:\${value}\`))`;
+  if (name === 'Stepper') return `Row() { Button('−').onClick(() => this.onEvent(\`valueChanged:\${Number(this.config.value) - 1}\`)); Text(this.config.value); Button('+').onClick(() => this.onEvent(\`valueChanged:\${Number(this.config.value) + 1}\`)) }`;
+  if (name === 'Select') return `Select(this.config.options.map((value: string) => ({ value }))).selected(this.config.options.indexOf(this.config.value)).onSelect((index: number, value: string) => this.onEvent(\`valueChanged:\${value}\`))`;
+  if (name === 'DatePicker') return `DatePicker().enabled(!this.config.disabled).onChange((value: DatePickerResult) => this.onEvent(\`valueChanged:\${value.year}-\${value.month + 1}-\${value.day}\`))`;
+  if (name === 'TimePicker') return `TimePicker().enabled(!this.config.disabled).onChange((value: TimePickerResult) => this.onEvent(\`valueChanged:\${value.hour}:\${value.minute}\`))`;
+  if (name === 'Progress') return `Progress({ value: Number(this.config.value), total: this.config.maximumValue, type: ProgressType.Linear })`;
+  if (name === 'CircularProgress') return `Progress({ value: Number(this.config.value), total: this.config.maximumValue, type: ProgressType.Ring })`;
+  if (name === 'Divider') return `Divider()`;
+  if (name === 'LoadingOverlay') return `LoadingProgress().accessibilityText(this.config.accessibilityLabel)`;
+  if (interactive) return `Button(this.config.label).enabled(!this.config.disabled && !this.config.loading).accessibilityText(this.config.accessibilityLabel).onClick(() => this.onEvent('activate'))`;
+  return `Text(this.config.label).accessibilityText(this.config.accessibilityLabel)`;
+}
+
 const ark = `
 // Generated from contracts/components.json. Do not edit.
-import { CoolComponentConfig, CoolGeneratedComponent } from './CoolCore'
+import { CoolComponentConfig } from './CoolCore'
 
 ${components.map(({ name, interactive }) => `
 @Component
@@ -45,7 +64,7 @@ export struct Cool${componentApiName(name)} {
   onEvent: (event: string) => void = () => {}
 
   build() {
-    CoolGeneratedComponent({ name: "${name}", interactive: ${interactive}, config: this.config, onEvent: this.onEvent })
+    ${arkBuild({ name, interactive })}
   }
 }`).join('\n')}
 `;
@@ -96,13 +115,18 @@ Component({
   data: { componentName: '${component.name}', interactive: ${component.interactive} },
 });`);
   await output(`${dir}/index.json`, JSON.stringify({ component: true, styleIsolation: 'apply-shared' }, null, 2));
-  await output(`${dir}/index.wxml`, `
-<view class="cool-component cool-glass cool-${kebab(component.name)} cool-material-{{resolvedMaterial}} cool-tone-{{tone}} cool-size-{{size}} {{selected ? 'is-selected' : ''}} {{disabled ? 'is-disabled' : ''}} {{error ? 'is-error' : ''}}" data-component="${component.name}">
+  const standardTemplate = `<view class="cool-component cool-glass cool-${kebab(component.name)} cool-material-{{resolvedMaterial}} cool-tone-{{tone}} cool-size-{{size}} {{selected ? 'is-selected' : ''}} {{disabled ? 'is-disabled' : ''}} {{error ? 'is-error' : ''}}" data-component="${component.name}">
   <view wx:if="{{loading}}" class="cool-loading" aria-label="loading"></view>
   <slot name="icon"/>
   ${control}
   <text wx:if="{{errorMessage}}" class="cool-error" role="alert">{{errorMessage}}</text>
-</view>`);
+</view>`;
+  const template = component.name === 'AlertDialog'
+    ? `<view wx:if="{{open}}" class="cool-overlay-backdrop" bindtap="requestDismiss"><view class="cool-component cool-glass cool-alert-dialog cool-material-{{resolvedMaterial}} cool-tone-{{tone}}" role="dialog" aria-modal="true" aria-label="{{resolvedAccessibilityLabel}}" catchtap="noop"><text wx:if="{{label}}" class="cool-label">{{label}}</text><slot/><text wx:if="{{errorMessage}}" class="cool-error" role="alert">{{errorMessage}}</text></view></view>`
+    : component.name === 'BottomSheet'
+      ? `<view wx:if="{{open}}" class="cool-overlay-backdrop cool-bottom-sheet-backdrop" bindtap="requestDismiss"><view class="cool-component cool-glass cool-bottom-sheet cool-material-{{resolvedMaterial}} cool-tone-{{tone}}" role="dialog" aria-modal="true" aria-label="{{resolvedAccessibilityLabel}}" catchtap="noop"><slot/></view></view>`
+      : standardTemplate;
+  await output(`${dir}/index.wxml`, template);
   await output(`${dir}/index.wxss`, `@import "../../styles/glass.wxss";`);
 }
 await output('packages/wechat/component-manifest.json', JSON.stringify(manifest, null, 2));
@@ -124,17 +148,22 @@ for (const component of components) {
   const swiftName = `Cool${componentApiName(component.name)}`;
   const nativeName = `Cool${componentApiName(component.name)}`;
   const tag = `cool-${kebab(component.name)}`;
-  const stateRows = component.interactive ? component.states.map((state) => `| ${state} | Supported | Supported | Supported | Supported |`).join('\n') : '| display | Supported | Supported | Supported | Supported |';
+  const maturity = component.maturity;
+  const stateRows = component.interactive
+    ? component.states.map((state) => `| ${state} | ${maturity.swiftui} | ${maturity.compose} | ${maturity.arkui} | ${maturity.wechat} |`).join('\n')
+    : `| display | ${maturity.swiftui} | ${maturity.compose} | ${maturity.arkui} | ${maturity.wechat} |`;
   await output(`docs/components/${kebab(component.name)}.md`, `
 # ${component.name}
 
-${component.name} is a ${component.category} component with shared geometry and semantic behavior, rendered through native platform primitives.
+${component.name} is a ${component.category} component. Its contract aligns geometry and semantics while each implementation preserves platform-native behavior.
 
 ## API matrix
 
 | SwiftUI | Compose | ArkUI | WeChat |
 | --- | --- | --- | --- |
 | \`${swiftName}\` | \`${nativeName}\` | \`${nativeName}\` | \`<${tag}>\` |
+
+Maturity: SwiftUI **${maturity.swiftui}**, Compose **${maturity.compose}**, ArkUI **${maturity.arkui}**, WeChat **${maturity.wechat}**.
 
 ## State matrix
 
@@ -144,16 +173,16 @@ ${stateRows}
 
 ## Accessibility
 
-Provide a localized accessibility label. The component preserves native screen-reader and keyboard semantics, the shared touch target, Dynamic Type or platform font scaling, reduced motion, reduced transparency and high contrast.
+Provide a localized accessibility label. Beta and planned capabilities still require the platform verification listed in the repository readiness matrix.
 
 ## Examples
 
 \`\`\`swift
-${swiftName}(.init(label: "${component.name}", accessibilityLabel: "${component.name}"))
+${swiftName}(/* typed platform parameters */)
 \`\`\`
 
 \`\`\`kotlin
-${nativeName}(props = CoolComponentProps(label = "${component.name}"))
+${nativeName}(/* typed platform parameters */)
 \`\`\`
 
 \`\`\`html
@@ -163,13 +192,15 @@ ${nativeName}(props = CoolComponentProps(label = "${component.name}"))
   await output(`docs/zh/components/${kebab(component.name)}.md`, `
 # ${component.name}
 
-${component.name} 属于 ${component.category} 组件，四端共享几何与语义行为，并通过各平台原生能力渲染。
+${component.name} 属于 ${component.category} 组件。组件契约统一几何与语义，各端实现保留平台原生行为。
 
 ## 四端 API 对照
 
 | SwiftUI | Compose | ArkUI | 微信小程序 |
 | --- | --- | --- | --- |
 | \`${swiftName}\` | \`${nativeName}\` | \`${nativeName}\` | \`<${tag}>\` |
+
+成熟度：SwiftUI **${maturity.swiftui}**、Compose **${maturity.compose}**、ArkUI **${maturity.arkui}**、微信小程序 **${maturity.wechat}**。
 
 ## 状态矩阵
 
@@ -179,16 +210,16 @@ ${stateRows}
 
 ## 可访问性
 
-请提供本地化无障碍标签。组件保留平台读屏与键盘语义，并支持统一触控目标、动态字体或平台字体缩放、减少动画、降低透明度和高对比度。
+请提供本地化无障碍标签。标为 beta 或 planned 的能力仍需完成仓库就绪度矩阵列出的平台验证。
 
 ## 示例
 
 \`\`\`swift
-${swiftName}(.init(label: "${component.name}", accessibilityLabel: "${component.name}"))
+${swiftName}(/* 类型安全的平台参数 */)
 \`\`\`
 
 \`\`\`kotlin
-${nativeName}(props = CoolComponentProps(label = "${component.name}"))
+${nativeName}(/* 类型安全的平台参数 */)
 \`\`\`
 
 \`\`\`html

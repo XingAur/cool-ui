@@ -1,5 +1,5 @@
 // Generated from contracts/components.json. Do not edit.
-import { CoolComponentConfig, CoolGeneratedComponent } from './CoolCore'
+import { CoolComponentConfig } from './CoolCore'
 
 
 @Component
@@ -8,7 +8,7 @@ export struct CoolThemeProvider {
   onEvent: (event: string) => void = () => {}
 
   build() {
-    CoolGeneratedComponent({ name: "ThemeProvider", interactive: false, config: this.config, onEvent: this.onEvent })
+    Text(this.config.label).accessibilityText(this.config.accessibilityLabel)
   }
 }
 
@@ -18,7 +18,7 @@ export struct CoolBackdrop {
   onEvent: (event: string) => void = () => {}
 
   build() {
-    CoolGeneratedComponent({ name: "Backdrop", interactive: false, config: this.config, onEvent: this.onEvent })
+    Text(this.config.label).accessibilityText(this.config.accessibilityLabel)
   }
 }
 
@@ -28,7 +28,7 @@ export struct CoolGlassSurface {
   onEvent: (event: string) => void = () => {}
 
   build() {
-    CoolGeneratedComponent({ name: "GlassSurface", interactive: false, config: this.config, onEvent: this.onEvent })
+    Text(this.config.label).accessibilityText(this.config.accessibilityLabel)
   }
 }
 
@@ -38,7 +38,7 @@ export struct CoolGlassGroup {
   onEvent: (event: string) => void = () => {}
 
   build() {
-    CoolGeneratedComponent({ name: "GlassGroup", interactive: false, config: this.config, onEvent: this.onEvent })
+    Text(this.config.label).accessibilityText(this.config.accessibilityLabel)
   }
 }
 
@@ -48,7 +48,7 @@ export struct CoolDivider {
   onEvent: (event: string) => void = () => {}
 
   build() {
-    CoolGeneratedComponent({ name: "Divider", interactive: false, config: this.config, onEvent: this.onEvent })
+    Divider()
   }
 }
 
@@ -58,7 +58,7 @@ export struct CoolButton {
   onEvent: (event: string) => void = () => {}
 
   build() {
-    CoolGeneratedComponent({ name: "Button", interactive: true, config: this.config, onEvent: this.onEvent })
+    Button(this.config.label).enabled(!this.config.disabled && !this.config.loading).accessibilityText(this.config.accessibilityLabel).onClick(() => this.onEvent('activate'))
   }
 }
 
@@ -68,7 +68,7 @@ export struct CoolIconButton {
   onEvent: (event: string) => void = () => {}
 
   build() {
-    CoolGeneratedComponent({ name: "IconButton", interactive: true, config: this.config, onEvent: this.onEvent })
+    Button(this.config.label).enabled(!this.config.disabled && !this.config.loading).accessibilityText(this.config.accessibilityLabel).onClick(() => this.onEvent('activate'))
   }
 }
 
@@ -78,7 +78,7 @@ export struct CoolFloatingActionButton {
   onEvent: (event: string) => void = () => {}
 
   build() {
-    CoolGeneratedComponent({ name: "FloatingActionButton", interactive: true, config: this.config, onEvent: this.onEvent })
+    Button(this.config.label).enabled(!this.config.disabled && !this.config.loading).accessibilityText(this.config.accessibilityLabel).onClick(() => this.onEvent('activate'))
   }
 }
 
@@ -88,7 +88,7 @@ export struct CoolChip {
   onEvent: (event: string) => void = () => {}
 
   build() {
-    CoolGeneratedComponent({ name: "Chip", interactive: true, config: this.config, onEvent: this.onEvent })
+    Button(this.config.label).enabled(!this.config.disabled && !this.config.loading).accessibilityText(this.config.accessibilityLabel).onClick(() => this.onEvent('activate'))
   }
 }
 
@@ -98,7 +98,7 @@ export struct CoolTextField {
   onEvent: (event: string) => void = () => {}
 
   build() {
-    CoolGeneratedComponent({ name: "TextField", interactive: true, config: this.config, onEvent: this.onEvent })
+    TextInput({ text: this.config.value, placeholder: this.config.placeholder }).enabled(!this.config.disabled).onChange((value: string) => this.onEvent(`valueChanged:${value}`))
   }
 }
 
@@ -108,7 +108,7 @@ export struct CoolTextArea {
   onEvent: (event: string) => void = () => {}
 
   build() {
-    CoolGeneratedComponent({ name: "TextArea", interactive: true, config: this.config, onEvent: this.onEvent })
+    TextArea({ text: this.config.value, placeholder: this.config.placeholder }).enabled(!this.config.disabled).onChange((value: string) => this.onEvent(`valueChanged:${value}`))
   }
 }
 
@@ -118,7 +118,7 @@ export struct CoolSearchField {
   onEvent: (event: string) => void = () => {}
 
   build() {
-    CoolGeneratedComponent({ name: "SearchField", interactive: true, config: this.config, onEvent: this.onEvent })
+    TextInput({ text: this.config.value, placeholder: this.config.placeholder }).enabled(!this.config.disabled).onChange((value: string) => this.onEvent(`valueChanged:${value}`))
   }
 }
 
@@ -128,7 +128,7 @@ export struct CoolToggle {
   onEvent: (event: string) => void = () => {}
 
   build() {
-    CoolGeneratedComponent({ name: "Toggle", interactive: true, config: this.config, onEvent: this.onEvent })
+    Toggle({ type: ToggleType.Switch, isOn: this.config.selected }).enabled(!this.config.disabled).onChange((value: boolean) => this.onEvent(`valueChanged:${value}`))
   }
 }
 
@@ -138,7 +138,7 @@ export struct CoolCheckbox {
   onEvent: (event: string) => void = () => {}
 
   build() {
-    CoolGeneratedComponent({ name: "Checkbox", interactive: true, config: this.config, onEvent: this.onEvent })
+    Checkbox({ name: this.config.label, group: 'coolui' }).select(this.config.selected).enabled(!this.config.disabled).onChange((value: boolean) => this.onEvent(`valueChanged:${value}`))
   }
 }
 
@@ -148,7 +148,7 @@ export struct CoolRadioGroup {
   onEvent: (event: string) => void = () => {}
 
   build() {
-    CoolGeneratedComponent({ name: "RadioGroup", interactive: true, config: this.config, onEvent: this.onEvent })
+    Radio({ value: this.config.value, group: 'coolui' }).checked(this.config.selected).enabled(!this.config.disabled).onChange((value: boolean) => this.onEvent(`valueChanged:${value}`))
   }
 }
 
@@ -158,7 +158,7 @@ export struct CoolSlider {
   onEvent: (event: string) => void = () => {}
 
   build() {
-    CoolGeneratedComponent({ name: "Slider", interactive: true, config: this.config, onEvent: this.onEvent })
+    Slider({ value: Number(this.config.value), min: this.config.minimumValue, max: this.config.maximumValue }).enabled(!this.config.disabled).onChange((value: number) => this.onEvent(`valueChanged:${value}`))
   }
 }
 
@@ -168,7 +168,7 @@ export struct CoolStepper {
   onEvent: (event: string) => void = () => {}
 
   build() {
-    CoolGeneratedComponent({ name: "Stepper", interactive: true, config: this.config, onEvent: this.onEvent })
+    Row() { Button('−').onClick(() => this.onEvent(`valueChanged:${Number(this.config.value) - 1}`)); Text(this.config.value); Button('+').onClick(() => this.onEvent(`valueChanged:${Number(this.config.value) + 1}`)) }
   }
 }
 
@@ -178,7 +178,7 @@ export struct CoolSelect {
   onEvent: (event: string) => void = () => {}
 
   build() {
-    CoolGeneratedComponent({ name: "Select", interactive: true, config: this.config, onEvent: this.onEvent })
+    Select(this.config.options.map((value: string) => ({ value }))).selected(this.config.options.indexOf(this.config.value)).onSelect((index: number, value: string) => this.onEvent(`valueChanged:${value}`))
   }
 }
 
@@ -188,7 +188,7 @@ export struct CoolDatePicker {
   onEvent: (event: string) => void = () => {}
 
   build() {
-    CoolGeneratedComponent({ name: "DatePicker", interactive: true, config: this.config, onEvent: this.onEvent })
+    DatePicker().enabled(!this.config.disabled).onChange((value: DatePickerResult) => this.onEvent(`valueChanged:${value.year}-${value.month + 1}-${value.day}`))
   }
 }
 
@@ -198,7 +198,7 @@ export struct CoolTimePicker {
   onEvent: (event: string) => void = () => {}
 
   build() {
-    CoolGeneratedComponent({ name: "TimePicker", interactive: true, config: this.config, onEvent: this.onEvent })
+    TimePicker().enabled(!this.config.disabled).onChange((value: TimePickerResult) => this.onEvent(`valueChanged:${value.hour}:${value.minute}`))
   }
 }
 
@@ -208,7 +208,7 @@ export struct CoolTopBar {
   onEvent: (event: string) => void = () => {}
 
   build() {
-    CoolGeneratedComponent({ name: "TopBar", interactive: true, config: this.config, onEvent: this.onEvent })
+    Button(this.config.label).enabled(!this.config.disabled && !this.config.loading).accessibilityText(this.config.accessibilityLabel).onClick(() => this.onEvent('activate'))
   }
 }
 
@@ -218,7 +218,7 @@ export struct CoolBottomNavigation {
   onEvent: (event: string) => void = () => {}
 
   build() {
-    CoolGeneratedComponent({ name: "BottomNavigation", interactive: true, config: this.config, onEvent: this.onEvent })
+    Button(this.config.label).enabled(!this.config.disabled && !this.config.loading).accessibilityText(this.config.accessibilityLabel).onClick(() => this.onEvent('activate'))
   }
 }
 
@@ -228,7 +228,7 @@ export struct CoolTabBar {
   onEvent: (event: string) => void = () => {}
 
   build() {
-    CoolGeneratedComponent({ name: "TabBar", interactive: true, config: this.config, onEvent: this.onEvent })
+    Button(this.config.label).enabled(!this.config.disabled && !this.config.loading).accessibilityText(this.config.accessibilityLabel).onClick(() => this.onEvent('activate'))
   }
 }
 
@@ -238,7 +238,7 @@ export struct CoolSegmentedControl {
   onEvent: (event: string) => void = () => {}
 
   build() {
-    CoolGeneratedComponent({ name: "SegmentedControl", interactive: true, config: this.config, onEvent: this.onEvent })
+    Button(this.config.label).enabled(!this.config.disabled && !this.config.loading).accessibilityText(this.config.accessibilityLabel).onClick(() => this.onEvent('activate'))
   }
 }
 
@@ -248,7 +248,7 @@ export struct CoolNavigationRail {
   onEvent: (event: string) => void = () => {}
 
   build() {
-    CoolGeneratedComponent({ name: "NavigationRail", interactive: true, config: this.config, onEvent: this.onEvent })
+    Button(this.config.label).enabled(!this.config.disabled && !this.config.loading).accessibilityText(this.config.accessibilityLabel).onClick(() => this.onEvent('activate'))
   }
 }
 
@@ -258,7 +258,7 @@ export struct CoolCard {
   onEvent: (event: string) => void = () => {}
 
   build() {
-    CoolGeneratedComponent({ name: "Card", interactive: true, config: this.config, onEvent: this.onEvent })
+    Button(this.config.label).enabled(!this.config.disabled && !this.config.loading).accessibilityText(this.config.accessibilityLabel).onClick(() => this.onEvent('activate'))
   }
 }
 
@@ -268,7 +268,7 @@ export struct CoolList {
   onEvent: (event: string) => void = () => {}
 
   build() {
-    CoolGeneratedComponent({ name: "List", interactive: false, config: this.config, onEvent: this.onEvent })
+    Text(this.config.label).accessibilityText(this.config.accessibilityLabel)
   }
 }
 
@@ -278,7 +278,7 @@ export struct CoolListItem {
   onEvent: (event: string) => void = () => {}
 
   build() {
-    CoolGeneratedComponent({ name: "ListItem", interactive: true, config: this.config, onEvent: this.onEvent })
+    Button(this.config.label).enabled(!this.config.disabled && !this.config.loading).accessibilityText(this.config.accessibilityLabel).onClick(() => this.onEvent('activate'))
   }
 }
 
@@ -288,7 +288,7 @@ export struct CoolBadge {
   onEvent: (event: string) => void = () => {}
 
   build() {
-    CoolGeneratedComponent({ name: "Badge", interactive: false, config: this.config, onEvent: this.onEvent })
+    Text(this.config.label).accessibilityText(this.config.accessibilityLabel)
   }
 }
 
@@ -298,7 +298,7 @@ export struct CoolAvatar {
   onEvent: (event: string) => void = () => {}
 
   build() {
-    CoolGeneratedComponent({ name: "Avatar", interactive: false, config: this.config, onEvent: this.onEvent })
+    Text(this.config.label).accessibilityText(this.config.accessibilityLabel)
   }
 }
 
@@ -308,7 +308,7 @@ export struct CoolProgress {
   onEvent: (event: string) => void = () => {}
 
   build() {
-    CoolGeneratedComponent({ name: "Progress", interactive: false, config: this.config, onEvent: this.onEvent })
+    Progress({ value: Number(this.config.value), total: this.config.maximumValue, type: ProgressType.Linear })
   }
 }
 
@@ -318,7 +318,7 @@ export struct CoolCircularProgress {
   onEvent: (event: string) => void = () => {}
 
   build() {
-    CoolGeneratedComponent({ name: "CircularProgress", interactive: false, config: this.config, onEvent: this.onEvent })
+    Progress({ value: Number(this.config.value), total: this.config.maximumValue, type: ProgressType.Ring })
   }
 }
 
@@ -328,7 +328,7 @@ export struct CoolSkeleton {
   onEvent: (event: string) => void = () => {}
 
   build() {
-    CoolGeneratedComponent({ name: "Skeleton", interactive: false, config: this.config, onEvent: this.onEvent })
+    Text(this.config.label).accessibilityText(this.config.accessibilityLabel)
   }
 }
 
@@ -338,7 +338,7 @@ export struct CoolStatTile {
   onEvent: (event: string) => void = () => {}
 
   build() {
-    CoolGeneratedComponent({ name: "StatTile", interactive: false, config: this.config, onEvent: this.onEvent })
+    Text(this.config.label).accessibilityText(this.config.accessibilityLabel)
   }
 }
 
@@ -348,7 +348,7 @@ export struct CoolEmptyState {
   onEvent: (event: string) => void = () => {}
 
   build() {
-    CoolGeneratedComponent({ name: "EmptyState", interactive: false, config: this.config, onEvent: this.onEvent })
+    Text(this.config.label).accessibilityText(this.config.accessibilityLabel)
   }
 }
 
@@ -358,7 +358,7 @@ export struct CoolToast {
   onEvent: (event: string) => void = () => {}
 
   build() {
-    CoolGeneratedComponent({ name: "Toast", interactive: false, config: this.config, onEvent: this.onEvent })
+    Text(this.config.label).accessibilityText(this.config.accessibilityLabel)
   }
 }
 
@@ -368,7 +368,7 @@ export struct CoolBanner {
   onEvent: (event: string) => void = () => {}
 
   build() {
-    CoolGeneratedComponent({ name: "Banner", interactive: true, config: this.config, onEvent: this.onEvent })
+    Button(this.config.label).enabled(!this.config.disabled && !this.config.loading).accessibilityText(this.config.accessibilityLabel).onClick(() => this.onEvent('activate'))
   }
 }
 
@@ -378,7 +378,7 @@ export struct CoolAlertDialog {
   onEvent: (event: string) => void = () => {}
 
   build() {
-    CoolGeneratedComponent({ name: "AlertDialog", interactive: true, config: this.config, onEvent: this.onEvent })
+    Button(this.config.label).enabled(!this.config.disabled && !this.config.loading).accessibilityText(this.config.accessibilityLabel).onClick(() => this.onEvent('activate'))
   }
 }
 
@@ -388,7 +388,7 @@ export struct CoolBottomSheet {
   onEvent: (event: string) => void = () => {}
 
   build() {
-    CoolGeneratedComponent({ name: "BottomSheet", interactive: true, config: this.config, onEvent: this.onEvent })
+    Button(this.config.label).enabled(!this.config.disabled && !this.config.loading).accessibilityText(this.config.accessibilityLabel).onClick(() => this.onEvent('activate'))
   }
 }
 
@@ -398,7 +398,7 @@ export struct CoolPopover {
   onEvent: (event: string) => void = () => {}
 
   build() {
-    CoolGeneratedComponent({ name: "Popover", interactive: true, config: this.config, onEvent: this.onEvent })
+    Button(this.config.label).enabled(!this.config.disabled && !this.config.loading).accessibilityText(this.config.accessibilityLabel).onClick(() => this.onEvent('activate'))
   }
 }
 
@@ -408,7 +408,7 @@ export struct CoolTooltip {
   onEvent: (event: string) => void = () => {}
 
   build() {
-    CoolGeneratedComponent({ name: "Tooltip", interactive: false, config: this.config, onEvent: this.onEvent })
+    Text(this.config.label).accessibilityText(this.config.accessibilityLabel)
   }
 }
 
@@ -418,6 +418,6 @@ export struct CoolLoadingOverlay {
   onEvent: (event: string) => void = () => {}
 
   build() {
-    CoolGeneratedComponent({ name: "LoadingOverlay", interactive: false, config: this.config, onEvent: this.onEvent })
+    LoadingProgress().accessibilityText(this.config.accessibilityLabel)
   }
 }

@@ -1,13 +1,13 @@
 # CoolUI for SwiftUI
 
-Add `packages/swift` as a local Swift Package or use the repository URL after it is published. The package targets iOS/iPadOS 26 and uses SwiftUI Liquid Glass through `glassEffect` and `GlassEffectContainer`.
+Add the repository root as a Swift Package dependency. The package targets iOS/iPadOS 26 and uses SwiftUI Liquid Glass through `glassEffect` and `GlassEffectContainer`.
 
 ```swift
 import CoolUI
 
-CoolButton(.init(label: "Continue", tone: .accent, accessibilityLabel: "Continue")) { event in
-  // Handle the controlled event.
-}
+CoolButton("Continue", tone: .accent) { submit() }
+
+CoolTextField("Name", text: $name, prompt: "Required")
 ```
 
-Reduced Transparency automatically selects the solid tokenized surface.
+Reduced Transparency automatically selects the solid tokenized surface. The root `Package.swift` is the supported remote-install manifest; the nested manifest remains useful for platform-local development.

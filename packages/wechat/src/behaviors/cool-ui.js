@@ -17,6 +17,7 @@ module.exports = Behavior({
     selected: { type: Boolean, value: false },
     disabled: { type: Boolean, value: false },
     loading: { type: Boolean, value: false },
+    open: { type: Boolean, value: false },
     error: { type: Boolean, value: false },
     errorMessage: { type: String, value: '' },
     accessibilityLabel: { type: String, value: '' },
@@ -25,10 +26,13 @@ module.exports = Behavior({
     min: { type: Number, value: 0 },
     max: { type: Number, value: 100 },
   },
-  data: { resolvedMaterial: 'regular' },
+  data: { resolvedMaterial: 'regular', resolvedAccessibilityLabel: '' },
   observers: {
     'material, transparencyMode': function resolveMaterial(material, transparencyMode) {
       this.setData({ resolvedMaterial: transparencyMode === 'reduced' ? 'solidFallback' : material });
+    },
+    'accessibilityLabel, label': function resolveAccessibilityLabel(accessibilityLabel, label) {
+      this.setData({ resolvedAccessibilityLabel: accessibilityLabel || label || '' });
     },
     state(value) {
       if (!semanticStates.includes(value)) this.setData({ state: 'default' });
@@ -54,5 +58,6 @@ module.exports = Behavior({
       this.triggerEvent('change', { value });
     },
     requestDismiss() { this.triggerEvent('dismiss'); },
+    noop() {},
   },
 });

@@ -1,6 +1,6 @@
 # BottomNavigation
 
-BottomNavigation is a navigation component with shared geometry and semantic behavior, rendered through native platform primitives.
+BottomNavigation is a navigation component. Its contract aligns geometry and semantics while each implementation preserves platform-native behavior.
 
 ## API matrix
 
@@ -8,30 +8,32 @@ BottomNavigation is a navigation component with shared geometry and semantic beh
 | --- | --- | --- | --- |
 | `CoolBottomNavigation` | `CoolBottomNavigation` | `CoolBottomNavigation` | `<cool-bottom-navigation>` |
 
+Maturity: SwiftUI **planned**, Compose **planned**, ArkUI **planned**, WeChat **planned**.
+
 ## State matrix
 
 | State | SwiftUI | Compose | ArkUI | WeChat |
 | --- | --- | --- | --- | --- |
-| default | Supported | Supported | Supported | Supported |
-| pressed | Supported | Supported | Supported | Supported |
-| focused | Supported | Supported | Supported | Supported |
-| selected | Supported | Supported | Supported | Supported |
-| disabled | Supported | Supported | Supported | Supported |
-| loading | Supported | Supported | Supported | Supported |
-| error | Supported | Supported | Supported | Supported |
+| default | planned | planned | planned | planned |
+| pressed | planned | planned | planned | planned |
+| focused | planned | planned | planned | planned |
+| selected | planned | planned | planned | planned |
+| disabled | planned | planned | planned | planned |
+| loading | planned | planned | planned | planned |
+| error | planned | planned | planned | planned |
 
 ## Accessibility
 
-Provide a localized accessibility label. The component preserves native screen-reader and keyboard semantics, the shared touch target, Dynamic Type or platform font scaling, reduced motion, reduced transparency and high contrast.
+Provide a localized accessibility label. Beta and planned capabilities still require the platform verification listed in the repository readiness matrix.
 
 ## Examples
 
 ```swift
-CoolBottomNavigation(.init(label: "BottomNavigation", accessibilityLabel: "BottomNavigation"))
+CoolBottomNavigation(/* typed platform parameters */)
 ```
 
 ```kotlin
-CoolBottomNavigation(props = CoolComponentProps(label = "BottomNavigation"))
+CoolBottomNavigation(/* typed platform parameters */)
 ```
 
 ```html

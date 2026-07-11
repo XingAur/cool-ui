@@ -12,3 +12,5 @@ Native WeChat Mini Program custom components for base library 3.14.3 and newer.
 ```
 
 Run `pnpm --dir packages/wechat build` before local linking. Values are controlled: bind `change`, update the owning page state, then pass the new value back to the component. Set `transparency-mode="reduced"` to force solid surfaces.
+
+Presentation components use an `open` property and emit `dismiss`; for example, `<cool-alert-dialog open="{{showDialog}}" bind:dismiss="closeDialog" />`.

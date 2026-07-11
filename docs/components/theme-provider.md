@@ -1,6 +1,6 @@
 # ThemeProvider
 
-ThemeProvider is a foundations component with shared geometry and semantic behavior, rendered through native platform primitives.
+ThemeProvider is a foundations component. Its contract aligns geometry and semantics while each implementation preserves platform-native behavior.
 
 ## API matrix
 
@@ -8,24 +8,26 @@ ThemeProvider is a foundations component with shared geometry and semantic behav
 | --- | --- | --- | --- |
 | `CoolThemeProvider` | `CoolThemeProvider` | `CoolThemeProvider` | `<cool-theme-provider>` |
 
+Maturity: SwiftUI **planned**, Compose **planned**, ArkUI **planned**, WeChat **planned**.
+
 ## State matrix
 
 | State | SwiftUI | Compose | ArkUI | WeChat |
 | --- | --- | --- | --- | --- |
-| display | Supported | Supported | Supported | Supported |
+| display | planned | planned | planned | planned |
 
 ## Accessibility
 
-Provide a localized accessibility label. The component preserves native screen-reader and keyboard semantics, the shared touch target, Dynamic Type or platform font scaling, reduced motion, reduced transparency and high contrast.
+Provide a localized accessibility label. Beta and planned capabilities still require the platform verification listed in the repository readiness matrix.
 
 ## Examples
 
 ```swift
-CoolThemeProvider(.init(label: "ThemeProvider", accessibilityLabel: "ThemeProvider"))
+CoolThemeProvider(/* typed platform parameters */)
 ```
 
 ```kotlin
-CoolThemeProvider(props = CoolComponentProps(label = "ThemeProvider"))
+CoolThemeProvider(/* typed platform parameters */)
 ```
 
 ```html

@@ -1,6 +1,6 @@
 # Select
 
-Select is a actions-inputs component with shared geometry and semantic behavior, rendered through native platform primitives.
+Select is a actions-inputs component. Its contract aligns geometry and semantics while each implementation preserves platform-native behavior.
 
 ## API matrix
 
@@ -8,30 +8,32 @@ Select is a actions-inputs component with shared geometry and semantic behavior,
 | --- | --- | --- | --- |
 | `CoolSelect` | `CoolSelect` | `CoolSelect` | `<cool-select>` |
 
+Maturity: SwiftUI **planned**, Compose **planned**, ArkUI **planned**, WeChat **planned**.
+
 ## State matrix
 
 | State | SwiftUI | Compose | ArkUI | WeChat |
 | --- | --- | --- | --- | --- |
-| default | Supported | Supported | Supported | Supported |
-| pressed | Supported | Supported | Supported | Supported |
-| focused | Supported | Supported | Supported | Supported |
-| selected | Supported | Supported | Supported | Supported |
-| disabled | Supported | Supported | Supported | Supported |
-| loading | Supported | Supported | Supported | Supported |
-| error | Supported | Supported | Supported | Supported |
+| default | planned | planned | planned | planned |
+| pressed | planned | planned | planned | planned |
+| focused | planned | planned | planned | planned |
+| selected | planned | planned | planned | planned |
+| disabled | planned | planned | planned | planned |
+| loading | planned | planned | planned | planned |
+| error | planned | planned | planned | planned |
 
 ## Accessibility
 
-Provide a localized accessibility label. The component preserves native screen-reader and keyboard semantics, the shared touch target, Dynamic Type or platform font scaling, reduced motion, reduced transparency and high contrast.
+Provide a localized accessibility label. Beta and planned capabilities still require the platform verification listed in the repository readiness matrix.
 
 ## Examples
 
 ```swift
-CoolSelect(.init(label: "Select", accessibilityLabel: "Select"))
+CoolSelect(/* typed platform parameters */)
 ```
 
 ```kotlin
-CoolSelect(props = CoolComponentProps(label = "Select"))
+CoolSelect(/* typed platform parameters */)
 ```
 
 ```html

@@ -1,6 +1,6 @@
 # BottomSheet
 
-BottomSheet is a feedback-overlays component with shared geometry and semantic behavior, rendered through native platform primitives.
+BottomSheet is a feedback-overlays component. Its contract aligns geometry and semantics while each implementation preserves platform-native behavior.
 
 ## API matrix
 
@@ -8,30 +8,32 @@ BottomSheet is a feedback-overlays component with shared geometry and semantic b
 | --- | --- | --- | --- |
 | `CoolBottomSheet` | `CoolBottomSheet` | `CoolBottomSheet` | `<cool-bottom-sheet>` |
 
+Maturity: SwiftUI **planned**, Compose **planned**, ArkUI **planned**, WeChat **planned**.
+
 ## State matrix
 
 | State | SwiftUI | Compose | ArkUI | WeChat |
 | --- | --- | --- | --- | --- |
-| default | Supported | Supported | Supported | Supported |
-| pressed | Supported | Supported | Supported | Supported |
-| focused | Supported | Supported | Supported | Supported |
-| selected | Supported | Supported | Supported | Supported |
-| disabled | Supported | Supported | Supported | Supported |
-| loading | Supported | Supported | Supported | Supported |
-| error | Supported | Supported | Supported | Supported |
+| default | planned | planned | planned | planned |
+| pressed | planned | planned | planned | planned |
+| focused | planned | planned | planned | planned |
+| selected | planned | planned | planned | planned |
+| disabled | planned | planned | planned | planned |
+| loading | planned | planned | planned | planned |
+| error | planned | planned | planned | planned |
 
 ## Accessibility
 
-Provide a localized accessibility label. The component preserves native screen-reader and keyboard semantics, the shared touch target, Dynamic Type or platform font scaling, reduced motion, reduced transparency and high contrast.
+Provide a localized accessibility label. Beta and planned capabilities still require the platform verification listed in the repository readiness matrix.
 
 ## Examples
 
 ```swift
-CoolBottomSheet(.init(label: "BottomSheet", accessibilityLabel: "BottomSheet"))
+CoolBottomSheet(/* typed platform parameters */)
 ```
 
 ```kotlin
-CoolBottomSheet(props = CoolComponentProps(label = "BottomSheet"))
+CoolBottomSheet(/* typed platform parameters */)
 ```
 
 ```html

@@ -1,6 +1,6 @@
 # Avatar
 
-Avatar is a content component with shared geometry and semantic behavior, rendered through native platform primitives.
+Avatar is a content component. Its contract aligns geometry and semantics while each implementation preserves platform-native behavior.
 
 ## API matrix
 
@@ -8,24 +8,26 @@ Avatar is a content component with shared geometry and semantic behavior, render
 | --- | --- | --- | --- |
 | `CoolAvatar` | `CoolAvatar` | `CoolAvatar` | `<cool-avatar>` |
 
+Maturity: SwiftUI **planned**, Compose **planned**, ArkUI **planned**, WeChat **planned**.
+
 ## State matrix
 
 | State | SwiftUI | Compose | ArkUI | WeChat |
 | --- | --- | --- | --- | --- |
-| display | Supported | Supported | Supported | Supported |
+| display | planned | planned | planned | planned |
 
 ## Accessibility
 
-Provide a localized accessibility label. The component preserves native screen-reader and keyboard semantics, the shared touch target, Dynamic Type or platform font scaling, reduced motion, reduced transparency and high contrast.
+Provide a localized accessibility label. Beta and planned capabilities still require the platform verification listed in the repository readiness matrix.
 
 ## Examples
 
 ```swift
-CoolAvatar(.init(label: "Avatar", accessibilityLabel: "Avatar"))
+CoolAvatar(/* typed platform parameters */)
 ```
 
 ```kotlin
-CoolAvatar(props = CoolComponentProps(label = "Avatar"))
+CoolAvatar(/* typed platform parameters */)
 ```
 
 ```html

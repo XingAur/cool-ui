@@ -1,6 +1,6 @@
 # Banner
 
-Banner 属于 feedback-overlays 组件，四端共享几何与语义行为，并通过各平台原生能力渲染。
+Banner 属于 feedback-overlays 组件。组件契约统一几何与语义，各端实现保留平台原生行为。
 
 ## 四端 API 对照
 
@@ -8,30 +8,32 @@ Banner 属于 feedback-overlays 组件，四端共享几何与语义行为，并
 | --- | --- | --- | --- |
 | `CoolBanner` | `CoolBanner` | `CoolBanner` | `<cool-banner>` |
 
+成熟度：SwiftUI **planned**、Compose **planned**、ArkUI **planned**、微信小程序 **planned**。
+
 ## 状态矩阵
 
 | 状态 | SwiftUI | Compose | ArkUI | 微信小程序 |
 | --- | --- | --- | --- | --- |
-| default | Supported | Supported | Supported | Supported |
-| pressed | Supported | Supported | Supported | Supported |
-| focused | Supported | Supported | Supported | Supported |
-| selected | Supported | Supported | Supported | Supported |
-| disabled | Supported | Supported | Supported | Supported |
-| loading | Supported | Supported | Supported | Supported |
-| error | Supported | Supported | Supported | Supported |
+| default | planned | planned | planned | planned |
+| pressed | planned | planned | planned | planned |
+| focused | planned | planned | planned | planned |
+| selected | planned | planned | planned | planned |
+| disabled | planned | planned | planned | planned |
+| loading | planned | planned | planned | planned |
+| error | planned | planned | planned | planned |
 
 ## 可访问性
 
-请提供本地化无障碍标签。组件保留平台读屏与键盘语义，并支持统一触控目标、动态字体或平台字体缩放、减少动画、降低透明度和高对比度。
+请提供本地化无障碍标签。标为 beta 或 planned 的能力仍需完成仓库就绪度矩阵列出的平台验证。
 
 ## 示例
 
 ```swift
-CoolBanner(.init(label: "Banner", accessibilityLabel: "Banner"))
+CoolBanner(/* 类型安全的平台参数 */)
 ```
 
 ```kotlin
-CoolBanner(props = CoolComponentProps(label = "Banner"))
+CoolBanner(/* 类型安全的平台参数 */)
 ```
 
 ```html

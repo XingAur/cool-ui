@@ -1,6 +1,6 @@
 # Skeleton
 
-Skeleton is a content component with shared geometry and semantic behavior, rendered through native platform primitives.
+Skeleton is a content component. Its contract aligns geometry and semantics while each implementation preserves platform-native behavior.
 
 ## API matrix
 
@@ -8,24 +8,26 @@ Skeleton is a content component with shared geometry and semantic behavior, rend
 | --- | --- | --- | --- |
 | `CoolSkeleton` | `CoolSkeleton` | `CoolSkeleton` | `<cool-skeleton>` |
 
+Maturity: SwiftUI **planned**, Compose **planned**, ArkUI **planned**, WeChat **planned**.
+
 ## State matrix
 
 | State | SwiftUI | Compose | ArkUI | WeChat |
 | --- | --- | --- | --- | --- |
-| display | Supported | Supported | Supported | Supported |
+| display | planned | planned | planned | planned |
 
 ## Accessibility
 
-Provide a localized accessibility label. The component preserves native screen-reader and keyboard semantics, the shared touch target, Dynamic Type or platform font scaling, reduced motion, reduced transparency and high contrast.
+Provide a localized accessibility label. Beta and planned capabilities still require the platform verification listed in the repository readiness matrix.
 
 ## Examples
 
 ```swift
-CoolSkeleton(.init(label: "Skeleton", accessibilityLabel: "Skeleton"))
+CoolSkeleton(/* typed platform parameters */)
 ```
 
 ```kotlin
-CoolSkeleton(props = CoolComponentProps(label = "Skeleton"))
+CoolSkeleton(/* typed platform parameters */)
 ```
 
 ```html

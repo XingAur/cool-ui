@@ -39,3 +39,7 @@
 .cool-loading { width: var(--cool-space-lg); height: var(--cool-space-lg); border: var(--cool-border-hairline) solid var(--cool-color-light-accent); border-top-color: transparent; border-radius: var(--cool-radius-pill); animation: cool-spin var(--cool-motion-slow) linear infinite; }
 @keyframes cool-spin { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .cool-glass { transition: none; } .cool-loading { animation: none; } }
+.cool-overlay-backdrop { position: fixed; z-index: 1000; inset: 0; display: flex; align-items: center; justify-content: center; padding: var(--cool-space-xl); background: rgba(0, 0, 0, .32); }
+.cool-alert-dialog { width: min(100%, 560rpx); }
+.cool-bottom-sheet-backdrop { align-items: flex-end; padding: 0; }
+.cool-bottom-sheet { width: 100%; border-radius: var(--cool-radius-large) var(--cool-radius-large) 0 0; padding-bottom: env(safe-area-inset-bottom); }

@@ -9,3 +9,5 @@ CoolButton({ config: new CoolComponentConfig('Continue') })
 ```
 
 Open the package in the latest non-beta HarmonyOS 6 DevEco Studio and run `hvigorw assembleHar --mode module -p product=default` for the publishable HAR.
+
+The 0.1.0 API is experimental: generation selects native ArkUI primitives, while full typed parameters, Hypium behavior coverage and a real HarmonyOS 6 HAR build remain release gates.

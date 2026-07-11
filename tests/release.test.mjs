@@ -57,3 +57,11 @@ test('local consumer installs the final cooL UI tarball names', async () => {
   });
   assert.match(await read('scripts/generate-sbom.mjs'), /name: 'cool-ui'/);
 });
+
+test('repository root is directly consumable by Swift Package Manager', async () => {
+  const manifest = await read('Package.swift');
+  assert.match(manifest, /name: "CoolUI"/);
+  assert.match(manifest, /path: "packages\/swift\/Sources\/CoolUI"/);
+  assert.match(await read('examples/swift-consumer/Package.swift'), /\.package\(path: "\.\.\/\.\."\)/);
+  assert.match(await read('examples/swift-consumer/Sources/Demo/main.swift'), /import CoolUI/);
+});

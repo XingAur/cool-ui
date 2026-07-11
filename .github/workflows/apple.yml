@@ -19,6 +19,8 @@ jobs:
           xcodebuild -version | grep -E '^Xcode 26(\.|$)'
       - name: Swift test
         run: swift test --package-path packages/swift
+      - name: Verify root SwiftPM consumer
+        run: swift run --package-path examples/swift-consumer
       - name: Generate Catalog project
         run: brew install xcodegen && cd apps/catalog-swift && xcodegen generate
       - name: Build iOS Catalog
