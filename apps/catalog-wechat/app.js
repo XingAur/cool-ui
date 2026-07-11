@@ -1,1 +1,1 @@
-App({ globalData: { catalogVersion: '0.1.0' } });
+App({ globalData: { catalogVersion: '0.2.0' } });

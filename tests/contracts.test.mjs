@@ -1,9 +1,16 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
+import { release, releaseVersion } from './release-fixture.mjs';
 
 const root = new URL('../', import.meta.url);
 const contract = JSON.parse(await readFile(new URL('contracts/components.json', root), 'utf8'));
+const versionedContracts = [
+  'contracts/components.json',
+  'contracts/component-capabilities.json',
+  'contracts/accessibility.json',
+  'contracts/performance.json',
+];
 
 const expectedComponents = [
   'ThemeProvider', 'Backdrop', 'GlassSurface', 'GlassGroup', 'Divider',
@@ -25,8 +32,13 @@ const expectedTypes = {
   TransparencyMode: ['full', 'reduced'],
 };
 
-test('publishing contract is versioned consistently', () => {
-  assert.equal(contract.version, '0.1.0');
+test('release contract is the canonical 0.2 release policy', () => {
+  assert.equal(release.version, '0.2.0');
+  assert.equal(release.publicRegistryPublishing, false);
+});
+
+test('publishing contract is versioned consistently', async () => {
+  assert.equal(contract.version, releaseVersion);
   assert.deepEqual(contract.packages, {
     tokens: '@cool-ui/tokens',
     wechat: '@cool-ui/wechat',
@@ -34,6 +46,14 @@ test('publishing contract is versioned consistently', () => {
     android: 'dev.coolui:coolui-compose',
     harmony: '@cool-ui/arkui',
   });
+
+  for (const path of versionedContracts) {
+    const versioned = JSON.parse(await readFile(new URL(path, root), 'utf8'));
+    assert.equal(versioned.version, releaseVersion, path);
+  }
+
+  const schema = JSON.parse(await readFile(new URL('contracts/components.schema.json', root), 'utf8'));
+  assert.equal(schema.properties.version.const, releaseVersion);
 });
 
 test('semantic types are stable and ordered', () => {

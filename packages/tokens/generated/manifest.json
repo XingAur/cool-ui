@@ -1,11 +1,11 @@
 {
-  "version": "0.1.0",
+  "version": "0.2.0",
   "source": "src/tokens.json",
   "outputs": {
-    "swift/CoolTokens.swift": "30ee112e46aa43cc8af2074bd264c0cd8e08b17154abdf17bb847e6d31e2299b",
-    "kotlin/CoolTokens.kt": "a49c2dc0b7dda945a30da40f298d488dd9b02d2c52800e0620d66ce271681e47",
-    "arkts/CoolTokens.ets": "a8640abfe25beb54bc583f6a1e3a4ccd3dad2310be3889335573f5e18eefc4ae",
-    "wechat/cool-ui-tokens.wxss": "f85c68b4df158ffea258ad2319e2083e065e1540faa6198e1695a518bcbf0f83",
-    "css/cool-ui-tokens.css": "45f0c93bb0be14288196eeb8a5a935d9d2438cbac318c1bd94b7b11b46f35f26"
+    "swift/CoolTokens.swift": "357d0789d3c2662613b029946922a799760926e6aa5c4b0ecc0a07a9bb7548bb",
+    "kotlin/CoolTokens.kt": "ea06857fd68ed21169dee13d4203bccb092218b5bad49c1e68c43feab3822d1a",
+    "arkts/CoolTokens.ets": "e6edcc389f07a6114b566c9883f3514d0437080e2c5fcd9610084c3aa0e265a9",
+    "wechat/cool-ui-tokens.wxss": "662971c2b15d2e45fae3761f78793aa0c69c3af0150c22dd88ed61f3797c94be",
+    "css/cool-ui-tokens.css": "d03a012f1c3937c2372804b4557a1c4358e1b8e2440f3f009d1dab19ad769c17"
   }
 }

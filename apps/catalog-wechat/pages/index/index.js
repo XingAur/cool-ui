@@ -1,1 +1,1 @@
-Page({ data: { version: '0.1.0' } });
+Page({ data: { version: '0.2.0' } });

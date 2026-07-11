@@ -43,7 +43,7 @@ public enum CoolTokens {
   public static let lightingBackdropGlowOpacity: Double = 0.26
   public static let lightingEdgeOpacity: Double = 0.2
   public static let lightingHighlightOpacity: Double = 0.42
-  public static let metaVersion = "0.1.0"
+  public static let metaVersion = "0.2.0"
   public static let modesDarkBackground = "#071018FF"
   public static let modesHighContrastFocusWidth = "3px"
   public static let modesLightBackground = "#F8FBFFFF"

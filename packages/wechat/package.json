@@ -1,6 +1,6 @@
 {
   "name": "@cool-ui/wechat",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "cooL UI native components for WeChat Mini Programs.",
   "license": "Apache-2.0",
   "miniprogram": "dist",

@@ -43,7 +43,7 @@ object CoolTokens {
   const val lightingBackdropGlowOpacity: Double = 0.26
   const val lightingEdgeOpacity: Double = 0.2
   const val lightingHighlightOpacity: Double = 0.42
-  const val metaVersion: String = "0.1.0"
+  const val metaVersion: String = "0.2.0"
   const val modesDarkBackground: String = "#071018FF"
   const val modesHighContrastFocusWidth: String = "3px"
   const val modesLightBackground: String = "#F8FBFFFF"

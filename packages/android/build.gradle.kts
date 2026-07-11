@@ -7,7 +7,11 @@ plugins {
 }
 
 group = "dev.coolui"
-version = "0.1.0"
+val releaseVersion = Regex("\"version\"\\s*:\\s*\"([^\"]+)\"")
+  .find(file("../../contracts/release.json").readText())
+  ?.groupValues?.get(1)
+  ?: error("contracts/release.json must declare version")
+version = releaseVersion
 
 android {
   namespace = "dev.coolui.compose"
@@ -55,7 +59,7 @@ publishing {
     register<MavenPublication>("release") {
       groupId = "dev.coolui"
       artifactId = "coolui-compose"
-      version = "0.1.0"
+      version = project.version.toString()
       afterEvaluate { from(components["release"]) }
       pom {
         name.set("cooL UI Compose")

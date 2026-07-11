@@ -8,7 +8,7 @@ The goal is shared geometry, semantic color, state, and motion rhythm—not pixe
 
 ## Current status
 
-Version `0.1.0` is an alpha snapshot and is intentionally not published to public registries. The old runtime string renderer has been removed from SwiftUI and Compose. ArkUI now selects native primitives during generation rather than routing every API through one runtime switch. WeChat inputs use native controls, and dialog/sheet components have controlled overlay and dismissal semantics.
+Version `0.2.0` is an alpha snapshot and is intentionally not published to public registries. The old runtime string renderer has been removed from SwiftUI and Compose. ArkUI now selects native primitives during generation rather than routing every API through one runtime switch. WeChat inputs use native controls, and dialog/sheet components have controlled overlay and dismissal semantics.
 
 All component maturity values remain `planned` until the relevant native compile, behavioral, accessibility, Catalog smoke, and golden-image gates pass. Passing Node source-contract tests alone is not presented as native-platform verification.
 

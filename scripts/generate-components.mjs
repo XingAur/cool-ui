@@ -3,7 +3,9 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+const release = JSON.parse(await readFile(resolve(root, 'contracts/release.json'), 'utf8'));
 const contract = JSON.parse(await readFile(resolve(root, 'contracts/components.json'), 'utf8'));
+if (contract.version !== release.version) throw new Error(`Component contract ${contract.version} does not match release ${release.version}`);
 const components = contract.components;
 const componentApiName = (name) => name;
 const kebab = (name) => name.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase();
@@ -133,16 +135,28 @@ await output('packages/wechat/component-manifest.json', JSON.stringify(manifest,
 
 const usingComponents = Object.fromEntries(Object.keys(manifest).map((tag) => [tag, `../../../packages/wechat/dist/components/${tag}/index`]));
 await output('apps/catalog-wechat/app.json', JSON.stringify({ pages: ['pages/index/index'], window: { navigationStyle: 'custom', backgroundColor: '#071018' }, style: 'v2', lazyCodeLoading: 'requiredComponents' }, null, 2));
+await output('apps/catalog-wechat/app.js', `App({ globalData: { catalogVersion: '${release.version}' } });`);
 await output('apps/catalog-wechat/pages/index/index.json', JSON.stringify({ usingComponents }, null, 2));
+await output('apps/catalog-wechat/pages/index/index.js', `Page({ data: { version: '${release.version}' } });`);
 await output('apps/catalog-wechat/pages/index/index.wxml', `
 <view class="catalog-shell cool-theme">
   <view class="catalog-orb catalog-orb-cyan"></view><view class="catalog-orb catalog-orb-amber"></view>
-  <view class="catalog-header"><text class="catalog-eyebrow">cooL UI / WECHAT</text><text class="catalog-title">Native glass catalog</text><text class="catalog-copy">42 components · 7 interaction states · semantic fallbacks</text></view>
+  <view class="catalog-header"><text class="catalog-eyebrow">cooL UI ${release.version} / WECHAT</text><text class="catalog-title">Native glass catalog</text><text class="catalog-copy">42 components · 7 interaction states · semantic fallbacks</text></view>
 ${['foundations', 'actions-inputs', 'navigation', 'content', 'feedback-overlays'].map((category) => `
   <view class="catalog-section"><text class="catalog-section-title">${category}</text><view class="catalog-grid">
     ${components.filter((component) => component.category === category).map(({ name }) => `<cool-${kebab(name)} label="${name}" accessibility-label="${name} example" />`).join('\n    ')}
   </view></view>`).join('\n')}
 </view>`);
+
+await output('examples/npm-consumer/package.json', JSON.stringify({
+  name: 'cool-ui-npm-consumer',
+  version: '0.0.0',
+  private: true,
+  dependencies: {
+    '@cool-ui/tokens': `file:../../artifacts/npm/cool-ui-tokens-${release.version}.tgz`,
+    '@cool-ui/wechat': `file:../../artifacts/npm/cool-ui-wechat-${release.version}.tgz`,
+  },
+}, null, 2));
 
 for (const component of components) {
   const swiftName = `Cool${componentApiName(component.name)}`;

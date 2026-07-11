@@ -41,7 +41,7 @@ export const CoolTokens = {
   lightingBackdropGlowOpacity: 0.26,
   lightingEdgeOpacity: 0.2,
   lightingHighlightOpacity: 0.42,
-  metaVersion: "0.1.0",
+  metaVersion: "0.2.0",
   modesDarkBackground: "#071018FF",
   modesHighContrastFocusWidth: "3px",
   modesLightBackground: "#F8FBFFFF",

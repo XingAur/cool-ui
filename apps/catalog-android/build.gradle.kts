@@ -3,10 +3,15 @@ plugins {
   id("org.jetbrains.kotlin.plugin.compose") version "2.3.21"
 }
 
+val releaseVersion = Regex("\"version\"\\s*:\\s*\"([^\"]+)\"")
+  .find(file("../../contracts/release.json").readText())
+  ?.groupValues?.get(1)
+  ?: error("contracts/release.json must declare version")
+
 android {
   namespace = "dev.coolui.catalog"
   compileSdk = 36
-  defaultConfig { applicationId = "dev.coolui.catalog"; minSdk = 31; targetSdk = 36; versionCode = 1; versionName = "0.1.0" }
+  defaultConfig { applicationId = "dev.coolui.catalog"; minSdk = 31; targetSdk = 36; versionCode = 2; versionName = releaseVersion }
   buildFeatures { compose = true }
   compileOptions { sourceCompatibility = JavaVersion.VERSION_17; targetCompatibility = JavaVersion.VERSION_17 }
 }

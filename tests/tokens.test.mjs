@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { access, readFile } from 'node:fs/promises';
 import test from 'node:test';
+import { releaseVersion } from './release-fixture.mjs';
 
 const root = new URL('../', import.meta.url);
 const sourceUrl = new URL('packages/tokens/src/tokens.json', root);
@@ -45,7 +46,7 @@ test('generator emits stable artifacts for all four platforms and CSS', async ()
   ]) await access(new URL(file, root));
 
   const manifest = JSON.parse(await readFile(new URL('packages/tokens/generated/manifest.json', root), 'utf8'));
-  assert.equal(manifest.version, '0.1.0');
+  assert.equal(manifest.version, releaseVersion);
   assert.equal(manifest.source, 'src/tokens.json');
   assert.equal(Object.keys(manifest.outputs).length, 5);
 });

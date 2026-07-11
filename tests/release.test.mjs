@@ -1,6 +1,9 @@
 import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
 import { access, readFile, readdir } from 'node:fs/promises';
 import test from 'node:test';
+import { fileURLToPath } from 'node:url';
+import { releaseVersion } from './release-fixture.mjs';
 
 const root = new URL('../', import.meta.url);
 const read = (path) => readFile(new URL(path, root), 'utf8');
@@ -53,10 +56,35 @@ test('golden, accessibility and consumer verification contracts are versioned', 
 test('local consumer installs the final cooL UI tarball names', async () => {
   const consumer = JSON.parse(await read('examples/npm-consumer/package.json'));
   assert.deepEqual(consumer.dependencies, {
-    '@cool-ui/tokens': 'file:../../artifacts/npm/cool-ui-tokens-0.1.0.tgz',
-    '@cool-ui/wechat': 'file:../../artifacts/npm/cool-ui-wechat-0.1.0.tgz',
+    '@cool-ui/tokens': `file:../../artifacts/npm/cool-ui-tokens-${releaseVersion}.tgz`,
+    '@cool-ui/wechat': `file:../../artifacts/npm/cool-ui-wechat-${releaseVersion}.tgz`,
   });
-  assert.match(await read('scripts/generate-sbom.mjs'), /name: 'cool-ui'/);
+
+  const generated = spawnSync(process.execPath, ['scripts/generate-sbom.mjs'], {
+    cwd: fileURLToPath(root),
+    encoding: 'utf8',
+  });
+  assert.equal(generated.status, 0, generated.stderr);
+  const sbom = JSON.parse(await read('artifacts/sbom.cdx.json'));
+  assert.equal(sbom.serialNumber, `urn:uuid:cool-ui-${releaseVersion}`);
+  assert.equal(sbom.metadata.component.name, 'cool-ui');
+  assert.equal(sbom.metadata.component.version, releaseVersion);
+  assert.ok(sbom.components.every(({ version }) => version === releaseVersion));
+});
+
+test('generators derive release metadata from the canonical release contract', async () => {
+  for (const path of [
+    'packages/tokens/scripts/generate.mjs',
+    'scripts/generate-components.mjs',
+    'scripts/generate-sbom.mjs',
+    'scripts/pack-local.mjs',
+  ]) {
+    assert.match(await read(path), /contracts[\\/]release\.json/, path);
+  }
+
+  assert.match(await read('apps/catalog-wechat/app.js'), new RegExp(`catalogVersion: '${releaseVersion.replaceAll('.', '\\.')}'`));
+  assert.match(await read('apps/catalog-wechat/pages/index/index.js'), new RegExp(`version: '${releaseVersion.replaceAll('.', '\\.')}'`));
+  assert.match(await read('apps/catalog-wechat/pages/index/index.wxml'), new RegExp(`cooL UI ${releaseVersion.replaceAll('.', '\\.')}`));
 });
 
 test('repository root is directly consumable by Swift Package Manager', async () => {

@@ -6,6 +6,11 @@ import { fileURLToPath } from 'node:url';
 const packageRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const sourcePath = resolve(packageRoot, 'src/tokens.json');
 const source = JSON.parse(await readFile(sourcePath, 'utf8'));
+const release = JSON.parse(await readFile(resolve(packageRoot, '../../contracts/release.json'), 'utf8'));
+source.meta = {
+  ...source.meta,
+  version: { $type: 'string', $value: release.version },
+};
 
 function flatten(node, path = [], output = new Map()) {
   for (const [key, value] of Object.entries(node)) {
@@ -93,4 +98,4 @@ for (const [relativePath, contents] of Object.entries(outputs)) {
   hashes[relativePath] = createHash('sha256').update(contents).digest('hex');
 }
 
-await writeFile(resolve(packageRoot, 'generated/manifest.json'), `${JSON.stringify({ version: '0.1.0', source: 'src/tokens.json', outputs: hashes }, null, 2)}\n`, 'utf8');
+await writeFile(resolve(packageRoot, 'generated/manifest.json'), `${JSON.stringify({ version: release.version, source: 'src/tokens.json', outputs: hashes }, null, 2)}\n`, 'utf8');

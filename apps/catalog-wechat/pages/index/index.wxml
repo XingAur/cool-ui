@@ -1,6 +1,6 @@
 <view class="catalog-shell cool-theme">
   <view class="catalog-orb catalog-orb-cyan"></view><view class="catalog-orb catalog-orb-amber"></view>
-  <view class="catalog-header"><text class="catalog-eyebrow">cooL UI / WECHAT</text><text class="catalog-title">Native glass catalog</text><text class="catalog-copy">42 components · 7 interaction states · semantic fallbacks</text></view>
+  <view class="catalog-header"><text class="catalog-eyebrow">cooL UI 0.2.0 / WECHAT</text><text class="catalog-title">Native glass catalog</text><text class="catalog-copy">42 components · 7 interaction states · semantic fallbacks</text></view>
 
   <view class="catalog-section"><text class="catalog-section-title">foundations</text><view class="catalog-grid">
     <cool-theme-provider label="ThemeProvider" accessibility-label="ThemeProvider example" />

@@ -1,6 +1,6 @@
 {
   "name": "cool-ui-monorepo",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "description": "Perceptually consistent, platform-native glass UI components.",
   "license": "Apache-2.0",
@@ -15,7 +15,7 @@
     "typecheck": "turbo run typecheck",
     "docs:dev": "pnpm --dir docs dev",
     "docs:build": "pnpm --dir docs build",
-    "generate": "pnpm tokens:generate && node scripts/generate-components.mjs",
+    "generate": "pnpm tokens:generate && node scripts/generate-components.mjs && node scripts/generate-sbom.mjs",
     "tokens:generate": "node packages/tokens/scripts/generate.mjs",
     "tokens:check": "pnpm generate && git diff --exit-code -- packages/tokens/generated packages/swift/Sources/CoolUI/CoolTokens.swift packages/android/src/main/kotlin/dev/coolui/tokens packages/arkui/src/main/ets/tokens packages/wechat/src/styles/tokens.wxss",
     "pack:local": "node scripts/pack-local.mjs",
