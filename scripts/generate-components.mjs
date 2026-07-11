@@ -516,7 +516,7 @@ export const CoolComponentRegistry: string[] = [
 ${components.map(({ name }) => `  "${name}",`).join('\n')}
 ]
 
-${components.filter(({ name }) => generationMode(name, 'arkui') !== 'registryOnly').map(({ name, interactive }) => `
+${components.filter(({ name }) => generationMode(name, 'arkui') === 'generated').map(({ name, interactive }) => `
 @Component
 export struct Cool${componentApiName(name)} {
   @Prop config: CoolComponentConfig = new CoolComponentConfig("${name}")

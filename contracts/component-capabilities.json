@@ -61,7 +61,7 @@
     "MonthCalendar": {
       "swiftui": "native",
       "compose": "native",
-      "arkui": "registryOnly",
+      "arkui": "native",
       "wechat": "native"
     }
   }

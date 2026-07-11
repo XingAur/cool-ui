@@ -42,25 +42,25 @@ export interface CoolGeneratedParams {
   onEvent: (event: string) => void
 }
 
-function tokenNumber(value: string): number {
+export function coolTokenNumber(value: string): number {
   const parsed = Number.parseFloat(value)
   return Number.isNaN(parsed) ? 0 : parsed
 }
 
 function materialBlur(config: CoolComponentConfig): number {
   if (config.transparencyMode === TransparencyMode.reduced || config.material === GlassMaterial.solidFallback) return 0
-  if (config.material === GlassMaterial.clear) return tokenNumber(CoolTokens.blurClear)
-  if (config.material === GlassMaterial.prominent) return tokenNumber(CoolTokens.blurProminent)
-  return tokenNumber(CoolTokens.blurRegular)
+  if (config.material === GlassMaterial.clear) return coolTokenNumber(CoolTokens.blurClear)
+  if (config.material === GlassMaterial.prominent) return coolTokenNumber(CoolTokens.blurProminent)
+  return coolTokenNumber(CoolTokens.blurRegular)
 }
 
 function componentRadius(size: Size): number {
-  if (size === Size.small) return tokenNumber(CoolTokens.radiusSmall)
-  if (size === Size.large) return tokenNumber(CoolTokens.radiusLarge)
-  return tokenNumber(CoolTokens.radiusMedium)
+  if (size === Size.small) return coolTokenNumber(CoolTokens.radiusSmall)
+  if (size === Size.large) return coolTokenNumber(CoolTokens.radiusLarge)
+  return coolTokenNumber(CoolTokens.radiusMedium)
 }
 
-function toneColor(tone: Tone): string {
+export function coolToneColor(tone: Tone): string {
   if (tone === Tone.accent) return CoolTokens.colorLightAccent
   if (tone === Tone.success) return CoolTokens.colorLightSuccess
   if (tone === Tone.warning) return CoolTokens.colorLightWarning
@@ -115,7 +115,7 @@ export function CoolGeneratedComponent(params: CoolGeneratedParams) {
     .padding({ left: CoolTokens.spaceLg, right: CoolTokens.spaceLg })
   }
   .borderRadius(componentRadius(params.config.size))
-  .backgroundColor(toneColor(params.config.tone))
+  .backgroundColor(coolToneColor(params.config.tone))
   .backdropBlur(materialBlur(params.config))
   .enabled(!params.config.disabled && !params.config.loading)
   .accessibilityText(params.config.accessibilityLabel)

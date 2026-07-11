@@ -78,7 +78,7 @@ test('all planned components exist on every platform', () => {
 
 test('interactive components expose state, value, event, icon and accessibility contracts', () => {
   const requiredStates = ['default', 'pressed', 'focused', 'selected', 'disabled', 'loading', 'error'];
-  for (const component of contract.components.filter(({ interactive, name }) => interactive && !registryOnlyComponents.has(name))) {
+  for (const component of contract.components.filter(({ interactive, name }) => interactive && name !== 'MonthCalendar' && !registryOnlyComponents.has(name))) {
     assert.deepEqual(component.states, requiredStates, component.name);
     assert.deepEqual(component.capabilities, ['controlledValue', 'event', 'accessibilityLabel', 'semanticIconSlot'], component.name);
   }
@@ -141,11 +141,11 @@ test('MonthCalendar shares machine-validatable calendar day and marker models', 
   });
 });
 
-test('MonthCalendar generation enables the native SwiftUI, Compose, and WeChat implementations', () => {
+test('MonthCalendar generation enables all four native implementations', () => {
   assert.deepEqual(capabilities.generationModes?.MonthCalendar, {
     swiftui: 'native',
     compose: 'native',
-    arkui: 'registryOnly',
+    arkui: 'native',
     wechat: 'native',
   });
   assert.deepEqual(componentSchema.properties.components.items.properties.api.properties.models, {
