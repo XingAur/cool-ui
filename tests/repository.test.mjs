@@ -103,20 +103,16 @@ test('every package is version-aligned and local-only', async () => {
   assert.doesNotMatch(releaseAutomation, /(?:npm|pnpm|yarn)\s+publish|mavenCentral|publishing\.sonatype|registry\.npmjs/i);
 
   const ohpm = JSON.parse(await read('packages/arkui/oh-package.json5'));
-  assert.equal(ohpm.scripts?.prePublish, 'node ../../scripts/guard-public-publish.mjs');
-  const prePublish = spawnSync(ohpm.scripts.prePublish, {
-    cwd: resolve(rootPath, 'packages/arkui'),
-    shell: true,
-    encoding: 'utf8',
-  });
-  assert.notEqual(prePublish.status, 0);
-  assert.match(prePublish.stderr, /publicRegistryPublishing=false/);
+  assert.equal(ohpm.hooks?.prePublish, 'node ../../scripts/guard-public-publish.mjs');
+  assert.equal(ohpm.scripts?.prePublish, undefined, 'OHPM prePublish must use hooks, not scripts');
 
   const ohpmEntrypoints = Object.values(JSON.parse(await read('package.json')).scripts).filter((command) => /ohpm\s+publish/i.test(command));
   assert.deepEqual(ohpmEntrypoints, ['node scripts/guard-public-publish.mjs && ohpm publish packages/arkui']);
   const harmonyWorkflow = await read('.github/workflows/harmony.yml');
   assert.match(harmonyWorkflow, /ohpm prepublish/i);
-  assert.match(harmonyWorkflow, /OHPM prepublish validation pending/i);
+  assert.match(harmonyWorkflow, /Get-Command ohpm[\s\S]*throw "OHPM is required/);
+  assert.match(harmonyWorkflow, /publicRegistryPublishing=false/);
+  assert.doesNotMatch(harmonyWorkflow, /validation pending|::notice::/i);
 
   const android = await read('packages/android/build.gradle.kts');
   assert.match(android, /contracts[\\/]release\.json/);
