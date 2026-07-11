@@ -87,7 +87,7 @@ test('Compose MonthCalendar routes custom day and marker slots independently', a
   assert.ok(dayButton, 'day button implementation');
   assert.match(
     dayButton,
-    /\)\s*\{\s*Column\([\s\S]*?\)\s*\{\s*if \(dayContent == null\)\s*\{\s*DefaultCoolMonthCalendarDay\(day, metrics\)\s*\}\s*else\s*\{\s*dayContent\(day\)\s*\}\s*if \(day\.visibleMarkers\.isNotEmpty\(\)\)\s*\{\s*CoolMonthCalendarMarkerRow\(day\.visibleMarkers, markerContent, metrics\)/,
+    /\)\s*\{\s*Column\([\s\S]*?\)\s*\{\s*if \(dayContent == null\)\s*\{\s*DefaultCoolMonthCalendarDay\(day, metrics, showSupplementaryContent\)\s*\}\s*else\s*\{\s*dayContent\(day\)\s*\}\s*if \(day\.visibleMarkers\.isNotEmpty\(\)\)\s*\{\s*CoolMonthCalendarMarkerRow\(day\.visibleMarkers, markerContent, metrics\)/,
   );
   assert.match(calendar, /private fun DefaultCoolMonthCalendarDay\([\s\S]*day: CoolCalendarDay,[\s\S]*metrics: CoolMonthCalendarMetrics/);
   assert.match(calendar, /private fun CoolMonthCalendarMarkerRow\([\s\S]*markers: List<CoolCalendarMarker>[\s\S]*markerContent:/);
@@ -125,6 +125,11 @@ test('Compose MonthCalendar uses tokens, remembered locale formatters, and occur
   assert.doesNotMatch(calendar, /key\s*=\s*\{\s*index,/);
   assert.match(calendar, /DateTimeFormatter\.ofLocalizedDate\(FormatStyle\.LONG\)\.withLocale\(locale\)/);
   assert.match(calendar, /resolvedAccessibilityLabel\(labels, dateFormatter\)/);
+  assert.match(calendar, /CALENDAR_SUPPLEMENTARY_CONTENT_FONT_SCALE_THRESHOLD/);
+  assert.match(calendar, /showsCalendarSupplementaryContent\(fontScale\)/);
+  assert.match(calendar, /if \(showSupplementaryContent\)[\s\S]*secondaryText[\s\S]*maxLines = 1[\s\S]*TextOverflow\.Ellipsis[\s\S]*badge[\s\S]*maxLines = 1[\s\S]*TextOverflow\.Ellipsis/);
+  assert.match(calendar, /mostContrastingColor\(\s*selectedContainerColor,[\s\S]*onSurface[\s\S]*onPrimary/);
+  assert.doesNotMatch(calendar, /day\.isSelected\s*->[^\n]*copy\(alpha/);
 });
 
 test('Android plugin versions are resolved by settings for standalone and Catalog builds', async () => {

@@ -7,6 +7,7 @@ import java.text.DateFormatSymbols
 import java.util.Calendar
 import java.util.Locale
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.graphics.Color
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -117,5 +118,28 @@ class CoolMonthCalendarTest {
     assertEquals(listOf("2026-07-12#0", "2026-07-12#1", "2026-07-13#0"), original.map { it.key })
     assertEquals(original.map { it.key }, withInsertion.drop(1).map { it.key })
     assertEquals(original.map { it.key }.toSet(), reordered.map { it.key }.toSet())
+  }
+
+  @Test fun supplementaryContentHidesAtAccessibilityFontScaleThreshold() {
+    assertTrue(showsCalendarSupplementaryContent(1f))
+    assertTrue(showsCalendarSupplementaryContent(1.49f))
+    assertFalse(showsCalendarSupplementaryContent(1.5f))
+    assertFalse(showsCalendarSupplementaryContent(2f))
+  }
+
+  @Test fun contrastingCalendarContentMeetsWcagForEveryTone() {
+    val neutralBackground = Color(0xFFE7E0EC)
+    val candidateSets = listOf(
+      listOf(Color(0xFF1D1B20), Color(0xFFFFFFFF)),
+      listOf(Color(0xFFE6E1E5), Color(0xFF000000)),
+    )
+    Tone.entries.forEach { tone ->
+      val background = if (tone == Tone.neutral) neutralBackground else tone.tokenColor()
+      candidateSets.forEach { candidates ->
+        val chosen = mostContrastingColor(background, candidates)
+        assertEquals(candidates.maxBy { contrastRatio(it, background) }, chosen)
+        assertTrue("$tone contrast", contrastRatio(chosen, background) >= 4.5)
+      }
+    }
   }
 }

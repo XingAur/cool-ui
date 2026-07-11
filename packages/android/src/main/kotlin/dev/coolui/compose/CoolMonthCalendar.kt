@@ -39,6 +39,7 @@ import androidx.compose.ui.semantics.disabled
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import dev.coolui.tokens.CoolTokens
@@ -49,8 +50,36 @@ import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import java.util.Calendar
 import java.util.Locale
+import kotlin.math.max
+import kotlin.math.min
+import kotlin.math.pow
 
 enum class CoolMonthDirection { Previous, Next }
+
+internal const val CALENDAR_SUPPLEMENTARY_CONTENT_FONT_SCALE_THRESHOLD = 1.5f
+
+internal fun showsCalendarSupplementaryContent(fontScale: Float): Boolean =
+  fontScale < CALENDAR_SUPPLEMENTARY_CONTENT_FONT_SCALE_THRESHOLD
+
+internal fun contrastRatio(foreground: Color, background: Color): Double {
+  fun Color.relativeLuminance(): Double {
+    fun linearized(channel: Float): Double {
+      val value = channel.toDouble()
+      return if (value <= 0.04045) value / 12.92 else ((value + 0.055) / 1.055).pow(2.4)
+    }
+    return (0.2126 * linearized(red)) + (0.7152 * linearized(green)) + (0.0722 * linearized(blue))
+  }
+
+  val foregroundLuminance = foreground.relativeLuminance()
+  val backgroundLuminance = background.relativeLuminance()
+  return (max(foregroundLuminance, backgroundLuminance) + 0.05) /
+    (min(foregroundLuminance, backgroundLuminance) + 0.05)
+}
+
+internal fun mostContrastingColor(background: Color, candidates: List<Color>): Color {
+  require(candidates.isNotEmpty()) { "At least one foreground candidate is required" }
+  return candidates.maxBy { contrastRatio(it, background) }
+}
 
 @Immutable
 data class CoolCalendarMarker(
@@ -176,6 +205,8 @@ private data class CoolMonthCalendarMetrics(
 
 /**
  * A strictly controlled month calendar whose consumer supplies all visible days.
+ * At accessibility font scales, default secondary text and badges are hidden visually while their
+ * complete values remain in each day button's accessibility description.
  *
  * @param dayCellHeight Optional explicit cell constraint. When custom dayContent is taller than
  * the token-derived default, pass a matching dayCellHeight so the lazy grid can measure exactly.
@@ -199,6 +230,7 @@ fun CoolMonthCalendar(
   markerContent: (@Composable (CoolCalendarMarker) -> Unit)? = null,
 ) {
   val fontScale = LocalDensity.current.fontScale
+  val showSupplementaryContent = showsCalendarSupplementaryContent(fontScale)
   val metrics = remember(dayCellHeight, fontScale) {
     val touchTarget = CoolTokens.sizeTouchTarget.tokenDp()
     CoolMonthCalendarMetrics(
@@ -279,6 +311,7 @@ fun CoolMonthCalendar(
                     labels = accessibilityLabels,
                     dateFormatter = dateFormatter,
                     metrics = metrics,
+                    showSupplementaryContent = showSupplementaryContent,
                     onDaySelected = onDaySelected,
                     dayContent = dayContent,
                     markerContent = markerContent,
@@ -327,17 +360,26 @@ private fun CoolMonthCalendarDayButton(
   labels: CoolMonthCalendarAccessibilityLabels,
   dateFormatter: DateTimeFormatter,
   metrics: CoolMonthCalendarMetrics,
+  showSupplementaryContent: Boolean,
   onDaySelected: (CoolCalendarDay) -> Unit,
   dayContent: (@Composable (CoolCalendarDay) -> Unit)?,
   markerContent: (@Composable (CoolCalendarMarker) -> Unit)?,
 ) {
+  val selectedContainerColor = if (day.tone == Tone.neutral) {
+    MaterialTheme.colorScheme.surfaceVariant
+  } else {
+    day.tone.tokenColor()
+  }
   val containerColor = when {
-    day.isSelected -> day.tone.tokenColor().copy(alpha = metrics.highlightOpacity)
+    day.isSelected -> selectedContainerColor
     day.isToday -> day.tone.tokenColor().copy(alpha = metrics.edgeOpacity)
     else -> Color.Transparent
   }
   val contentColor = if (day.isSelected) {
-    MaterialTheme.colorScheme.onPrimary
+    mostContrastingColor(
+      selectedContainerColor,
+      listOf(MaterialTheme.colorScheme.onSurface, MaterialTheme.colorScheme.onPrimary),
+    )
   } else {
     MaterialTheme.colorScheme.onSurface
   }
@@ -370,7 +412,7 @@ private fun CoolMonthCalendarDayButton(
       verticalArrangement = Arrangement.spacedBy(metrics.borderWidth),
     ) {
       if (dayContent == null) {
-        DefaultCoolMonthCalendarDay(day, metrics)
+        DefaultCoolMonthCalendarDay(day, metrics, showSupplementaryContent)
       } else {
         dayContent(day)
       }
@@ -385,20 +427,32 @@ private fun CoolMonthCalendarDayButton(
 private fun DefaultCoolMonthCalendarDay(
   day: CoolCalendarDay,
   metrics: CoolMonthCalendarMetrics,
+  showSupplementaryContent: Boolean,
 ) {
   Text(text = day.day.toString(), style = MaterialTheme.typography.bodyMedium)
-  day.secondaryText?.let { Text(text = it, style = MaterialTheme.typography.labelSmall) }
-  day.badge?.let {
-    Text(
-      text = it,
-      modifier = Modifier
-        .background(day.tone.tokenColor().copy(alpha = metrics.edgeOpacity), CircleShape)
-        .padding(
-          horizontal = metrics.spaceXs,
-          vertical = metrics.borderWidth,
-        ),
-      style = MaterialTheme.typography.labelSmall,
-    )
+  if (showSupplementaryContent) {
+    day.secondaryText?.let {
+      Text(
+        text = it,
+        style = MaterialTheme.typography.labelSmall,
+        maxLines = 1,
+        overflow = TextOverflow.Ellipsis,
+      )
+    }
+    day.badge?.let {
+      Text(
+        text = it,
+        modifier = Modifier
+          .background(day.tone.tokenColor().copy(alpha = metrics.highlightOpacity), CircleShape)
+          .padding(
+            horizontal = metrics.spaceXs,
+            vertical = metrics.borderWidth,
+          ),
+        style = MaterialTheme.typography.labelSmall,
+        maxLines = 1,
+        overflow = TextOverflow.Ellipsis,
+      )
+    }
   }
 }
 

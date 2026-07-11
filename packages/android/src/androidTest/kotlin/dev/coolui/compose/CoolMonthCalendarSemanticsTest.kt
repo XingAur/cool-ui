@@ -11,8 +11,10 @@ import androidx.compose.ui.test.assertHasClickAction
 import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithContentDescription
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
@@ -55,13 +57,15 @@ class CoolMonthCalendarSemanticsTest {
 
   @Test fun highFontScaleKeepsDayAtLeastTokenTouchTarget() {
     val selected = LocalDate.of(2026, 7, 12)
+    val secondary = "A very long accessibility secondary description"
+    val badge = "A very long accessibility badge description"
     composeRule.setContent {
       CompositionLocalProvider(LocalDensity provides Density(density = 1f, fontScale = 2f)) {
         CoolThemeProvider {
           CoolMonthCalendar(
             selectedDate = selected,
             displayedMonth = YearMonth.of(2026, 7),
-            days = listOf(CoolCalendarDay(selected, 12, accessibilityLabel = "Scaled day")),
+            days = listOf(CoolCalendarDay(selected, 12, secondaryText = secondary, badge = badge)),
             onDaySelected = {},
             onMonthChange = {},
           )
@@ -70,6 +74,10 @@ class CoolMonthCalendarSemanticsTest {
     }
 
     val touchTarget = CoolTokens.sizeTouchTarget.removeSuffix("px").toFloat().dp
-    composeRule.onNodeWithContentDescription("Scaled day").assertHeightIsAtLeast(touchTarget)
+    composeRule.onAllNodesWithText(secondary, useUnmergedTree = true).assertCountEquals(0)
+    composeRule.onAllNodesWithText(badge, useUnmergedTree = true).assertCountEquals(0)
+    composeRule.onNode(hasContentDescription(secondary, substring = true))
+      .assertHeightIsAtLeast(touchTarget)
+    composeRule.onAllNodes(hasContentDescription(secondary, substring = true)).assertCountEquals(1)
   }
 }
