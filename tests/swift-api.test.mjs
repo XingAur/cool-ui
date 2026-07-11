@@ -23,3 +23,21 @@ test('Swift Catalog consumes public components instead of the generic renderer',
   assert.match(catalog, /CoolThemeProvider/);
   assert.match(catalog, /CoolGlassSurface/);
 });
+
+test('SwiftUI actions and inputs expose native typed values', async () => {
+  const actions = await read('packages/swift/Sources/CoolUI/CoolActions.swift');
+  const textInputs = await read('packages/swift/Sources/CoolUI/CoolTextInputs.swift');
+  const selections = await read('packages/swift/Sources/CoolUI/CoolSelectionInputs.swift');
+  const numeric = await read('packages/swift/Sources/CoolUI/CoolNumericInputs.swift');
+  const dates = await read('packages/swift/Sources/CoolUI/CoolDateInputs.swift');
+
+  assert.match(actions, /public struct CoolButton<Label: View>/);
+  assert.match(actions, /public struct CoolIconButton: View/);
+  assert.match(actions, /public struct CoolFloatingActionButton: View/);
+  assert.match(actions, /public struct CoolChip<Label: View>/);
+  assert.match(textInputs, /Binding<String>/);
+  assert.match(selections, /Binding<Bool>/);
+  assert.match(selections, /public struct CoolSelectionOption<Value: Hashable/);
+  assert.match(numeric, /Binding<Double>/);
+  assert.match(dates, /Binding<Date>/);
+});

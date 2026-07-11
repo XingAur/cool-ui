@@ -5,7 +5,11 @@ import { fileURLToPath } from 'node:url';
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const contract = JSON.parse(await readFile(resolve(root, 'contracts/components.json'), 'utf8'));
 const components = contract.components;
-const handwrittenSwiftComponents = new Set(['ThemeProvider', 'Backdrop', 'GlassSurface', 'GlassGroup', 'Divider']);
+const handwrittenSwiftComponents = new Set(
+  components
+    .filter(({ category }) => ['foundations', 'actions-inputs'].includes(category))
+    .map(({ name }) => name),
+);
 const componentApiName = (name) => name;
 const kebab = (name) => name.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase();
 

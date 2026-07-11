@@ -13,6 +13,22 @@ struct CatalogView: View {
   @State private var contrastMode: CoolContrastMode = .standard
   @State private var motionMode: CoolMotionMode = .full
   @State private var transparencyMode: CoolTransparencyMode = .full
+  @State private var chipSelected = true
+  @State private var name = "Ada"
+  @State private var notes = "Native controls, shared semantics."
+  @State private var search = ""
+  @State private var notificationsEnabled = true
+  @State private var remembered = false
+  @State private var choice = "regular"
+  @State private var sliderValue = 64.0
+  @State private var stepperValue = 3.0
+  @State private var date = Date()
+
+  private let materialOptions = [
+    CoolSelectionOption(id: "clear", title: "Clear", systemImage: "sparkles"),
+    CoolSelectionOption(id: "regular", title: "Regular", systemImage: "square.on.square"),
+    CoolSelectionOption(id: "prominent", title: "Prominent", systemImage: "star.fill"),
+  ]
 
   private var configuration: CoolThemeConfiguration {
     CoolThemeConfiguration(
@@ -77,6 +93,29 @@ struct CatalogView: View {
                 set: { transparencyMode = $0 ? .reduced : .full }
               ))
             }
+
+            Text("Actions and inputs")
+              .font(.title2.weight(.semibold))
+              .padding(.top, 8)
+
+            HStack(spacing: 12) {
+              CoolButton("Continue", tone: .accent, action: {})
+              CoolIconButton(systemImage: "search", accessibilityLabel: "Search", action: {})
+              CoolFloatingActionButton(systemImage: "plus", accessibilityLabel: "Add", action: {})
+            }
+
+            CoolChip("Selected filter", isSelected: $chipSelected)
+            CoolTextField("Name", text: $name, prompt: "Your name")
+            CoolTextArea("Notes", text: $notes)
+            CoolSearchField(text: $search, prompt: "Search components")
+            CoolToggle("Notifications", isOn: $notificationsEnabled)
+            CoolCheckbox("Remember selection", isChecked: $remembered)
+            CoolRadioGroup("Material", selection: $choice, options: materialOptions)
+            CoolSelect("Material", selection: $choice, options: materialOptions)
+            CoolSlider(value: $sliderValue, in: 0...100, label: "Intensity")
+            CoolStepper("Layers", value: $stepperValue, in: 0...8)
+            CoolDatePicker("Date", selection: $date)
+            CoolTimePicker("Time", selection: $date)
           }
           .padding(24)
         }
