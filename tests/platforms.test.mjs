@@ -69,8 +69,8 @@ test('every component is checked independently against each platform generation 
   }
 });
 
-test('MonthCalendar is native only in WeChat and reserved in other platform registries', async () => {
-  const swiftRegistry = await read('packages/swift/Sources/CoolUI/GeneratedComponents.swift');
+test('MonthCalendar is native in SwiftUI and WeChat and reserved in other platform registries', async () => {
+  const swiftCalendar = await read('packages/swift/Sources/CoolUI/CoolMonthCalendar.swift');
   const kotlinRegistry = await read('packages/android/src/main/kotlin/dev/coolui/compose/GeneratedComponents.kt');
   const arkRegistry = await read('packages/arkui/src/main/ets/components/GeneratedComponents.ets');
   const wechatManifest = JSON.parse(await read('packages/wechat/component-manifest.json'));
@@ -84,9 +84,9 @@ test('MonthCalendar is native only in WeChat and reserved in other platform regi
       platform,
       platformExpectation(capabilities.generationModes ?? {}, 'MonthCalendar', platform),
     ])),
-    { swiftui: 'reservation', compose: 'reservation', arkui: 'reservation', wechat: 'native' },
+    { swiftui: 'native', compose: 'reservation', arkui: 'reservation', wechat: 'native' },
   );
-  assert.match(swiftRegistry, /"MonthCalendar"/);
+  assert.match(swiftCalendar, /public struct CoolMonthCalendar\b/);
   assert.match(kotlinRegistry, /"MonthCalendar"/);
   assert.match(arkRegistry, /"MonthCalendar"/);
   assert.doesNotMatch(arkRegistry, /export struct CoolMonthCalendar\b/);

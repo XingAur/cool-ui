@@ -59,7 +59,7 @@
   },
   "generationModes": {
     "MonthCalendar": {
-      "swiftui": "registryOnly",
+      "swiftui": "native",
       "compose": "registryOnly",
       "arkui": "registryOnly",
       "wechat": "native"

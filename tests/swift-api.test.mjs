@@ -63,3 +63,43 @@ test('SwiftUI navigation, content, and feedback use composed native APIs', async
   assert.match(feedback, /\.popover\(/);
   assert.match(feedback, /public struct CoolLoadingOverlay<OverlayContent: View>: ViewModifier/);
 });
+
+test('SwiftUI MonthCalendar exposes controlled models and native grid composition', async () => {
+  const calendar = await read('packages/swift/Sources/CoolUI/CoolMonthCalendar.swift');
+  const accessibilityHelper = calendar.match(/private func localizedAccessibilityLabel[\s\S]*?\n  }/)?.[0] ?? '';
+
+  assert.match(calendar, /public enum CoolMonthDirection[^\n]*Hashable[^\n]*Sendable/);
+  assert.match(calendar, /public struct CoolCalendarMarker: Hashable, Sendable/);
+  assert.match(calendar, /public struct CoolCalendarDay: Identifiable, Hashable, Sendable/);
+  assert.match(calendar, /Array\(markers\.prefix\(3\)\)/);
+  assert.match(calendar, /public struct CoolMonthCalendar<Header: View, DayContent: View, MarkerContent: View>: View/);
+  assert.match(calendar, /\(Date, @escaping \(CoolMonthDirection\) -> Void\) -> Header/);
+  assert.match(calendar, /@Binding private var selection: Date/);
+  assert.match(calendar, /@Binding private var displayedMonth: Date/);
+  assert.match(calendar, /LazyVGrid\(columns:/);
+  assert.match(calendar, /CoolGlassSurface/);
+  assert.match(calendar, /CoolSemanticIcons\.sfSymbol\(for:/);
+  assert.match(calendar, /selection = \w+\.date/);
+  assert.match(calendar, /onMonthChange\(direction\)/);
+  assert.match(accessibilityHelper, /model\.secondaryText/);
+  assert.match(accessibilityHelper, /model\.badge/);
+  assert.doesNotMatch(calendar, /date\(byAdding:\s*\.month/, 'the controlled component must not calculate a new month');
+  assert.doesNotMatch(calendar, /\.glassEffect\(/, 'calendar days must remain native buttons inside one glass surface');
+});
+
+test('Swift Catalog owns a controlled 42-cell MonthCalendar fixture', async () => {
+  const catalog = await read('apps/catalog-swift/CoolUICatalog/CoolUICatalogApp.swift');
+
+  assert.match(catalog, /@State private var calendarSelection/);
+  assert.match(catalog, /@State private var displayedMonth/);
+  assert.match(catalog, /0\.\.<42/);
+  assert.match(catalog, /CoolMonthCalendar\(/);
+  assert.match(catalog, /selection: \$calendarSelection/);
+  assert.match(catalog, /displayedMonth: \$displayedMonth/);
+  assert.match(catalog, /Quarterly planning sync/);
+  assert.match(catalog, /isDisabled:/);
+  assert.match(catalog, /isToday:/);
+  assert.match(catalog, /isSelected:/);
+  assert.match(catalog, /badge:/);
+  assert.match(catalog, /markers:/);
+});

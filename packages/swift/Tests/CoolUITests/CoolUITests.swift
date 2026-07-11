@@ -64,3 +64,39 @@ import SwiftUI
   _ = Text("Host").coolTooltip(isPresented: .constant(false)) { Text("Tooltip") }
   _ = Text("Host").coolLoadingOverlay(isPresented: true) { ProgressView("Loading") }
 }
+
+@Test func calendarDayCapsMarkersAtThree() {
+  let markers = CoolTone.allCases.map { CoolCalendarMarker(tone: $0, accessibilityLabel: $0.rawValue) }
+  let day = CoolCalendarDay(date: Date(timeIntervalSince1970: 0), day: 1, markers: markers)
+
+  #expect(day.markers.count == 3)
+  #expect(day.markers.map(\.tone) == [.neutral, .accent, .success])
+}
+
+@Test @MainActor func monthCalendarAcceptsDefaultAndCustomSlots() {
+  let date = Date(timeIntervalSince1970: 0)
+  let marker = CoolCalendarMarker(tone: .accent, accessibilityLabel: "Appointment")
+  let day = CoolCalendarDay(
+    date: date,
+    day: 1,
+    secondaryText: "New year",
+    accessibilityLabel: "January 1",
+    isToday: true,
+    isSelected: true,
+    tone: .accent,
+    badge: "2",
+    markers: [marker]
+  )
+
+  _ = CoolMonthCalendar(selection: .constant(date), displayedMonth: .constant(date), days: [day])
+  _ = CoolMonthCalendar(
+    selection: .constant(date),
+    displayedMonth: .constant(date),
+    days: [day],
+    header: { month, changeMonth in
+      Button(month.formatted(.dateTime.year().month())) { changeMonth(.next) }
+    },
+    day: { model in Text(String(model.day)) },
+    marker: { model in Circle().accessibilityLabel(model.accessibilityLabel ?? model.tone.rawValue) }
+  )
+}

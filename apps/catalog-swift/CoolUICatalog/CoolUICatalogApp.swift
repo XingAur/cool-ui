@@ -23,6 +23,8 @@ struct CatalogView: View {
   @State private var sliderValue = 64.0
   @State private var stepperValue = 3.0
   @State private var date = Date()
+  @State private var calendarSelection = CatalogView.catalogDate(year: 2026, month: 7, day: 12)
+  @State private var displayedMonth = CatalogView.catalogDate(year: 2026, month: 7, day: 1)
   @State private var navigationSelection = "home"
   @State private var showToast = false
   @State private var showDialog = false
@@ -42,6 +44,39 @@ struct CatalogView: View {
     CoolNavigationItem(id: "search", title: "Search", systemImage: "search"),
     CoolNavigationItem(id: "settings", title: "Settings", systemImage: "settings"),
   ]
+
+  private static func catalogDate(year: Int, month: Int, day: Int) -> Date {
+    Calendar.autoupdatingCurrent.date(from: DateComponents(year: year, month: month, day: day)) ?? Date()
+  }
+
+  private var calendarDays: [CoolCalendarDay] {
+    let calendar = Calendar.autoupdatingCurrent
+    guard let interval = calendar.dateInterval(of: .month, for: displayedMonth) else { return [] }
+    let firstDay = interval.start
+    let firstWeekdayOffset = (calendar.component(.weekday, from: firstDay) - calendar.firstWeekday + 7) % 7
+    guard let gridStart = calendar.date(byAdding: .day, value: -firstWeekdayOffset, to: firstDay) else { return [] }
+
+    return (0..<42).compactMap { offset in
+      guard let fixtureDate = calendar.date(byAdding: .day, value: offset, to: gridStart) else { return nil }
+      let belongsToDisplayedMonth = calendar.isDate(fixtureDate, equalTo: displayedMonth, toGranularity: .month)
+      return CoolCalendarDay(
+        date: fixtureDate,
+        day: calendar.component(.day, from: fixtureDate),
+        secondaryText: offset == 17 ? "Quarterly planning sync" : (offset == 19 ? "Festival" : nil),
+        accessibilityLabel: fixtureDate.formatted(.dateTime.year().month(.wide).day()),
+        isToday: offset == 18,
+        isSelected: calendar.isDate(fixtureDate, inSameDayAs: calendarSelection),
+        isDisabled: !belongsToDisplayedMonth || offset == 21,
+        tone: offset == 19 ? .success : (offset == 20 ? .warning : .neutral),
+        badge: offset == 16 ? "3" : nil,
+        markers: offset == 17 ? [
+          CoolCalendarMarker(tone: .accent, accessibilityLabel: "Work"),
+          CoolCalendarMarker(tone: .success, accessibilityLabel: "Personal"),
+          CoolCalendarMarker(tone: .warning, accessibilityLabel: "Reminder"),
+        ] : []
+      )
+    }
+  }
 
   private var configuration: CoolThemeConfiguration {
     CoolThemeConfiguration(
@@ -129,6 +164,19 @@ struct CatalogView: View {
             CoolStepper("Layers", value: $stepperValue, in: 0...8)
             CoolDatePicker("Date", selection: $date)
             CoolTimePicker("Time", selection: $date)
+
+            CoolMonthCalendar(
+              selection: $calendarSelection,
+              displayedMonth: $displayedMonth,
+              days: calendarDays,
+              onSelect: { calendarSelection = $0.date },
+              onMonthChange: { direction in
+                let value = direction == .previous ? -1 : 1
+                if let month = Calendar.autoupdatingCurrent.date(byAdding: .month, value: value, to: displayedMonth) {
+                  displayedMonth = month
+                }
+              }
+            )
 
             Text("Navigation")
               .font(.title2.weight(.semibold))
