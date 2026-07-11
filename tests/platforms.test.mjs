@@ -9,29 +9,63 @@ const capabilities = JSON.parse(await read('contracts/component-capabilities.jso
 
 const componentApiName = (name) => name;
 const kebab = (name) => name.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase();
+const platforms = ['swiftui', 'compose', 'arkui', 'wechat'];
 const nonRenderedModes = new Set(['registryOnly', 'reserved']);
-const registryOnlyComponents = Object.entries(capabilities.generationModes ?? {})
-  .filter(([, modes]) => Object.values(modes).some((mode) => nonRenderedModes.has(mode)))
-  .map(([name]) => name);
+const platformExpectation = (generationModes, name, platform) => (
+  nonRenderedModes.has(generationModes[name]?.[platform])
+    ? 'reservation'
+    : 'native'
+);
 
-test('every implemented component has its idiomatic public name on all four platforms', async () => {
+test('mixed generation modes keep implemented platforms under native API checks', () => {
+  const mixedModes = {
+    MonthCalendar: {
+      swiftui: 'native',
+      compose: 'native',
+      arkui: 'registryOnly',
+      wechat: 'reserved',
+    },
+  };
+  assert.deepEqual(
+    Object.fromEntries(platforms
+      .map((platform) => [platform, platformExpectation(mixedModes, 'MonthCalendar', platform)])),
+    { swiftui: 'native', compose: 'native', arkui: 'reservation', wechat: 'reservation' },
+  );
+});
+
+test('every component is checked independently against each platform generation mode', async () => {
   const swiftFiles = await readdir(new URL('packages/swift/Sources/CoolUI/', root));
   const swiftSources = (await Promise.all(
     swiftFiles.filter((file) => file.endsWith('.swift')).map((file) => read(`packages/swift/Sources/CoolUI/${file}`)),
   )).join('\n');
+  const composeSources = (await Promise.all((await readdir(new URL('packages/android/src/main/kotlin/dev/coolui/compose/', root))).filter((file) => file.endsWith('.kt')).map((file) => read(`packages/android/src/main/kotlin/dev/coolui/compose/${file}`)))).join('\n');
+  const arkSources = await read('packages/arkui/src/main/ets/components/GeneratedComponents.ets');
+  const wechatManifest = await read('packages/wechat/component-manifest.json');
   const sources = {
     swiftui: swiftSources,
-    compose: (await Promise.all((await readdir(new URL('packages/android/src/main/kotlin/dev/coolui/compose/', root))).filter((file) => file.endsWith('.kt')).map((file) => read(`packages/android/src/main/kotlin/dev/coolui/compose/${file}`)))).join('\n'),
-    arkui: await read('packages/arkui/src/main/ets/components/GeneratedComponents.ets'),
-    wechat: await read('packages/wechat/component-manifest.json'),
+    compose: composeSources,
+    arkui: arkSources,
+    wechat: wechatManifest,
+  };
+  const registries = {
+    swiftui: await read('packages/swift/Sources/CoolUI/GeneratedComponents.swift'),
+    compose: await read('packages/android/src/main/kotlin/dev/coolui/compose/GeneratedComponents.kt'),
+    arkui: arkSources,
+    wechat: wechatManifest,
   };
 
   for (const { name } of contract.components) {
-    if (registryOnlyComponents.includes(name)) continue;
-    assert.match(sources.swiftui, new RegExp(`\\bCool${componentApiName(name)}\\b`), `Swift ${name}`);
-    assert.match(sources.compose, new RegExp(`\\bCool${componentApiName(name)}\\b`), `Compose ${name}`);
-    assert.match(sources.arkui, new RegExp(`\\bCool${componentApiName(name)}\\b`), `ArkUI ${name}`);
-    assert.match(sources.wechat, new RegExp(`cool-${kebab(name)}`), `WeChat ${name}`);
+    for (const platform of platforms) {
+      const expectation = platformExpectation(capabilities.generationModes ?? {}, name, platform);
+      const pattern = platform === 'wechat'
+        ? new RegExp(`cool-${kebab(name)}`)
+        : expectation === 'reservation'
+          ? new RegExp(`"${name}"`)
+          : platform === 'arkui'
+            ? new RegExp(`export struct Cool${componentApiName(name)}\\b`)
+            : new RegExp(`\\bCool${componentApiName(name)}\\b`);
+      assert.match(expectation === 'reservation' ? registries[platform] : sources[platform], pattern, `${platform} ${name} ${expectation}`);
+    }
   }
 });
 
@@ -45,7 +79,13 @@ test('MonthCalendar is reserved in every platform registry', async () => {
     await read('packages/wechat/src/components/cool-month-calendar/index.wxml'),
   ].join('\n');
 
-  assert.deepEqual(registryOnlyComponents, ['MonthCalendar']);
+  assert.deepEqual(
+    Object.fromEntries(platforms.map((platform) => [
+      platform,
+      platformExpectation(capabilities.generationModes ?? {}, 'MonthCalendar', platform),
+    ])),
+    { swiftui: 'reservation', compose: 'reservation', arkui: 'reservation', wechat: 'reservation' },
+  );
   assert.match(swiftRegistry, /"MonthCalendar"/);
   assert.match(kotlinRegistry, /"MonthCalendar"/);
   assert.match(arkRegistry, /"MonthCalendar"/);
