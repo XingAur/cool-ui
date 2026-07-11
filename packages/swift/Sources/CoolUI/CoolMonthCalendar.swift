@@ -23,15 +23,40 @@ public struct CoolMonthCalendarAccessibilityLabels: Hashable, Sendable {
   public let previousMonth: String
   public let nextMonth: String
   public let today: String
+  public let neutralMarker: String
+  public let accentMarker: String
+  public let successMarker: String
+  public let warningMarker: String
+  public let dangerMarker: String
 
   public init(
     previousMonth: String = "Previous month",
     nextMonth: String = "Next month",
-    today: String = "Today"
+    today: String = "Today",
+    neutralMarker: String = "Neutral marker",
+    accentMarker: String = "Accent marker",
+    successMarker: String = "Success marker",
+    warningMarker: String = "Warning marker",
+    dangerMarker: String = "Danger marker"
   ) {
     self.previousMonth = previousMonth
     self.nextMonth = nextMonth
     self.today = today
+    self.neutralMarker = neutralMarker
+    self.accentMarker = accentMarker
+    self.successMarker = successMarker
+    self.warningMarker = warningMarker
+    self.dangerMarker = dangerMarker
+  }
+
+  public func markerLabel(for tone: CoolTone) -> String {
+    switch tone {
+    case .neutral: return neutralMarker
+    case .accent: return accentMarker
+    case .success: return successMarker
+    case .warning: return warningMarker
+    case .danger: return dangerMarker
+    }
   }
 }
 
@@ -193,11 +218,13 @@ public struct CoolMonthCalendar<Header: View, DayContent: View, MarkerContent: V
     return date.formatted(style)
   }
 
-  private func localizedAccessibilityLabel(_ model: CoolCalendarDay) -> String {
+  func localizedAccessibilityLabel(_ model: CoolCalendarDay) -> String {
     var details = [model.accessibilityLabel ?? localizedDay(model.date)]
     if let secondaryText = model.secondaryText { details.append(secondaryText) }
     if let badge = model.badge { details.append(badge) }
-    details.append(contentsOf: model.markers.compactMap(\.accessibilityLabel))
+    details.append(contentsOf: model.markers.map { marker in
+      marker.accessibilityLabel ?? accessibilityLabels.markerLabel(for: marker.tone)
+    })
     return details.joined(separator: ", ")
   }
 
@@ -321,7 +348,6 @@ public struct CoolMonthCalendar<Header: View, DayContent: View, MarkerContent: V
           HStack(spacing: spacingExtraSmall) {
             ForEach(Array(model.markers.enumerated()), id: \.offset) { _, markerModel in
               markerSlot(markerModel)
-                .accessibilityLabel(markerModel.accessibilityLabel ?? markerModel.tone.rawValue)
             }
           }
         }

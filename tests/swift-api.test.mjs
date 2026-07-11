@@ -66,7 +66,7 @@ test('SwiftUI navigation, content, and feedback use composed native APIs', async
 
 test('SwiftUI MonthCalendar exposes controlled models and native grid composition', async () => {
   const calendar = await read('packages/swift/Sources/CoolUI/CoolMonthCalendar.swift');
-  const accessibilityHelper = calendar.match(/private func localizedAccessibilityLabel[\s\S]*?\n  }/)?.[0] ?? '';
+  const accessibilityHelper = calendar.match(/func localizedAccessibilityLabel[\s\S]*?\n  }/)?.[0] ?? '';
 
   assert.match(calendar, /public enum CoolMonthDirection[^\n]*Hashable[^\n]*Sendable/);
   assert.match(calendar, /public struct CoolCalendarMarker: Hashable, Sendable/);
@@ -77,6 +77,12 @@ test('SwiftUI MonthCalendar exposes controlled models and native grid compositio
   assert.match(calendar, /public let previousMonth: String/);
   assert.match(calendar, /public let nextMonth: String/);
   assert.match(calendar, /public let today: String/);
+  assert.match(calendar, /public let neutralMarker: String/);
+  assert.match(calendar, /public let accentMarker: String/);
+  assert.match(calendar, /public let successMarker: String/);
+  assert.match(calendar, /public let warningMarker: String/);
+  assert.match(calendar, /public let dangerMarker: String/);
+  assert.match(calendar, /public func markerLabel\(for tone: CoolTone\) -> String/);
   assert.match(calendar, /public struct CoolMonthCalendar<Header: View, DayContent: View, MarkerContent: View>: View/);
   assert.match(calendar, /header: @escaping \(CoolMonthCalendarHeaderContext\) -> Header/);
   assert.match(calendar, /@Binding private var selection: Date/);
@@ -105,6 +111,10 @@ test('SwiftUI MonthCalendar exposes controlled models and native grid compositio
   assert.doesNotMatch(calendar, /\(Date, @escaping \(CoolMonthDirection\) -> Void\) -> Header/);
   assert.match(accessibilityHelper, /model\.secondaryText/);
   assert.match(accessibilityHelper, /model\.badge/);
+  assert.match(accessibilityHelper, /model\.markers\.map/);
+  assert.match(accessibilityHelper, /accessibilityLabels\.markerLabel\(for: marker\.tone\)/);
+  assert.doesNotMatch(accessibilityHelper, /compactMap/, 'nil marker labels must use the injected tone fallback');
+  assert.doesNotMatch(calendar, /markerSlot\(markerModel\)\s*\n\s*\.accessibilityLabel/, 'ignored marker children must not advertise ineffective labels');
   assert.doesNotMatch(calendar, /date\(byAdding:\s*\.month/, 'the controlled component must not calculate a new month');
   assert.doesNotMatch(calendar, /\.glassEffect\(/, 'calendar days must remain native buttons inside one glass surface');
 });

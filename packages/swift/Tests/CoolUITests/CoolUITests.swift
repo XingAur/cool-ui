@@ -230,3 +230,41 @@ import SwiftUI
 
   #expect(calendar.weekdayLabels.count == 7)
 }
+
+@Test @MainActor func monthCalendarUsesLocalizedMarkerFallbacksInParentAccessibilityLabel() {
+  let date = Date(timeIntervalSince1970: 0)
+  let labels = CoolMonthCalendarAccessibilityLabels(
+    neutralMarker: "中性标记",
+    accentMarker: "强调标记",
+    successMarker: "成功标记",
+    warningMarker: "警告标记",
+    dangerMarker: "危险标记"
+  )
+  let day = CoolCalendarDay(
+    date: date,
+    day: 1,
+    accessibilityLabel: "一月一日",
+    markers: [
+      CoolCalendarMarker(tone: .accent),
+      CoolCalendarMarker(tone: .warning),
+      CoolCalendarMarker(tone: .danger, accessibilityLabel: "自定义危险标记"),
+    ]
+  )
+  let calendar = CoolMonthCalendar(
+    selection: .constant(date),
+    displayedMonth: .constant(date),
+    days: [day],
+    accessibilityLabels: labels
+  )
+
+  #expect(labels.markerLabel(for: .neutral) == "中性标记")
+  #expect(labels.markerLabel(for: .accent) == "强调标记")
+  #expect(labels.markerLabel(for: .success) == "成功标记")
+  #expect(labels.markerLabel(for: .warning) == "警告标记")
+  #expect(labels.markerLabel(for: .danger) == "危险标记")
+  let parentLabel = calendar.localizedAccessibilityLabel(calendar.resolvedDay(day))
+  #expect(parentLabel.contains("强调标记"))
+  #expect(parentLabel.contains("警告标记"))
+  #expect(parentLabel.contains("自定义危险标记"))
+  #expect(parentLabel == "一月一日, 强调标记, 警告标记, 自定义危险标记")
+}
