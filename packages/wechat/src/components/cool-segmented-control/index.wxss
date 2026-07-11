@@ -39,11 +39,15 @@
   border-radius: var(--cool-radius-pill);
 }
 
-.cool-segmented-group {
+.cool-segmented-control {
+  width: 100%;
+  padding: var(--cool-space-xs);
+  box-sizing: border-box;
+}
+.cool-segmented-options {
   display: flex;
   gap: var(--cool-space-xs);
   width: 100%;
-  padding: var(--cool-space-xs);
   box-sizing: border-box;
 }
 .cool-segmented-option {

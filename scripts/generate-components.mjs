@@ -117,7 +117,7 @@ function controlledOptionTemplate(componentName) {
 <scroll-view class="cool-component cool-glass cool-tab-bar cool-material-{{resolvedMaterial}} cool-tone-{{tone}} cool-size-{{size}} {{disabled ? 'is-disabled' : ''}} {{loading ? 'is-loading' : ''}} {{error ? 'is-error' : ''}}" data-component="TabBar" scroll-x="{{true}}" enhanced="{{true}}" show-scrollbar="{{false}}" role="tablist" aria-label="{{resolvedAccessibilityLabel}}">
   <view wx:if="{{loading}}" class="cool-loading" aria-label="loading"></view>
   <view class="cool-tab-track">
-    <view wx:for="{{viewOptions}}" wx:key="_key" class="cool-page-tab {{item._index === selectedIndex ? 'is-active' : ''}} {{item.disabled || disabled ? 'is-disabled' : ''}}" data-index="{{item._index}}" role="tab" aria-selected="{{item._index === selectedIndex}}" aria-disabled="{{item.disabled || disabled}}" bindtap="handleOptionTap">
+    <view wx:for="{{viewOptions}}" wx:key="_key" class="cool-page-tab {{item._index === selectedIndex ? 'is-active' : ''}} {{item.disabled || disabled || loading ? 'is-disabled' : ''}}" data-index="{{item._index}}" role="tab" aria-selected="{{item._index === selectedIndex}}" aria-disabled="{{item.disabled || disabled || loading}}" bindtap="handleOptionTap">
       <text class="cool-option-label">{{item.label}}</text>
       <text wx:if="{{item.badge || item.badge === 0}}" class="cool-option-badge">{{item.badge}}</text>
     </view>
@@ -126,11 +126,13 @@ function controlledOptionTemplate(componentName) {
 </scroll-view>`;
 
   return `
-<view class="cool-component cool-glass cool-segmented-control cool-segmented-group cool-material-{{resolvedMaterial}} cool-tone-{{tone}} cool-size-{{size}} {{disabled ? 'is-disabled' : ''}} {{loading ? 'is-loading' : ''}} {{error ? 'is-error' : ''}}" data-component="SegmentedControl" role="tablist" aria-label="{{resolvedAccessibilityLabel}}">
+<view class="cool-component cool-glass cool-segmented-control cool-material-{{resolvedMaterial}} cool-tone-{{tone}} cool-size-{{size}} {{disabled ? 'is-disabled' : ''}} {{loading ? 'is-loading' : ''}} {{error ? 'is-error' : ''}}" data-component="SegmentedControl">
   <view wx:if="{{loading}}" class="cool-loading" aria-label="loading"></view>
-  <view wx:for="{{viewOptions}}" wx:key="_key" class="cool-segmented-option {{item._index === selectedIndex ? 'is-active' : ''}} {{item.disabled || disabled ? 'is-disabled' : ''}}" data-index="{{item._index}}" role="tab" aria-selected="{{item._index === selectedIndex}}" aria-disabled="{{item.disabled || disabled}}" bindtap="handleOptionTap">
-    <text class="cool-option-label">{{item.label}}</text>
-    <text wx:if="{{item.badge || item.badge === 0}}" class="cool-option-badge">{{item.badge}}</text>
+  <view class="cool-segmented-options" role="tablist" aria-label="{{resolvedAccessibilityLabel}}">
+    <view wx:for="{{viewOptions}}" wx:key="_key" class="cool-segmented-option {{item._index === selectedIndex ? 'is-active' : ''}} {{item.disabled || disabled || loading ? 'is-disabled' : ''}}" data-index="{{item._index}}" role="tab" aria-selected="{{item._index === selectedIndex}}" aria-disabled="{{item.disabled || disabled || loading}}" bindtap="handleOptionTap">
+      <text class="cool-option-label">{{item.label}}</text>
+      <text wx:if="{{item.badge || item.badge === 0}}" class="cool-option-badge">{{item.badge}}</text>
+    </view>
   </view>
   <text wx:if="{{errorMessage}}" class="cool-error" role="alert">{{errorMessage}}</text>
 </view>`;
@@ -197,11 +199,15 @@ function controlledOptionStyles(componentName) {
 
   return `${shared}
 
-.cool-segmented-group {
+.cool-segmented-control {
+  width: 100%;
+  padding: var(--cool-space-xs);
+  box-sizing: border-box;
+}
+.cool-segmented-options {
   display: flex;
   gap: var(--cool-space-xs);
   width: 100%;
-  padding: var(--cool-space-xs);
   box-sizing: border-box;
 }
 .cool-segmented-option {

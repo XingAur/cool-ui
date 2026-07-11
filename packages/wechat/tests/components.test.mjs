@@ -217,7 +217,7 @@ test('controlled TabBar and SegmentedControl render option semantics from stable
     assert.match(wxml, /data-index="\{\{item\._index\}\}"/, tag);
     assert.match(wxml, /bindtap="handleOptionTap"/, tag);
     assert.match(wxml, /item\._index === selectedIndex/, `${tag} first-match active state`);
-    assert.match(wxml, /item\.disabled \|\| disabled/, `${tag} disabled state`);
+    assert.equal((wxml.match(/item\.disabled \|\| disabled \|\| loading/g) ?? []).length, 2, `${tag} visual and aria disabled state`);
     assert.match(wxml, /wx:if="\{\{item\.badge \|\| item\.badge === 0\}\}"/, `${tag} badge`);
     assert.match(wxml, /role="tablist"/, tag);
     assert.match(wxml, /role="tab"/, tag);
@@ -228,7 +228,7 @@ test('controlled TabBar and SegmentedControl render option semantics from stable
   assert.match(tabWxml, /cool-page-tab/);
 
   const segmentWxml = await readFile(new URL('src/components/cool-segmented-control/index.wxml', root), 'utf8');
-  assert.match(segmentWxml, /cool-segmented-group/);
+  assert.match(segmentWxml, /cool-segmented-options/);
 });
 
 test('controlled option components preserve loading and error presentation states', async () => {
@@ -239,6 +239,18 @@ test('controlled option components preserve loading and error presentation state
     assert.match(wxml, /wx:if="\{\{loading\}\}" class="cool-loading" aria-label="loading"/, `${tag} spinner`);
     assert.match(wxml, /wx:if="\{\{errorMessage\}\}" class="cool-error" role="alert"/, `${tag} error message`);
   }
+});
+
+test('controlled option status nodes stay outside option flex and scroll tracks', async () => {
+  const segmentWxml = await readFile(new URL('src/components/cool-segmented-control/index.wxml', root), 'utf8');
+  const segmentStyles = await readFile(new URL('src/components/cool-segmented-control/index.wxss', root), 'utf8');
+  assert.match(segmentWxml, /^<view class="[^"]*cool-segmented-control[^"]*"[^>]*>/);
+  assert.match(segmentWxml, /class="cool-loading"[\s\S]*<view class="cool-segmented-options" role="tablist"[^>]*>[\s\S]*wx:for="\{\{viewOptions\}\}"[\s\S]*<\/view>\s*<text wx:if="\{\{errorMessage\}\}"/);
+  assert.match(segmentStyles, /\.cool-segmented-options\s*\{[\s\S]*?display:\s*flex;/);
+  assert.doesNotMatch(segmentStyles, /\.cool-segmented-control\s*\{[^}]*display:\s*flex;/);
+
+  const tabWxml = await readFile(new URL('src/components/cool-tab-bar/index.wxml', root), 'utf8');
+  assert.match(tabWxml, /class="cool-loading"[\s\S]*<view class="cool-tab-track">[\s\S]*wx:for="\{\{viewOptions\}\}"[\s\S]*<\/view>\s*<text wx:if="\{\{errorMessage\}\}"/);
 });
 
 test('controlled option components emit exact change details without writing value', async () => {
