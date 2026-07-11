@@ -19,6 +19,19 @@ jobs:
         with: { node-version: 22 }
       - run: pnpm install --frozen-lockfile
       - run: pnpm --dir packages/arkui test
+      - name: Verify OHPM prepublish guard
+        working-directory: packages/arkui
+        shell: powershell
+        run: |
+          if (Get-Command ohpm -ErrorAction SilentlyContinue) {
+            $output = (ohpm prepublish 2>&1 | Out-String)
+            if ($LASTEXITCODE -eq 0 -or $output -notmatch 'publicRegistryPublishing=false') {
+              throw "OHPM prepublish did not execute the local-only guard: $output"
+            }
+            Write-Host "OHPM prepublish guard rejected public publishing as expected."
+          } else {
+            Write-Host "::notice::OHPM prepublish validation pending: ohpm is unavailable on this runner."
+          }
       - name: Build HAR
         working-directory: packages/arkui
         run: hvigorw assembleHar --mode module -p product=default

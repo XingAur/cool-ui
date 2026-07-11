@@ -9,8 +9,12 @@ await mkdir(resolve(root, 'artifacts'), { recursive: true });
 const manifests = ['package.json', 'packages/tokens/package.json', 'packages/wechat/package.json', 'packages/arkui/oh-package.json5'];
 const components = [];
 
-function stableUuid(name) {
-  const bytes = createHash('sha256').update(name).digest().subarray(0, 16);
+const URL_NAMESPACE = '6ba7b811-9dad-11d1-80b4-00c04fd430c8';
+
+function uuidV5(namespace, name) {
+  const namespaceBytes = Buffer.from(namespace.replaceAll('-', ''), 'hex');
+  if (namespaceBytes.length !== 16) throw new Error(`Invalid UUID namespace: ${namespace}`);
+  const bytes = createHash('sha1').update(namespaceBytes).update(name, 'utf8').digest().subarray(0, 16);
   bytes[6] = (bytes[6] & 0x0f) | 0x50;
   bytes[8] = (bytes[8] & 0x3f) | 0x80;
   const hex = bytes.toString('hex');
@@ -33,7 +37,7 @@ for (const relative of manifests) {
 const sbom = {
   bomFormat: 'CycloneDX',
   specVersion: '1.6',
-  serialNumber: `urn:uuid:${stableUuid(`cool-ui:${release.version}`)}`,
+  serialNumber: `urn:uuid:${uuidV5(URL_NAMESPACE, `cool-ui@${release.version}`)}`,
   version: 1,
   metadata: { component: { type: 'application', name: 'cool-ui', version: release.version } },
   components,

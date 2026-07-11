@@ -22,7 +22,8 @@
     "artifacts": "node scripts/build-artifacts.mjs",
     "changeset": "changeset",
     "version-packages": "node scripts/sync-release-version.mjs && pnpm generate",
-    "prepublishOnly": "node scripts/guard-public-publish.mjs"
+    "prepublishOnly": "node scripts/guard-public-publish.mjs",
+    "publish:ohpm": "node scripts/guard-public-publish.mjs && ohpm publish packages/arkui"
   },
   "devDependencies": {
     "@changesets/cli": "^2.29.5",

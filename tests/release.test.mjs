@@ -76,6 +76,7 @@ test('local consumer installs the final cooL UI tarball names', async () => {
   assert.equal(generated.status, 0, generated.stderr);
   const sbom = JSON.parse(await read('artifacts/sbom.cdx.json'));
   assert.match(sbom.serialNumber, /^urn:uuid:[0-9a-f]{8}-[0-9a-f]{4}-5[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
+  assert.equal(sbom.serialNumber, 'urn:uuid:d39319ec-2014-537f-8b7b-f30a49a1803d');
   assert.equal(sbom.metadata.component.name, 'cool-ui');
   assert.equal(sbom.metadata.component.version, releaseVersion);
   assert.ok(sbom.components.every(({ version }) => version === releaseVersion));

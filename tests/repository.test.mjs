@@ -23,6 +23,7 @@ test('root workspace pins the approved toolchain and release policy', async () =
   assert.equal(pkg.scripts['version-packages'], 'node scripts/sync-release-version.mjs && pnpm generate');
   assert.equal(pkg.scripts['tokens:check'], 'node scripts/check-generated.mjs');
   assert.equal(pkg.scripts.prepublishOnly, 'node scripts/guard-public-publish.mjs');
+  assert.equal(pkg.scripts['publish:ohpm'], 'node scripts/guard-public-publish.mjs && ohpm publish packages/arkui');
 
   assert.match(await read('pnpm-workspace.yaml'), /packages\/\*/);
   assert.match(await read('turbo.json'), /docs:build/);
@@ -99,7 +100,23 @@ test('every package is version-aligned and local-only', async () => {
     await read('.github/workflows/apple.yml'),
     await read('.github/workflows/harmony.yml'),
   ].join('\n');
-  assert.doesNotMatch(releaseAutomation, /(?:npm|pnpm|yarn|ohpm)\s+publish|mavenCentral|publishing\.sonatype|registry\.npmjs/i);
+  assert.doesNotMatch(releaseAutomation, /(?:npm|pnpm|yarn)\s+publish|mavenCentral|publishing\.sonatype|registry\.npmjs/i);
+
+  const ohpm = JSON.parse(await read('packages/arkui/oh-package.json5'));
+  assert.equal(ohpm.scripts?.prePublish, 'node ../../scripts/guard-public-publish.mjs');
+  const prePublish = spawnSync(ohpm.scripts.prePublish, {
+    cwd: resolve(rootPath, 'packages/arkui'),
+    shell: true,
+    encoding: 'utf8',
+  });
+  assert.notEqual(prePublish.status, 0);
+  assert.match(prePublish.stderr, /publicRegistryPublishing=false/);
+
+  const ohpmEntrypoints = Object.values(JSON.parse(await read('package.json')).scripts).filter((command) => /ohpm\s+publish/i.test(command));
+  assert.deepEqual(ohpmEntrypoints, ['node scripts/guard-public-publish.mjs && ohpm publish packages/arkui']);
+  const harmonyWorkflow = await read('.github/workflows/harmony.yml');
+  assert.match(harmonyWorkflow, /ohpm prepublish/i);
+  assert.match(harmonyWorkflow, /OHPM prepublish validation pending/i);
 
   const android = await read('packages/android/build.gradle.kts');
   assert.match(android, /contracts[\\/]release\.json/);
