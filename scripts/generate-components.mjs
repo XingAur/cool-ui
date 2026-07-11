@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const contract = JSON.parse(await readFile(resolve(root, 'contracts/components.json'), 'utf8'));
 const components = contract.components;
+const handwrittenSwiftComponents = new Set(['ThemeProvider', 'Backdrop', 'GlassSurface', 'GlassGroup', 'Divider']);
 const componentApiName = (name) => name;
 const kebab = (name) => name.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase();
 
@@ -18,7 +19,7 @@ const swift = `
 // Generated from contracts/components.json. Do not edit.
 import SwiftUI
 
-${components.map(({ name, interactive }) => `
+${components.filter(({ name }) => !handwrittenSwiftComponents.has(name)).map(({ name, interactive }) => `
 @available(iOS 26.0, *)
 public struct Cool${componentApiName(name)}: View {
   private let props: CoolComponentProps

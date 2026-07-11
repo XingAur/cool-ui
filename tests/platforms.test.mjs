@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { access, readFile } from 'node:fs/promises';
+import { access, readFile, readdir } from 'node:fs/promises';
 import test from 'node:test';
 
 const root = new URL('../', import.meta.url);
@@ -10,8 +10,12 @@ const componentApiName = (name) => name;
 const kebab = (name) => name.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase();
 
 test('every component has its idiomatic public name on all four platforms', async () => {
+  const swiftFiles = await readdir(new URL('packages/swift/Sources/CoolUI/', root));
+  const swiftSources = (await Promise.all(
+    swiftFiles.filter((file) => file.endsWith('.swift')).map((file) => read(`packages/swift/Sources/CoolUI/${file}`)),
+  )).join('\n');
   const sources = {
-    swiftui: await read('packages/swift/Sources/CoolUI/GeneratedComponents.swift'),
+    swiftui: swiftSources,
     compose: await read('packages/android/src/main/kotlin/dev/coolui/compose/GeneratedComponents.kt'),
     arkui: await read('packages/arkui/src/main/ets/components/GeneratedComponents.ets'),
     wechat: await read('packages/wechat/component-manifest.json'),
@@ -26,9 +30,10 @@ test('every component has its idiomatic public name on all four platforms', asyn
 });
 
 test('platform foundations use native glass capabilities and generated tokens', async () => {
-  const swift = await read('packages/swift/Sources/CoolUI/CoolCore.swift');
+  const swift = `${await read('packages/swift/Sources/CoolUI/CoolCore.swift')}\n${await read('packages/swift/Sources/CoolUI/CoolGlass.swift')}`;
   assert.match(swift, /GlassEffectContainer/);
   assert.match(swift, /glassEffect/);
+  assert.match(swift, /public struct CoolGlassSurface<Content: View>/);
   assert.match(swift, /CoolTokens/);
 
   const android = await read('packages/android/src/main/kotlin/dev/coolui/compose/CoolCore.kt');

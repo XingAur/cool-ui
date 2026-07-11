@@ -1,13 +1,13 @@
 import SwiftUI
 
-public enum CoolThemeMode: String, CaseIterable, Sendable { case system, light, dark }
-public enum CoolGlassMaterial: String, CaseIterable, Sendable { case clear, regular, prominent, solidFallback }
-public enum CoolTone: String, CaseIterable, Sendable { case neutral, accent, success, warning, danger }
-public enum CoolSize: String, CaseIterable, Sendable { case small, medium, large }
-public enum CoolContrastMode: String, CaseIterable, Sendable { case standard, high }
-public enum CoolMotionMode: String, CaseIterable, Sendable { case full, reduced }
-public enum CoolTransparencyMode: String, CaseIterable, Sendable { case full, reduced }
-public enum CoolComponentState: String, CaseIterable, Sendable { case `default`, pressed, focused, selected, disabled, loading, error }
+public enum CoolThemeMode: String, CaseIterable, Hashable, Sendable { case system, light, dark }
+public enum CoolGlassMaterial: String, CaseIterable, Hashable, Sendable { case clear, regular, prominent, solidFallback }
+public enum CoolTone: String, CaseIterable, Hashable, Sendable { case neutral, accent, success, warning, danger }
+public enum CoolSize: String, CaseIterable, Hashable, Sendable { case small, medium, large }
+public enum CoolContrastMode: String, CaseIterable, Hashable, Sendable { case standard, high }
+public enum CoolMotionMode: String, CaseIterable, Hashable, Sendable { case full, reduced }
+public enum CoolTransparencyMode: String, CaseIterable, Hashable, Sendable { case full, reduced }
+public enum CoolComponentState: String, CaseIterable, Hashable, Sendable { case `default`, pressed, focused, selected, disabled, loading, error }
 
 public enum CoolComponentEvent: Sendable, Equatable {
   case activate
@@ -67,36 +67,6 @@ public struct CoolComponentProps: Sendable {
     self.options = options
     self.minimumValue = minimumValue
     self.maximumValue = maximumValue
-  }
-}
-
-public struct CoolThemeConfiguration: Sendable {
-  public var themeMode: CoolThemeMode
-  public var contrastMode: CoolContrastMode
-  public var motionMode: CoolMotionMode
-  public var transparencyMode: CoolTransparencyMode
-
-  public init(
-    themeMode: CoolThemeMode = .system,
-    contrastMode: CoolContrastMode = .standard,
-    motionMode: CoolMotionMode = .full,
-    transparencyMode: CoolTransparencyMode = .full
-  ) {
-    self.themeMode = themeMode
-    self.contrastMode = contrastMode
-    self.motionMode = motionMode
-    self.transparencyMode = transparencyMode
-  }
-}
-
-private struct CoolThemeKey: EnvironmentKey {
-  static let defaultValue = CoolThemeConfiguration()
-}
-
-public extension EnvironmentValues {
-  var coolTheme: CoolThemeConfiguration {
-    get { self[CoolThemeKey.self] }
-    set { self[CoolThemeKey.self] = newValue }
   }
 }
 
