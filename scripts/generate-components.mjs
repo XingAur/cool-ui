@@ -27,18 +27,11 @@ const kotlin = `
 // Generated from contracts/components.json. Do not edit.
 package dev.coolui.compose
 
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-
-${components.map(({ name, interactive }) => `
-@Composable
-fun Cool${componentApiName(name)}(
-  props: CoolComponentProps = CoolComponentProps(label = "${name}"),
-  modifier: Modifier = Modifier,
-  onEvent: (CoolComponentEvent) -> Unit = {},
-) {
-  CoolGeneratedComponent(name = "${name}", interactive = ${interactive}, props = props, modifier = modifier, onEvent = onEvent)
-}`).join('\n')}
+object CoolComponentRegistry {
+  val names: List<String> = listOf(
+${components.map(({ name }) => `    "${name}",`).join('\n')}
+  )
+}
 `;
 
 const ark = `

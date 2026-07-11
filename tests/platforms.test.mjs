@@ -16,7 +16,7 @@ test('every component has its idiomatic public name on all four platforms', asyn
   )).join('\n');
   const sources = {
     swiftui: swiftSources,
-    compose: await read('packages/android/src/main/kotlin/dev/coolui/compose/GeneratedComponents.kt'),
+    compose: (await Promise.all((await readdir(new URL('packages/android/src/main/kotlin/dev/coolui/compose/', root))).filter((file) => file.endsWith('.kt')).map((file) => read(`packages/android/src/main/kotlin/dev/coolui/compose/${file}`)))).join('\n'),
     arkui: await read('packages/arkui/src/main/ets/components/GeneratedComponents.ets'),
     wechat: await read('packages/wechat/component-manifest.json'),
   };
@@ -36,7 +36,7 @@ test('platform foundations use native glass capabilities and generated tokens', 
   assert.match(swift, /public struct CoolGlassSurface<Content: View>/);
   assert.match(swift, /CoolTokens/);
 
-  const android = await read('packages/android/src/main/kotlin/dev/coolui/compose/CoolCore.kt');
+  const android = (await Promise.all((await readdir(new URL('packages/android/src/main/kotlin/dev/coolui/compose/', root))).filter((file) => file.endsWith('.kt')).map((file) => read(`packages/android/src/main/kotlin/dev/coolui/compose/${file}`)))).join('\n');
   assert.match(android, /RenderEffect|\.blur\(/);
   assert.match(android, /CoolTokens/);
   assert.match(android, /Build\.VERSION_CODES\.S/);
