@@ -177,6 +177,16 @@ function normalizeMarker(marker) {
   return normalized;
 }
 
+function isGregorianLeapYear(year) {
+  return year % 400 === 0 || (year % 4 === 0 && year % 100 !== 0);
+}
+
+function daysInGregorianMonth(year, month) {
+  if (month < 1 || month > 12) return 0;
+  const monthLengths = [31, isGregorianLeapYear(year) ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+  return monthLengths[month - 1];
+}
+
 function gregorianDayFromISO(value) {
   if (typeof value !== 'string') return null;
   const match = /^(\\d{4})-(\\d{2})-(\\d{2})$/.exec(value);
@@ -184,10 +194,14 @@ function gregorianDayFromISO(value) {
   const year = Number(match[1]);
   const month = Number(match[2]);
   const day = Number(match[3]);
-  const roundTrip = new Date(Date.UTC(year, month - 1, day));
-  if (year >= 0 && year <= 99) roundTrip.setUTCFullYear(year);
-  if (roundTrip.getUTCFullYear() !== year || roundTrip.getUTCMonth() !== month - 1 || roundTrip.getUTCDate() !== day) return null;
+  if (day < 1 || day > daysInGregorianMonth(year, month)) return null;
   return day;
+}
+
+function groupCalendarWeeks(viewDays) {
+  const viewWeeks = [];
+  for (let index = 0; index < viewDays.length; index += 7) viewWeeks.push(viewDays.slice(index, index + 7));
+  return viewWeeks;
 }
 
 function normalizeDays(days, selectedDate) {
@@ -234,14 +248,15 @@ Component({
     weekdays: { type: Array, value: ['一', '二', '三', '四', '五', '六', '日'] },
     useCustomHeader: { type: Boolean, value: false },
   },
-  data: { componentName: 'MonthCalendar', interactive: true, viewDays: [] },
+  data: { componentName: 'MonthCalendar', interactive: true, viewDays: [], viewWeeks: [] },
   observers: {
     'days, selectedDate': function resolveDays(days, selectedDate) {
       if (!Array.isArray(days)) {
-        this.setData({ viewDays: [] });
+        this.setData({ viewDays: [], viewWeeks: [] });
         return;
       }
-      this.setData({ viewDays: normalizeDays(days, selectedDate) });
+      const viewDays = normalizeDays(days, selectedDate);
+      this.setData({ viewDays, viewWeeks: groupCalendarWeeks(viewDays) });
     },
   },
   methods: {
@@ -277,24 +292,27 @@ function monthCalendarTemplate() {
     <slot wx:else name="header"/>
   </view>
   <view class="cool-calendar-grid" role="grid" aria-label="{{resolvedAccessibilityLabel}}">
-    <text wx:for="{{weekdays}}" wx:key="*this" class="cool-calendar-weekday" role="columnheader">{{item}}</text>
-    <button
-      wx:for="{{viewDays}}"
-      wx:key="_index"
-      class="cool-calendar-day cool-calendar-day-tone-{{item.tone}} {{item.isSelected ? 'is-selected' : ''}} {{item.isToday ? 'is-today' : ''}} {{item.isDisabled || disabled || loading ? 'is-disabled' : ''}}"
-      data-index="{{item._index}}"
-      disabled="{{item.isDisabled || disabled || loading}}"
-      aria-disabled="{{item.isDisabled || disabled || loading}}"
-      aria-selected="{{item.isSelected}}"
-      aria-label="{{item.resolvedAccessibilityLabel}}"
-      role="gridcell"
-      bindtap="handleDayTap"
-    >
-      <day day="{{item}}"/>
-      <view class="cool-calendar-markers">
-        <marker wx:for="{{item.markers}}" wx:for-item="marker" wx:key="index" marker="{{marker}}"/>
+    <view class="cool-calendar-weekday-row" role="row">
+      <text wx:for="{{weekdays}}" wx:key="*this" class="cool-calendar-weekday" role="columnheader">{{item}}</text>
+    </view>
+    <view wx:for="{{viewWeeks}}" wx:for-item="week" wx:key="index" class="cool-calendar-week" role="row">
+      <view wx:for="{{week}}" wx:for-item="item" wx:key="_index" class="cool-calendar-cell" role="gridcell" aria-selected="{{item.isSelected}}" aria-disabled="{{item.isDisabled || disabled || loading}}">
+        <button
+          class="cool-calendar-day cool-calendar-day-tone-{{item.tone}} {{item.isSelected ? 'is-selected' : ''}} {{item.isToday ? 'is-today' : ''}} {{item.isDisabled || disabled || loading ? 'is-disabled' : ''}}"
+          data-index="{{item._index}}"
+          disabled="{{item.isDisabled || disabled || loading}}"
+          aria-disabled="{{item.isDisabled || disabled || loading}}"
+          aria-selected="{{item.isSelected}}"
+          aria-label="{{item.resolvedAccessibilityLabel}}"
+          bindtap="handleDayTap"
+        >
+          <day day="{{item}}"/>
+          <view class="cool-calendar-markers">
+            <marker wx:for="{{item.markers}}" wx:for-item="marker" wx:key="index" marker="{{marker}}"/>
+          </view>
+        </button>
       </view>
-    </button>
+    </view>
   </view>
 </view>`;
 }
@@ -336,13 +354,21 @@ function monthCalendarStyles() {
 .cool-calendar-day::after { border: 0; }
 
 .cool-calendar-grid {
-  display: grid;
-  grid-template-columns: repeat(7, minmax(0, 1fr));
+  display: flex;
+  flex-direction: column;
   gap: var(--cool-space-xs);
   width: 100%;
 }
 
 .cool-calendar-grid { margin-top: var(--cool-space-md); }
+.cool-calendar-weekday-row,
+.cool-calendar-week {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: var(--cool-space-xs);
+  width: 100%;
+}
+.cool-calendar-cell { min-width: 0; }
 .cool-calendar-weekday {
   color: var(--cool-color-light-textSecondary);
   font-size: var(--cool-typography-caption);

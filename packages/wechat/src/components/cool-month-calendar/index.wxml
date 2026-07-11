@@ -8,23 +8,26 @@
     <slot wx:else name="header"/>
   </view>
   <view class="cool-calendar-grid" role="grid" aria-label="{{resolvedAccessibilityLabel}}">
-    <text wx:for="{{weekdays}}" wx:key="*this" class="cool-calendar-weekday" role="columnheader">{{item}}</text>
-    <button
-      wx:for="{{viewDays}}"
-      wx:key="_index"
-      class="cool-calendar-day cool-calendar-day-tone-{{item.tone}} {{item.isSelected ? 'is-selected' : ''}} {{item.isToday ? 'is-today' : ''}} {{item.isDisabled || disabled || loading ? 'is-disabled' : ''}}"
-      data-index="{{item._index}}"
-      disabled="{{item.isDisabled || disabled || loading}}"
-      aria-disabled="{{item.isDisabled || disabled || loading}}"
-      aria-selected="{{item.isSelected}}"
-      aria-label="{{item.resolvedAccessibilityLabel}}"
-      role="gridcell"
-      bindtap="handleDayTap"
-    >
-      <day day="{{item}}"/>
-      <view class="cool-calendar-markers">
-        <marker wx:for="{{item.markers}}" wx:for-item="marker" wx:key="index" marker="{{marker}}"/>
+    <view class="cool-calendar-weekday-row" role="row">
+      <text wx:for="{{weekdays}}" wx:key="*this" class="cool-calendar-weekday" role="columnheader">{{item}}</text>
+    </view>
+    <view wx:for="{{viewWeeks}}" wx:for-item="week" wx:key="index" class="cool-calendar-week" role="row">
+      <view wx:for="{{week}}" wx:for-item="item" wx:key="_index" class="cool-calendar-cell" role="gridcell" aria-selected="{{item.isSelected}}" aria-disabled="{{item.isDisabled || disabled || loading}}">
+        <button
+          class="cool-calendar-day cool-calendar-day-tone-{{item.tone}} {{item.isSelected ? 'is-selected' : ''}} {{item.isToday ? 'is-today' : ''}} {{item.isDisabled || disabled || loading ? 'is-disabled' : ''}}"
+          data-index="{{item._index}}"
+          disabled="{{item.isDisabled || disabled || loading}}"
+          aria-disabled="{{item.isDisabled || disabled || loading}}"
+          aria-selected="{{item.isSelected}}"
+          aria-label="{{item.resolvedAccessibilityLabel}}"
+          bindtap="handleDayTap"
+        >
+          <day day="{{item}}"/>
+          <view class="cool-calendar-markers">
+            <marker wx:for="{{item.markers}}" wx:for-item="marker" wx:key="index" marker="{{marker}}"/>
+          </view>
+        </button>
       </view>
-    </button>
+    </view>
   </view>
 </view>

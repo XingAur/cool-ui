@@ -14,6 +14,16 @@ function normalizeMarker(marker) {
   return normalized;
 }
 
+function isGregorianLeapYear(year) {
+  return year % 400 === 0 || (year % 4 === 0 && year % 100 !== 0);
+}
+
+function daysInGregorianMonth(year, month) {
+  if (month < 1 || month > 12) return 0;
+  const monthLengths = [31, isGregorianLeapYear(year) ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+  return monthLengths[month - 1];
+}
+
 function gregorianDayFromISO(value) {
   if (typeof value !== 'string') return null;
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
@@ -21,10 +31,14 @@ function gregorianDayFromISO(value) {
   const year = Number(match[1]);
   const month = Number(match[2]);
   const day = Number(match[3]);
-  const roundTrip = new Date(Date.UTC(year, month - 1, day));
-  if (year >= 0 && year <= 99) roundTrip.setUTCFullYear(year);
-  if (roundTrip.getUTCFullYear() !== year || roundTrip.getUTCMonth() !== month - 1 || roundTrip.getUTCDate() !== day) return null;
+  if (day < 1 || day > daysInGregorianMonth(year, month)) return null;
   return day;
+}
+
+function groupCalendarWeeks(viewDays) {
+  const viewWeeks = [];
+  for (let index = 0; index < viewDays.length; index += 7) viewWeeks.push(viewDays.slice(index, index + 7));
+  return viewWeeks;
 }
 
 function normalizeDays(days, selectedDate) {
@@ -71,14 +85,15 @@ Component({
     weekdays: { type: Array, value: ['一', '二', '三', '四', '五', '六', '日'] },
     useCustomHeader: { type: Boolean, value: false },
   },
-  data: { componentName: 'MonthCalendar', interactive: true, viewDays: [] },
+  data: { componentName: 'MonthCalendar', interactive: true, viewDays: [], viewWeeks: [] },
   observers: {
     'days, selectedDate': function resolveDays(days, selectedDate) {
       if (!Array.isArray(days)) {
-        this.setData({ viewDays: [] });
+        this.setData({ viewDays: [], viewWeeks: [] });
         return;
       }
-      this.setData({ viewDays: normalizeDays(days, selectedDate) });
+      const viewDays = normalizeDays(days, selectedDate);
+      this.setData({ viewDays, viewWeeks: groupCalendarWeeks(viewDays) });
     },
   },
   methods: {

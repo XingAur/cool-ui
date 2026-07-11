@@ -478,7 +478,7 @@ test('MonthCalendar normalizes controlled days without mutating consumer input',
   const observer = definition.observers['days, selectedDate'];
   const invalidWrites = [];
   observer.call({ setData(update) { invalidWrites.push(update); } }, null, '');
-  assert.deepEqual(plainData(invalidWrites), [{ viewDays: [] }]);
+  assert.deepEqual(plainData(invalidWrites), [{ viewDays: [], viewWeeks: [] }]);
 
   const days = [
     null,
@@ -502,6 +502,7 @@ test('MonthCalendar normalizes controlled days without mutating consumer input',
   observer.call({ setData(update) { writes.push(update); } }, days, '2026-07-12');
   assert.deepEqual(days, snapshot, 'consumer day objects remain immutable');
   const viewDays = plainData(writes[0].viewDays);
+  assert.deepEqual(plainData(writes[0].viewWeeks), [viewDays]);
   assert.equal(viewDays.length, 2);
   assert.equal(viewDays[0]._index, 2);
   assert.equal(viewDays[0].isSelected, false, 'non-empty selectedDate is authoritative');
@@ -526,12 +527,33 @@ test('MonthCalendar normalizes controlled days without mutating consumer input',
     date: '2026-07-12', day: 12, markers: [], tone: 'neutral', isDisabled: false,
     isToday: false, isSelected: true, resolvedAccessibilityLabel: '2026-07-12', _index: 0,
   }]);
+  assert.deepEqual(plainData(uncontrolledWrites[0].viewWeeks), [plainData(uncontrolledWrites[0].viewDays)]);
+});
+
+test('MonthCalendar groups normalized days into seven-day viewWeeks and keeps a short final week', async () => {
+  const { definition } = await loadGeneratedComponent('cool-month-calendar');
+  const observer = definition.observers['days, selectedDate'];
+  const makeDays = (length) => Array.from({ length }, (_, index) => {
+    const date = new Date(Date.UTC(2026, 5, 1 + index));
+    const iso = [date.getUTCFullYear(), String(date.getUTCMonth() + 1).padStart(2, '0'), String(date.getUTCDate()).padStart(2, '0')].join('-');
+    return { date: iso, day: date.getUTCDate() };
+  });
+  for (const [length, weekSizes] of [[42, [7, 7, 7, 7, 7, 7]], [10, [7, 3]]]) {
+    const writes = [];
+    observer.call({ setData(update) { writes.push(update); } }, makeDays(length), '');
+    const update = plainData(writes[0]);
+    assert.equal(update.viewDays.length, length);
+    assert.deepEqual(update.viewWeeks.map((week) => week.length), weekSizes);
+    assert.deepEqual(update.viewWeeks.flat(), update.viewDays);
+    assert.deepEqual(update.viewDays.map((day) => day._index), Array.from({ length }, (_, index) => index));
+  }
 });
 
 test('MonthCalendar validates Gregorian ISO dates, matching day numbers, and selectedDate authority', async () => {
   const { definition, source } = await loadGeneratedComponent('cool-month-calendar');
   const observer = definition.observers['days, selectedDate'];
   const days = [
+    { date: '0000-02-29', day: 29, isSelected: true },
     { date: '2024-02-29', day: 29, isSelected: false },
     { date: '2023-02-29', day: 29, isSelected: true },
     { date: '2026-02-31', day: 31, isSelected: true },
@@ -543,19 +565,21 @@ test('MonthCalendar validates Gregorian ISO dates, matching day numbers, and sel
   const invalidSelectionWrites = [];
   observer.call({ setData(update) { invalidSelectionWrites.push(update); } }, days, '2026-02-31');
   const invalidSelectionDays = plainData(invalidSelectionWrites[0].viewDays);
-  assert.deepEqual(invalidSelectionDays.map((day) => day.date), ['2024-02-29', '2026-04-30']);
-  assert.equal(invalidSelectionDays[0].isSelected, false);
-  assert.equal(invalidSelectionDays[1].isSelected, true, 'invalid selectedDate must not override day.isSelected');
+  assert.deepEqual(invalidSelectionDays.map((day) => day.date), ['0000-02-29', '2024-02-29', '2026-04-30']);
+  assert.equal(invalidSelectionDays[0].isSelected, true, 'year 0000 follows proleptic Gregorian leap-year arithmetic');
+  assert.equal(invalidSelectionDays[1].isSelected, false);
+  assert.equal(invalidSelectionDays[2].isSelected, true, 'invalid selectedDate must not override day.isSelected');
 
   const validSelectionWrites = [];
   observer.call({ setData(update) { validSelectionWrites.push(update); } }, days, '2024-02-29');
   const validSelectionDays = plainData(validSelectionWrites[0].viewDays);
-  assert.equal(validSelectionDays[0].isSelected, true);
-  assert.equal(validSelectionDays[1].isSelected, false, 'valid selectedDate remains authoritative');
-  assert.match(source, /Date\.UTC/);
-  assert.match(source, /getUTCFullYear\(\)/);
-  assert.match(source, /getUTCMonth\(\)/);
-  assert.match(source, /getUTCDate\(\)/);
+  assert.equal(validSelectionDays[0].isSelected, false);
+  assert.equal(validSelectionDays[1].isSelected, true);
+  assert.equal(validSelectionDays[2].isSelected, false, 'valid selectedDate remains authoritative');
+  assert.match(source, /function isGregorianLeapYear/);
+  assert.match(source, /year % 400 === 0/);
+  assert.match(source, /function daysInGregorianMonth/);
+  assert.doesNotMatch(source, /new Date|Date\.UTC/);
 });
 
 test('MonthCalendar emits exact controlled select and monthchange details', async () => {
@@ -623,7 +647,7 @@ test('MonthCalendar select payload deep-clones the normalized day and marker rec
   assert.deepEqual(plainData(viewDay.markers), [{ tone: 'accent', accessibilityLabel: 'Event' }]);
 });
 
-test('MonthCalendar renders one accessible direct-child grid and loading-safe controls on one glass surface', async () => {
+test('MonthCalendar renders grid rows with columnheaders and gridcells wrapping implicit native buttons', async () => {
   const wxml = await readFile(new URL('src/components/cool-month-calendar/index.wxml', root), 'utf8');
   const wxss = await readFile(new URL('src/components/cool-month-calendar/index.wxss', root), 'utf8');
   assert.equal((wxml.match(/cool-glass/g) ?? []).length, 1);
@@ -636,10 +660,14 @@ test('MonthCalendar renders one accessible direct-child grid and loading-safe co
   const gridStart = wxml.indexOf('<view class="cool-calendar-grid"');
   const gridEnd = wxml.lastIndexOf('</view>');
   const grid = wxml.slice(gridStart, gridEnd);
-  assert.match(grid, /^<view[^>]*role="grid"[^>]*>\s*<text wx:for="\{\{weekdays\}\}" wx:key="\*this"[^>]*role="columnheader"[^>]*>[^<]*<\/text>\s*<button/);
+  assert.match(grid, /^<view[^>]*role="grid"[^>]*>\s*<view class="cool-calendar-weekday-row" role="row">\s*<text wx:for="\{\{weekdays\}\}"[^>]*role="columnheader"[^>]*>[^<]*<\/text>\s*<\/view>\s*<view wx:for="\{\{viewWeeks\}\}"[^>]*role="row"[^>]*>/);
+  assert.match(grid, /role="row"[^>]*>\s*<view wx:for="\{\{week\}\}"[^>]*role="gridcell"[^>]*>\s*<button\b/);
   assert.equal((grid.match(/role="columnheader"/g) ?? []).length, 1);
   assert.equal((grid.match(/role="gridcell"/g) ?? []).length, 1);
-  assert.doesNotMatch(wxml, /cool-calendar-weekdays|role="row"/);
+  assert.equal((grid.match(/role="row"/g) ?? []).length, 2, 'weekday row and repeated week row templates');
+  const buttonTags = [...wxml.matchAll(/<button\b[^>]*>/gs)].map((match) => match[0]);
+  assert.equal(buttonTags.length, 3, 'two navigation controls and one repeated day button');
+  assert.ok(buttonTags.every((tag) => !/\srole=/.test(tag)), 'native buttons keep implicit button semantics');
   assert.equal((wxml.match(/<button\b/g) ?? []).length, 3, 'two navigation controls and one repeated day button');
   assert.equal((wxml.match(/class="cool-calendar-nav"[^>]*disabled="\{\{disabled \|\| loading\}\}"/g) ?? []).length, 2);
   assert.match(wxml, /aria-label="\{\{item\.resolvedAccessibilityLabel\}\}"/);
@@ -649,7 +677,7 @@ test('MonthCalendar renders one accessible direct-child grid and loading-safe co
   for (const state of ['is-selected', 'is-today', 'is-disabled', 'cool-calendar-day-tone-']) assert.match(wxml, new RegExp(state));
   assert.match(wxml, /wx:for="\{\{item\.markers\}\}"/);
   assert.match(wxss, /@import "\.\.\/\.\.\/styles\/glass\.wxss"/);
-  assert.match(wxss, /grid-template-columns:\s*repeat\(7,/);
+  assert.match(wxss, /\.cool-calendar-weekday-row,[\s\S]*\.cool-calendar-week\s*\{[\s\S]*display:\s*grid;[\s\S]*grid-template-columns:\s*repeat\(7,/);
   assert.match(wxss, /background:\s*var\(--cool-/);
   assert.match(wxss, /border(?:-color)?:[^;]*var\(--cool-/);
   assert.doesNotMatch(wxss, /#[\da-f]{3,8}|rgba?\(|(?:backdrop-filter|filter):\s*blur|border-radius:\s*\d/i);

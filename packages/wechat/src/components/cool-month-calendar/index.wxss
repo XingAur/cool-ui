@@ -33,13 +33,21 @@
 .cool-calendar-day::after { border: 0; }
 
 .cool-calendar-grid {
-  display: grid;
-  grid-template-columns: repeat(7, minmax(0, 1fr));
+  display: flex;
+  flex-direction: column;
   gap: var(--cool-space-xs);
   width: 100%;
 }
 
 .cool-calendar-grid { margin-top: var(--cool-space-md); }
+.cool-calendar-weekday-row,
+.cool-calendar-week {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: var(--cool-space-xs);
+  width: 100%;
+}
+.cool-calendar-cell { min-width: 0; }
 .cool-calendar-weekday {
   color: var(--cool-color-light-textSecondary);
   font-size: var(--cool-typography-caption);
