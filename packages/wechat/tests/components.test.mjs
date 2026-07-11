@@ -50,14 +50,14 @@ test('all component tags are generated', async () => {
   assert.equal(manifest['cool-month-calendar'], './dist/components/cool-month-calendar/index');
 });
 
-test('reserved MonthCalendar placeholder has no interaction semantics', async () => {
-  const source = [
-    await readFile(new URL('src/components/cool-month-calendar/index.js', root), 'utf8'),
-    await readFile(new URL('src/components/cool-month-calendar/index.wxml', root), 'utf8'),
-  ].join('\n');
-  assert.match(source, /generationMode: 'reserved'/);
-  assert.match(source, /data-generation-mode="reserved"/);
-  assert.doesNotMatch(source, /handleTap|bindtap=|triggerEvent|activate|role="button"/);
+test('MonthCalendar declares controlled serializable properties', async () => {
+  const { definition } = await loadGeneratedComponent('cool-month-calendar');
+  assert.equal(definition.properties.year.type.name, 'Number');
+  assert.equal(definition.properties.month.type.name, 'Number');
+  assert.equal(definition.properties.days.type.name, 'Array');
+  assert.equal(definition.properties.selectedDate.type.name, 'String');
+  assert.equal(definition.properties.weekdays.type.name, 'Array');
+  assert.deepEqual(plainData(definition.properties.weekdays.value), ['一', '二', '三', '四', '五', '六', '日']);
 });
 
 test('shared behavior exposes controlled events and accessibility state inputs', async () => {
@@ -208,6 +208,15 @@ test('WeChat catalog showcases native Button states without replacing the compon
 
 const controlledOptionTags = ['cool-tab-bar', 'cool-segmented-control'];
 const plainData = (value) => JSON.parse(JSON.stringify(value));
+
+async function loadCatalogPage() {
+  const source = await readFile(new URL('../../apps/catalog-wechat/pages/index/index.js', root), 'utf8');
+  let definition;
+  vm.runInNewContext(source, {
+    Page(value) { definition = value; },
+  }, { filename: 'catalog-wechat/pages/index/index.js' });
+  return { definition, source };
+}
 
 test('controlled TabBar and SegmentedControl render option semantics from stable value keys', async () => {
   for (const tag of controlledOptionTags) {
@@ -460,4 +469,166 @@ test('WeChat catalog controls TabBar and SegmentedControl with typed interactive
   assert.match(wxml, /<cool-segmented-control[^>]*options="\{\{segmentOptions\}\}"[^>]*value="\{\{segmentValue\}\}"[^>]*bind:change="handleSegmentChange"/);
   assert.equal((wxml.match(/accessibility-label="Button example"/g) ?? []).length, 1);
   assert.match(wxml, /43 components/);
+});
+
+test('MonthCalendar normalizes controlled days without mutating consumer input', async () => {
+  const { definition } = await loadGeneratedComponent('cool-month-calendar');
+  const observer = definition.observers['days, selectedDate'];
+  const invalidWrites = [];
+  observer.call({ setData(update) { invalidWrites.push(update); } }, null, '');
+  assert.deepEqual(plainData(invalidWrites), [{ days: [], viewDays: [] }]);
+
+  const days = [
+    null,
+    { date: 'not-iso', day: 1 },
+    { date: '2026-07-11', day: 11, isSelected: true, markers: 'invalid' },
+    {
+      date: '2026-07-12', day: 12, secondaryText: 'Today', accessibilityLabel: '',
+      isToday: 1, isDisabled: 0, isSelected: false, tone: 'unknown', badge: '3',
+      markers: [
+        { tone: 'accent', accessibilityLabel: 'event' },
+        { tone: 'invalid' },
+        null,
+        { tone: 'danger' },
+      ],
+    },
+    { date: '2026-07-13', day: 13.5 },
+    { date: '2026-07-14', day: 32 },
+  ];
+  const snapshot = structuredClone(days);
+  const writes = [];
+  observer.call({ setData(update) { writes.push(update); } }, days, '2026-07-12');
+  assert.deepEqual(days, snapshot, 'consumer day objects remain immutable');
+  const viewDays = plainData(writes[0].viewDays);
+  assert.equal(viewDays.length, 2);
+  assert.equal(viewDays[0]._index, 2);
+  assert.equal(viewDays[0].isSelected, false, 'non-empty selectedDate is authoritative');
+  assert.deepEqual(viewDays[0].markers, []);
+  assert.equal(viewDays[1]._index, 3);
+  assert.equal(viewDays[1].resolvedAccessibilityLabel, '2026-07-12 Today');
+  assert.equal(viewDays[1].isSelected, true);
+  assert.equal(viewDays[1].isToday, true);
+  assert.equal(viewDays[1].isDisabled, false);
+  assert.equal(viewDays[1].tone, 'neutral');
+  assert.deepEqual(viewDays[1].markers, [
+    { tone: 'accent', accessibilityLabel: 'event' },
+    { tone: 'neutral' },
+    { tone: 'neutral' },
+  ]);
+
+  const uncontrolledWrites = [];
+  observer.call({ setData(update) { uncontrolledWrites.push(update); } }, [
+    { date: '2026-07-12', day: 12, accessibilityLabel: '', isSelected: true },
+  ], '');
+  assert.deepEqual(plainData(uncontrolledWrites[0].viewDays), [{
+    date: '2026-07-12', day: 12, markers: [], tone: 'neutral', isDisabled: false,
+    isToday: false, isSelected: true, resolvedAccessibilityLabel: '2026-07-12', _index: 0,
+  }]);
+});
+
+test('MonthCalendar emits exact controlled select and monthchange details', async () => {
+  const { definition, source } = await loadGeneratedComponent('cool-month-calendar');
+  assert.doesNotMatch(source, /setData\(\{\s*selectedDate\s*:/);
+  assert.doesNotMatch(source, /setData\(\{\s*(?:year|month)\s*:/);
+  const normalizedDay = {
+    date: '2026-07-12', day: 12, secondaryText: 'Today', markers: [{ tone: 'accent' }],
+    tone: 'accent', isDisabled: false, isToday: true, isSelected: true,
+    resolvedAccessibilityLabel: '2026-07-12 Today', _index: 8,
+  };
+  const invokeDay = (day = normalizedDay, overrides = {}, index = 8) => {
+    const events = [];
+    const writes = [];
+    definition.methods.handleDayTap.call({
+      data: { viewDays: [day], disabled: false, loading: false, ...overrides },
+      setData(update) { writes.push(update); },
+      triggerEvent(name, detail) { events.push({ name, detail }); },
+    }, { currentTarget: { dataset: { index } } });
+    return { events: plainData(events), writes };
+  };
+  assert.deepEqual(invokeDay().events, [{ name: 'select', detail: { day: {
+    date: '2026-07-12', day: 12, secondaryText: 'Today', markers: [{ tone: 'accent' }],
+    tone: 'accent', isDisabled: false, isToday: true, isSelected: true,
+    resolvedAccessibilityLabel: '2026-07-12 Today',
+  } } }]);
+  assert.deepEqual(invokeDay().writes, []);
+  assert.deepEqual(invokeDay({ ...normalizedDay, isDisabled: true }).events, []);
+  assert.deepEqual(invokeDay(normalizedDay, { disabled: true }).events, []);
+  assert.deepEqual(invokeDay(normalizedDay, { loading: true }).events, []);
+  assert.deepEqual(invokeDay(normalizedDay, {}, 99).events, []);
+
+  const invokeMonth = (direction) => {
+    const events = [];
+    const writes = [];
+    definition.methods.handleMonthChange.call({
+      setData(update) { writes.push(update); },
+      triggerEvent(name, detail) { events.push({ name, detail }); },
+    }, { currentTarget: { dataset: { direction } } });
+    return { events: plainData(events), writes };
+  };
+  assert.deepEqual(invokeMonth('previous').events, [{ name: 'monthchange', detail: { direction: 'previous' } }]);
+  assert.deepEqual(invokeMonth('next').events, [{ name: 'monthchange', detail: { direction: 'next' } }]);
+  assert.deepEqual(invokeMonth('later').events, []);
+  assert.deepEqual(invokeMonth('next').writes, []);
+});
+
+test('MonthCalendar renders an accessible seven-column token-only calendar on one glass surface', async () => {
+  const wxml = await readFile(new URL('src/components/cool-month-calendar/index.wxml', root), 'utf8');
+  const wxss = await readFile(new URL('src/components/cool-month-calendar/index.wxss', root), 'utf8');
+  assert.equal((wxml.match(/cool-glass/g) ?? []).length, 1);
+  assert.match(wxml, /cool-material-\{\{resolvedMaterial\}\}/);
+  assert.match(wxml, /cool-tone-\{\{tone\}\}/);
+  assert.match(wxml, /cool-size-\{\{size\}\}/);
+  assert.match(wxml, /\{\{year\}\}[\s\S]*\{\{month\}\}/);
+  assert.match(wxml, /wx:for="\{\{weekdays\}\}"[\s\S]*wx:key="\*this"/);
+  assert.match(wxml, /class="cool-calendar-grid"[\s\S]*wx:for="\{\{viewDays\}\}"/);
+  assert.equal((wxml.match(/<button\b/g) ?? []).length, 3, 'two navigation controls and one repeated day button');
+  assert.match(wxml, /data-direction="previous"[\s\S]*bindtap="handleMonthChange"/);
+  assert.match(wxml, /data-direction="next"[\s\S]*bindtap="handleMonthChange"/);
+  assert.match(wxml, /aria-label="\{\{item\.resolvedAccessibilityLabel\}\}"/);
+  assert.match(wxml, /aria-disabled="\{\{item\.isDisabled \|\| disabled\}\}"/);
+  assert.match(wxml, /disabled="\{\{item\.isDisabled \|\| disabled\}\}"/);
+  for (const state of ['is-selected', 'is-today', 'is-disabled', 'cool-calendar-day-tone-']) assert.match(wxml, new RegExp(state));
+  assert.match(wxml, /wx:if="\{\{item\.badge \|\| item\.badge === 0\}\}"/);
+  assert.match(wxml, /wx:if="\{\{item\.secondaryText\}\}"/);
+  assert.match(wxml, /wx:for="\{\{item\.markers\}\}"/);
+  for (const slot of ['header', 'day', 'marker']) assert.match(wxml, new RegExp(`<slot name="${slot}"`));
+  for (const fallback of ['cool-calendar-header-fallback', 'cool-calendar-day-fallback', 'cool-calendar-marker-fallback']) assert.match(wxml, new RegExp(fallback));
+  assert.match(wxss, /@import "\.\.\/\.\.\/styles\/glass\.wxss"/);
+  assert.match(wxss, /grid-template-columns:\s*repeat\(7,/);
+  assert.match(wxss, /background:\s*var\(--cool-/);
+  assert.match(wxss, /border(?:-color)?:[^;]*var\(--cool-/);
+  assert.doesNotMatch(wxss, /#[\da-f]{3,8}|rgba?\(|(?:backdrop-filter|filter):\s*blur|border-radius:\s*\d/i);
+});
+
+test('WeChat Catalog owns the controlled 42-cell MonthCalendar fixture and month arithmetic', async () => {
+  const wxml = await readFile(new URL('../../apps/catalog-wechat/pages/index/index.wxml', root), 'utf8');
+  const { definition, source } = await loadCatalogPage();
+  const initial = plainData(definition.data);
+  assert.equal(initial.calendarYear, 2026);
+  assert.equal(initial.calendarMonth, 7);
+  assert.equal(initial.calendarSelectedDate, '2026-07-12');
+  assert.equal(initial.calendarDays.length, 42);
+  assert.ok(initial.calendarDays.some((day) => day.isToday));
+  assert.ok(initial.calendarDays.some((day) => day.isDisabled));
+  assert.ok(initial.calendarDays.some((day) => day.secondaryText));
+  assert.ok(initial.calendarDays.some((day) => day.badge));
+  assert.ok(initial.calendarDays.some((day) => day.tone === 'accent'));
+  assert.ok(initial.calendarDays.some((day) => day.markers?.length === 3));
+  assert.match(source, /function createCalendarDays\(year, month/);
+  assert.match(source, /new Date\(year, month - 1, 1\)/);
+  assert.match(source, /onCalendarSelect\(event\)[\s\S]*calendarSelectedDate: event\.detail\.day\.date/);
+  assert.match(source, /onCalendarMonthChange\(event\)[\s\S]*createCalendarDays/);
+  assert.match(wxml, /<cool-month-calendar[^>]*year="\{\{calendarYear\}\}"[^>]*month="\{\{calendarMonth\}\}"[^>]*days="\{\{calendarDays\}\}"[^>]*selected-date="\{\{calendarSelectedDate\}\}"[^>]*bind:select="onCalendarSelect"[^>]*bind:monthchange="onCalendarMonthChange"/);
+
+  const writes = [];
+  definition.onCalendarSelect.call({ setData(update) { writes.push(update); } }, { detail: { day: { date: '2026-07-20' } } });
+  assert.deepEqual(plainData(writes), [{ calendarSelectedDate: '2026-07-20' }]);
+  const monthWrites = [];
+  definition.onCalendarMonthChange.call({
+    data: initial,
+    setData(update) { monthWrites.push(update); },
+  }, { detail: { direction: 'next' } });
+  assert.equal(monthWrites[0].calendarYear, 2026);
+  assert.equal(monthWrites[0].calendarMonth, 8);
+  assert.equal(monthWrites[0].calendarDays.length, 42);
 });

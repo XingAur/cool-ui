@@ -69,12 +69,12 @@ test('every component is checked independently against each platform generation 
   }
 });
 
-test('MonthCalendar is reserved in every platform registry', async () => {
+test('MonthCalendar is native only in WeChat and reserved in other platform registries', async () => {
   const swiftRegistry = await read('packages/swift/Sources/CoolUI/GeneratedComponents.swift');
   const kotlinRegistry = await read('packages/android/src/main/kotlin/dev/coolui/compose/GeneratedComponents.kt');
   const arkRegistry = await read('packages/arkui/src/main/ets/components/GeneratedComponents.ets');
   const wechatManifest = JSON.parse(await read('packages/wechat/component-manifest.json'));
-  const wechatPlaceholder = [
+  const wechatCalendar = [
     await read('packages/wechat/src/components/cool-month-calendar/index.js'),
     await read('packages/wechat/src/components/cool-month-calendar/index.wxml'),
   ].join('\n');
@@ -84,16 +84,18 @@ test('MonthCalendar is reserved in every platform registry', async () => {
       platform,
       platformExpectation(capabilities.generationModes ?? {}, 'MonthCalendar', platform),
     ])),
-    { swiftui: 'reservation', compose: 'reservation', arkui: 'reservation', wechat: 'reservation' },
+    { swiftui: 'reservation', compose: 'reservation', arkui: 'reservation', wechat: 'native' },
   );
   assert.match(swiftRegistry, /"MonthCalendar"/);
   assert.match(kotlinRegistry, /"MonthCalendar"/);
   assert.match(arkRegistry, /"MonthCalendar"/);
   assert.doesNotMatch(arkRegistry, /export struct CoolMonthCalendar\b/);
   assert.equal(wechatManifest['cool-month-calendar'], './dist/components/cool-month-calendar/index');
-  assert.match(wechatPlaceholder, /generationMode: 'reserved'/);
-  assert.match(wechatPlaceholder, /data-generation-mode="reserved"/);
-  assert.doesNotMatch(wechatPlaceholder, /handleTap|bindtap=|triggerEvent|activate|role="button"/);
+  assert.match(wechatCalendar, /handleDayTap/);
+  assert.match(wechatCalendar, /handleMonthChange/);
+  assert.match(wechatCalendar, /triggerEvent\('select'/);
+  assert.match(wechatCalendar, /triggerEvent\('monthchange'/);
+  assert.doesNotMatch(wechatCalendar, /data-generation-mode="reserved"/);
 });
 
 test('platform foundations use native glass capabilities and generated tokens', async () => {

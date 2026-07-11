@@ -62,7 +62,7 @@
       "swiftui": "registryOnly",
       "compose": "registryOnly",
       "arkui": "registryOnly",
-      "wechat": "reserved"
+      "wechat": "native"
     }
   }
 }

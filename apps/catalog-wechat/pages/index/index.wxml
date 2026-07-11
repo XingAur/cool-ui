@@ -55,7 +55,7 @@
     <cool-skeleton label="Skeleton" accessibility-label="Skeleton example" />
     <cool-stat-tile label="StatTile" accessibility-label="StatTile example" />
     <cool-empty-state label="EmptyState" accessibility-label="EmptyState example" />
-    <cool-month-calendar label="MonthCalendar" accessibility-label="MonthCalendar example" />
+    <cool-month-calendar year="{{calendarYear}}" month="{{calendarMonth}}" days="{{calendarDays}}" selected-date="{{calendarSelectedDate}}" bind:select="onCalendarSelect" bind:monthchange="onCalendarMonthChange" accessibility-label="MonthCalendar example" />
   </view></view>
 
   <view class="catalog-section"><text class="catalog-section-title">feedback-overlays</text><view class="catalog-grid">

@@ -138,7 +138,7 @@ function controlledOptionTemplate(componentName) {
 </view>`;
 }
 
-function controlledOptionStyles(componentName) {
+function controlledOptionStylesPrefix() {
   const shared = `
 @import "../../styles/glass.wxss";
 
@@ -155,7 +155,248 @@ function controlledOptionStyles(componentName) {
   border: var(--cool-border-hairline) solid var(--cool-color-light-surfaceTint);
   transition: background var(--cool-motion-fast), border-color var(--cool-motion-fast), color var(--cool-motion-fast);
 }
+`;
+  return shared;
+}
 
+function monthCalendarScript() {
+  return `
+const coolBehavior = require('../../behaviors/cool-ui');
+const calendarTones = new Set(['neutral', 'accent', 'success', 'warning', 'danger']);
+
+function normalizedTone(tone) {
+  return calendarTones.has(tone) ? tone : 'neutral';
+}
+
+function normalizeMarker(marker) {
+  const value = marker && typeof marker === 'object' ? marker : {};
+  const normalized = { tone: normalizedTone(value.tone) };
+  if (typeof value.accessibilityLabel === 'string' && value.accessibilityLabel) {
+    normalized.accessibilityLabel = value.accessibilityLabel;
+  }
+  return normalized;
+}
+
+function normalizeDays(days, selectedDate) {
+  if (!Array.isArray(days)) return [];
+  const hasControlledSelection = typeof selectedDate === 'string' && selectedDate.length > 0;
+  const viewDays = [];
+  days.forEach((item, index) => {
+    if (!item || typeof item !== 'object') return;
+    if (typeof item.date !== 'string' || !/^\\d{4}-\\d{2}-\\d{2}$/.test(item.date)) return;
+    if (!Number.isInteger(item.day) || item.day < 1 || item.day > 31) return;
+    const secondaryText = typeof item.secondaryText === 'string' ? item.secondaryText : '';
+    const accessibilityLabel = typeof item.accessibilityLabel === 'string' ? item.accessibilityLabel : '';
+    const normalized = {
+      date: item.date,
+      day: item.day,
+      markers: Array.isArray(item.markers) ? item.markers.slice(0, 3).map(normalizeMarker) : [],
+      tone: normalizedTone(item.tone),
+      isDisabled: Boolean(item.isDisabled),
+      isToday: Boolean(item.isToday),
+      isSelected: hasControlledSelection ? item.date === selectedDate : Boolean(item.isSelected),
+      resolvedAccessibilityLabel: accessibilityLabel || [item.date, secondaryText].filter(Boolean).join(' ') || String(item.day),
+      _index: index,
+    };
+    if (secondaryText) normalized.secondaryText = secondaryText;
+    if (typeof item.badge === 'string' || typeof item.badge === 'number') normalized.badge = item.badge;
+    viewDays.push(normalized);
+  });
+  return viewDays;
+}
+
+function eventDay(viewDay) {
+  const { _index, ...day } = viewDay;
+  return day;
+}
+
+Component({
+  behaviors: [coolBehavior],
+  options: { multipleSlots: true, styleIsolation: 'apply-shared' },
+  properties: {
+    year: { type: Number, value: 1970 },
+    month: { type: Number, value: 1 },
+    days: { type: Array, value: [] },
+    selectedDate: { type: String, value: '' },
+    weekdays: { type: Array, value: ['一', '二', '三', '四', '五', '六', '日'] },
+  },
+  data: { componentName: 'MonthCalendar', interactive: true, viewDays: [] },
+  observers: {
+    'days, selectedDate': function resolveDays(days, selectedDate) {
+      if (!Array.isArray(days)) {
+        this.setData({ days: [], viewDays: [] });
+        return;
+      }
+      this.setData({ viewDays: normalizeDays(days, selectedDate) });
+    },
+  },
+  methods: {
+    handleDayTap(event) {
+      if (this.data.disabled || this.data.loading) return;
+      const dataset = event && event.currentTarget && event.currentTarget.dataset;
+      const index = dataset ? Number(dataset.index) : Number.NaN;
+      if (!Number.isInteger(index)) return;
+      const day = (Array.isArray(this.data.viewDays) ? this.data.viewDays : []).find((item) => item._index === index);
+      if (!day || day.isDisabled) return;
+      this.triggerEvent('select', { day: eventDay(day) });
+    },
+    handleMonthChange(event) {
+      if (this.data && (this.data.disabled || this.data.loading)) return;
+      const dataset = event && event.currentTarget && event.currentTarget.dataset;
+      const direction = dataset && dataset.direction;
+      if (direction !== 'previous' && direction !== 'next') return;
+      this.triggerEvent('monthchange', { direction });
+    },
+  },
+});`;
+}
+
+function monthCalendarTemplate() {
+  return `
+<view class="cool-component cool-glass cool-month-calendar cool-material-{{resolvedMaterial}} cool-tone-{{tone}} cool-size-{{size}} {{disabled ? 'is-disabled' : ''}}" data-component="MonthCalendar">
+  <view class="cool-calendar-header">
+    <view class="cool-calendar-header-fallback">
+      <button class="cool-calendar-nav" data-direction="previous" disabled="{{disabled || loading}}" aria-label="Previous month" bindtap="handleMonthChange">‹</button>
+      <text class="cool-calendar-title">{{year}} / {{month}}</text>
+      <button class="cool-calendar-nav" data-direction="next" disabled="{{disabled || loading}}" aria-label="Next month" bindtap="handleMonthChange">›</button>
+    </view>
+    <slot name="header"/>
+  </view>
+  <view class="cool-calendar-weekdays" role="row">
+    <text wx:for="{{weekdays}}" wx:key="*this" class="cool-calendar-weekday" role="columnheader">{{item}}</text>
+  </view>
+  <view class="cool-calendar-grid" role="grid">
+    <button
+      wx:for="{{viewDays}}"
+      wx:key="_index"
+      class="cool-calendar-day cool-calendar-day-tone-{{item.tone}} {{item.isSelected ? 'is-selected' : ''}} {{item.isToday ? 'is-today' : ''}} {{item.isDisabled || disabled ? 'is-disabled' : ''}}"
+      data-index="{{item._index}}"
+      disabled="{{item.isDisabled || disabled}}"
+      aria-disabled="{{item.isDisabled || disabled}}"
+      aria-selected="{{item.isSelected}}"
+      aria-label="{{item.resolvedAccessibilityLabel}}"
+      bindtap="handleDayTap"
+    >
+      <view class="cool-calendar-day-fallback">
+        <text class="cool-calendar-day-number">{{item.day}}</text>
+        <text wx:if="{{item.secondaryText}}" class="cool-calendar-secondary">{{item.secondaryText}}</text>
+        <text wx:if="{{item.badge || item.badge === 0}}" class="cool-calendar-badge">{{item.badge}}</text>
+      </view>
+      <slot name="day"/>
+      <view class="cool-calendar-markers">
+        <view wx:for="{{item.markers}}" wx:for-item="marker" wx:key="index" class="cool-calendar-marker-fallback cool-calendar-marker cool-calendar-marker-{{marker.tone}}" aria-label="{{marker.accessibilityLabel}}"></view>
+        <slot name="marker"/>
+      </view>
+    </button>
+  </view>
+</view>`;
+}
+
+function monthCalendarStyles() {
+  return `
+@import "../../styles/glass.wxss";
+
+.cool-month-calendar {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.cool-calendar-header,
+.cool-calendar-header-fallback {
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.cool-calendar-header { flex-direction: column; gap: var(--cool-space-xs); }
+.cool-calendar-header-fallback { justify-content: space-between; gap: var(--cool-space-sm); }
+.cool-calendar-title { font-size: var(--cool-typography-title); }
+
+.cool-calendar-nav {
+  min-width: var(--cool-size-touchTarget);
+  min-height: var(--cool-size-touchTarget);
+  margin: 0;
+  padding: var(--cool-space-xs);
+  color: var(--cool-color-light-text);
+  font-size: var(--cool-typography-title);
+  line-height: normal;
+  background: var(--cool-color-light-surface);
+  border: var(--cool-border-hairline) solid var(--cool-color-light-surfaceTint);
+  border-radius: var(--cool-radius-pill);
+}
+
+.cool-calendar-nav::after,
+.cool-calendar-day::after { border: 0; }
+
+.cool-calendar-weekdays,
+.cool-calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: var(--cool-space-xs);
+  width: 100%;
+}
+
+.cool-calendar-weekdays { margin-top: var(--cool-space-md); }
+.cool-calendar-grid { margin-top: var(--cool-space-xs); }
+.cool-calendar-weekday {
+  color: var(--cool-color-light-textSecondary);
+  font-size: var(--cool-typography-caption);
+  text-align: center;
+}
+
+.cool-calendar-day {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--cool-space-xs);
+  width: 100%;
+  min-width: 0;
+  min-height: var(--cool-size-touchTarget);
+  margin: 0;
+  padding: var(--cool-space-xs);
+  color: var(--cool-color-light-text);
+  font-size: var(--cool-typography-body);
+  line-height: normal;
+  background: var(--cool-color-light-surface);
+  border: var(--cool-border-hairline) solid var(--cool-color-light-surfaceTint);
+  border-radius: var(--cool-radius-medium);
+}
+
+.cool-calendar-day-fallback { display: flex; flex-direction: column; align-items: center; gap: var(--cool-space-xs); }
+.cool-calendar-day-number { font-size: var(--cool-typography-body); }
+.cool-calendar-secondary { color: var(--cool-color-light-textSecondary); font-size: var(--cool-typography-caption); }
+.cool-calendar-badge {
+  padding: var(--cool-space-xs);
+  color: var(--cool-color-light-text);
+  font-size: var(--cool-typography-caption);
+  background: var(--cool-color-light-surfaceTint);
+  border-radius: var(--cool-radius-pill);
+}
+
+.cool-calendar-day.is-selected { color: var(--cool-color-light-background); background: var(--cool-color-light-accent); border-color: var(--cool-color-light-accent); }
+.cool-calendar-day.is-today { border-width: var(--cool-border-focus); border-color: var(--cool-color-light-accent); }
+.cool-calendar-day.is-disabled { opacity: var(--cool-opacity-disabled); }
+.cool-calendar-day-tone-accent { border-color: var(--cool-color-light-accent); }
+.cool-calendar-day-tone-success { border-color: var(--cool-color-light-success); }
+.cool-calendar-day-tone-warning { border-color: var(--cool-color-light-warning); }
+.cool-calendar-day-tone-danger { border-color: var(--cool-color-light-danger); }
+
+.cool-calendar-markers { display: flex; align-items: center; justify-content: center; gap: var(--cool-space-xs); }
+.cool-calendar-marker {
+  width: var(--cool-space-xs);
+  height: var(--cool-space-xs);
+  background: var(--cool-color-light-surfaceTint);
+  border-radius: var(--cool-radius-pill);
+}
+.cool-calendar-marker-accent { background: var(--cool-color-light-accent); }
+.cool-calendar-marker-success { background: var(--cool-color-light-success); }
+.cool-calendar-marker-warning { background: var(--cool-color-light-warning); }
+.cool-calendar-marker-danger { background: var(--cool-color-light-danger); }`;
+}
+
+function controlledOptionStyles(componentName) {
+  const shared = `${controlledOptionStylesPrefix()}
 .cool-page-tab.is-active,
 .cool-segmented-option.is-active {
   color: var(--cool-color-light-background);
@@ -298,6 +539,13 @@ Component({
   <slot/>
 </view>`);
     await output(`${dir}/index.wxss`, `@import "../../styles/glass.wxss";`);
+    continue;
+  }
+  if (component.name === 'MonthCalendar') {
+    await output(`${dir}/index.js`, monthCalendarScript());
+    await output(`${dir}/index.json`, JSON.stringify({ component: true, styleIsolation: 'apply-shared' }, null, 2));
+    await output(`${dir}/index.wxml`, monthCalendarTemplate());
+    await output(`${dir}/index.wxss`, monthCalendarStyles());
     continue;
   }
   if (component.name === 'Button') {
@@ -473,12 +721,46 @@ const usingComponents = Object.fromEntries(Object.keys(manifest).map((tag) => [t
 const catalogComponentExample = ({ name }) => {
   if (name === 'TabBar') return '<cool-tab-bar options="{{tabOptions}}" value="{{tabValue}}" bind:change="handleTabChange" accessibility-label="TabBar example" />';
   if (name === 'SegmentedControl') return '<cool-segmented-control options="{{segmentOptions}}" value="{{segmentValue}}" bind:change="handleSegmentChange" accessibility-label="SegmentedControl example" />';
+  if (name === 'MonthCalendar') return '<cool-month-calendar year="{{calendarYear}}" month="{{calendarMonth}}" days="{{calendarDays}}" selected-date="{{calendarSelectedDate}}" bind:select="onCalendarSelect" bind:monthchange="onCalendarMonthChange" accessibility-label="MonthCalendar example" />';
   return `<cool-${kebab(name)} label="${name}" accessibility-label="${name} example" />`;
 };
 await output('apps/catalog-wechat/app.json', JSON.stringify({ pages: ['pages/index/index'], window: { navigationStyle: 'custom', backgroundColor: '#071018' }, style: 'v2', lazyCodeLoading: 'requiredComponents' }, null, 2));
 await output('apps/catalog-wechat/app.js', `App({ globalData: { catalogVersion: '${release.version}' } });`);
 await output('apps/catalog-wechat/pages/index/index.json', JSON.stringify({ usingComponents }, null, 2));
 await output('apps/catalog-wechat/pages/index/index.js', `
+function padCalendarPart(value) {
+  return String(value).padStart(2, '0');
+}
+
+function calendarISODate(date) {
+  return [date.getFullYear(), padCalendarPart(date.getMonth() + 1), padCalendarPart(date.getDate())].join('-');
+}
+
+function createCalendarDays(year, month) {
+  const first = new Date(year, month - 1, 1);
+  const mondayOffset = (first.getDay() + 6) % 7;
+  return Array.from({ length: 42 }, (_, index) => {
+    const date = new Date(year, month - 1, 1 - mondayOffset + index);
+    const iso = calendarISODate(date);
+    const day = {
+      date: iso,
+      day: date.getDate(),
+      isDisabled: date.getMonth() !== month - 1,
+      tone: iso === '2026-07-12' ? 'accent' : 'neutral',
+    };
+    if (iso === '2026-07-05') day.isDisabled = true;
+    if (iso === '2026-07-12') {
+      day.isToday = true;
+      day.secondaryText = 'Today';
+      day.badge = '3';
+    }
+    if (iso === '2026-07-16') {
+      day.markers = [{ tone: 'accent' }, { tone: 'success' }, { tone: 'warning' }];
+    }
+    return day;
+  });
+}
+
 Page({
   data: {
     version: '${release.version}',
@@ -495,6 +777,10 @@ Page({
       { value: 2, label: 'Week' },
       { value: 3, label: 'Month', badge: 'New' },
     ],
+    calendarYear: 2026,
+    calendarMonth: 7,
+    calendarSelectedDate: '2026-07-12',
+    calendarDays: createCalendarDays(2026, 7),
   },
   handleButtonSubmit(event) {
     this.setData({ buttonSubmitResult: JSON.stringify(event.detail) });
@@ -504,6 +790,18 @@ Page({
   },
   handleSegmentChange(event) {
     this.setData({ segmentValue: event.detail.value });
+  },
+  onCalendarSelect(event) {
+    this.setData({ calendarSelectedDate: event.detail.day.date });
+  },
+  onCalendarMonthChange(event) {
+    const direction = event && event.detail && event.detail.direction;
+    if (direction !== 'previous' && direction !== 'next') return;
+    const offset = direction === 'previous' ? -1 : 1;
+    const displayedMonth = new Date(this.data.calendarYear, this.data.calendarMonth - 1 + offset, 1);
+    const calendarYear = displayedMonth.getFullYear();
+    const calendarMonth = displayedMonth.getMonth() + 1;
+    this.setData({ calendarYear, calendarMonth, calendarDays: createCalendarDays(calendarYear, calendarMonth) });
   },
 });`);
 await output('apps/catalog-wechat/pages/index/index.wxml', `

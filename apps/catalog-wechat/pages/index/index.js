@@ -1,3 +1,36 @@
+function padCalendarPart(value) {
+  return String(value).padStart(2, '0');
+}
+
+function calendarISODate(date) {
+  return [date.getFullYear(), padCalendarPart(date.getMonth() + 1), padCalendarPart(date.getDate())].join('-');
+}
+
+function createCalendarDays(year, month) {
+  const first = new Date(year, month - 1, 1);
+  const mondayOffset = (first.getDay() + 6) % 7;
+  return Array.from({ length: 42 }, (_, index) => {
+    const date = new Date(year, month - 1, 1 - mondayOffset + index);
+    const iso = calendarISODate(date);
+    const day = {
+      date: iso,
+      day: date.getDate(),
+      isDisabled: date.getMonth() !== month - 1,
+      tone: iso === '2026-07-12' ? 'accent' : 'neutral',
+    };
+    if (iso === '2026-07-05') day.isDisabled = true;
+    if (iso === '2026-07-12') {
+      day.isToday = true;
+      day.secondaryText = 'Today';
+      day.badge = '3';
+    }
+    if (iso === '2026-07-16') {
+      day.markers = [{ tone: 'accent' }, { tone: 'success' }, { tone: 'warning' }];
+    }
+    return day;
+  });
+}
+
 Page({
   data: {
     version: '0.2.0',
@@ -14,6 +47,10 @@ Page({
       { value: 2, label: 'Week' },
       { value: 3, label: 'Month', badge: 'New' },
     ],
+    calendarYear: 2026,
+    calendarMonth: 7,
+    calendarSelectedDate: '2026-07-12',
+    calendarDays: createCalendarDays(2026, 7),
   },
   handleButtonSubmit(event) {
     this.setData({ buttonSubmitResult: JSON.stringify(event.detail) });
@@ -23,5 +60,17 @@ Page({
   },
   handleSegmentChange(event) {
     this.setData({ segmentValue: event.detail.value });
+  },
+  onCalendarSelect(event) {
+    this.setData({ calendarSelectedDate: event.detail.day.date });
+  },
+  onCalendarMonthChange(event) {
+    const direction = event && event.detail && event.detail.direction;
+    if (direction !== 'previous' && direction !== 'next') return;
+    const offset = direction === 'previous' ? -1 : 1;
+    const displayedMonth = new Date(this.data.calendarYear, this.data.calendarMonth - 1 + offset, 1);
+    const calendarYear = displayedMonth.getFullYear();
+    const calendarMonth = displayedMonth.getMonth() + 1;
+    this.setData({ calendarYear, calendarMonth, calendarDays: createCalendarDays(calendarYear, calendarMonth) });
   },
 });
