@@ -26,9 +26,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import dev.coolui.compose.*
 import dev.coolui.tokens.CoolTokens
+import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.YearMonth
+
+private val catalogFirstDayOfWeek = DayOfWeek.MONDAY
+private val catalogWeekdays = listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
 
 class MainActivity : ComponentActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
@@ -69,7 +73,7 @@ private fun Catalog() {
           selectedDate = selectedDate,
           displayedMonth = displayedMonth,
           days = calendarDays,
-          weekdays = listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"),
+          weekdays = catalogWeekdays,
           onDaySelected = { day ->
             selectedDate = day.date
             calendarDays = createCalendarDays(displayedMonth)
@@ -93,7 +97,8 @@ private fun Catalog() {
 
 private fun createCalendarDays(displayedMonth: YearMonth): List<CoolCalendarDay> {
   val firstDay = displayedMonth.atDay(1)
-  val gridStart = firstDay.minusDays((firstDay.dayOfWeek.value - 1).toLong())
+  val leadingDays = Math.floorMod(firstDay.dayOfWeek.value - catalogFirstDayOfWeek.value, 7)
+  val gridStart = firstDay.minusDays(leadingDays.toLong())
   return List(42) { index ->
     val date = gridStart.plusDays(index.toLong())
     val isTodayAndSelectedFixture = date == LocalDate.of(2026, 7, 12)

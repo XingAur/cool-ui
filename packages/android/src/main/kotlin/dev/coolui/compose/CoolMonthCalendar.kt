@@ -17,9 +17,8 @@ import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.itemsIndexed
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
@@ -29,20 +28,26 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.disabled
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import dev.coolui.tokens.CoolTokens
 import java.text.DateFormatSymbols
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
+import java.util.Calendar
 import java.util.Locale
 
 enum class CoolMonthDirection { Previous, Next }
@@ -53,7 +58,6 @@ data class CoolCalendarMarker(
   val accessibilityLabel: String? = null,
 )
 
-@Immutable
 data class CoolCalendarDay(
   val date: LocalDate,
   val day: Int,
@@ -83,15 +87,19 @@ class CoolMonthCalendarAccessibilityLabels(
 
 internal fun CoolCalendarDay.resolvedAccessibilityLabel(
   labels: CoolMonthCalendarAccessibilityLabels,
+  dateFormatter: DateTimeFormatter,
 ): String {
   accessibilityLabel?.takeIf(String::isNotBlank)?.let { return it }
   return buildList {
-    add(date.toString())
+    add(date.format(dateFormatter))
     secondaryText?.takeIf(String::isNotBlank)?.let(::add)
     badge?.takeIf(String::isNotBlank)?.let { add(it) }
     if (isToday) add(labels.today)
     markers.forEach { marker ->
-      add(marker.accessibilityLabel?.takeIf(String::isNotBlank) ?: labels.markerToneLabel(marker.tone))
+      add(
+        marker.accessibilityLabel?.takeIf(String::isNotBlank)
+          ?: labels.markerToneLabel(marker.tone),
+      )
     }
   }.joinToString(", ")
 }
@@ -108,17 +116,70 @@ internal fun dispatchCoolCalendarDaySelection(
 
 internal fun defaultCoolCalendarWeekdays(locale: Locale): List<String> {
   val shortWeekdays = DateFormatSymbols.getInstance(locale).shortWeekdays
-  return listOf(
-    shortWeekdays[2],
-    shortWeekdays[3],
-    shortWeekdays[4],
-    shortWeekdays[5],
-    shortWeekdays[6],
-    shortWeekdays[7],
-    shortWeekdays[1],
-  )
+  val firstDayOfWeek = Calendar.getInstance(locale).firstDayOfWeek
+  return List(7) { offset ->
+    val calendarDay = ((firstDayOfWeek - Calendar.SUNDAY + offset) % 7) + Calendar.SUNDAY
+    shortWeekdays[calendarDay]
+  }
 }
 
+internal data class ResolvedCoolCalendarDayItem(
+  val day: CoolCalendarDay,
+  val key: String,
+)
+
+internal fun resolveCoolCalendarDayItems(
+  days: List<CoolCalendarDay>,
+  selectedDate: LocalDate,
+): List<ResolvedCoolCalendarDayItem> {
+  val occurrences = mutableMapOf<LocalDate, Int>()
+  return days.map { day ->
+    val occurrence = occurrences.getOrDefault(day.date, 0)
+    occurrences[day.date] = occurrence + 1
+    ResolvedCoolCalendarDayItem(day.resolved(selectedDate), "${day.date}#$occurrence")
+  }
+}
+
+internal fun resolveCoolCalendarDayCellHeight(
+  customHeight: Dp?,
+  controlLarge: Dp,
+  touchTarget: Dp,
+  fontScale: Float,
+): Dp = maxOf(
+  touchTarget,
+  controlLarge,
+  customHeight ?: ((controlLarge + touchTarget) * fontScale.coerceAtLeast(1f)),
+)
+
+internal fun resolveCoolCalendarGridHeight(
+  dayCellHeight: Dp,
+  rowCount: Int,
+  rowSpacing: Dp,
+): Dp = if (rowCount <= 0) {
+  0.dp
+} else {
+  (dayCellHeight * rowCount) + (rowSpacing * (rowCount - 1))
+}
+
+private data class CoolMonthCalendarMetrics(
+  val borderWidth: Dp,
+  val radius: Dp,
+  val spaceXs: Dp,
+  val spaceSm: Dp,
+  val spaceMd: Dp,
+  val touchTarget: Dp,
+  val dayCellHeight: Dp,
+  val edgeOpacity: Float,
+  val highlightOpacity: Float,
+  val disabledOpacity: Float,
+)
+
+/**
+ * A strictly controlled month calendar whose consumer supplies all visible days.
+ *
+ * @param dayCellHeight Optional explicit cell constraint. When custom dayContent is taller than
+ * the token-derived default, pass a matching dayCellHeight so the lazy grid can measure exactly.
+ */
 @Composable
 fun CoolMonthCalendar(
   selectedDate: LocalDate,
@@ -130,62 +191,100 @@ fun CoolMonthCalendar(
   modifier: Modifier = Modifier,
   material: GlassMaterial = GlassMaterial.regular,
   tone: Tone = Tone.neutral,
+  dayCellHeight: Dp? = null,
   locale: Locale = Locale.getDefault(),
   accessibilityLabels: CoolMonthCalendarAccessibilityLabels = CoolMonthCalendarAccessibilityLabels(),
   header: (@Composable (YearMonth, (CoolMonthDirection) -> Unit) -> Unit)? = null,
   dayContent: (@Composable (CoolCalendarDay) -> Unit)? = null,
   markerContent: (@Composable (CoolCalendarMarker) -> Unit)? = null,
 ) {
-  val resolvedDays = days.map { it.resolved(selectedDate) }
-  val resolvedWeekdays = if (weekdays.size == 7) weekdays else defaultCoolCalendarWeekdays(locale)
-  val monthPattern = DateTimePatternGenerator.getInstance(locale).getBestPattern("yMMMM")
-  val monthFormatter = DateTimeFormatter.ofPattern(monthPattern, locale)
-  val dayRowCount = ((resolvedDays.size + 6) / 7).coerceAtLeast(1)
-  val calendarHeight = 112.dp + (96.dp * dayRowCount)
+  val fontScale = LocalDensity.current.fontScale
+  val metrics = remember(dayCellHeight, fontScale) {
+    val touchTarget = CoolTokens.sizeTouchTarget.tokenDp()
+    CoolMonthCalendarMetrics(
+      borderWidth = CoolTokens.borderHairline.tokenDp(),
+      radius = CoolTokens.radiusSmall.tokenDp(),
+      spaceXs = CoolTokens.spaceXs.tokenDp(),
+      spaceSm = CoolTokens.spaceSm.tokenDp(),
+      spaceMd = CoolTokens.spaceMd.tokenDp(),
+      touchTarget = touchTarget,
+      dayCellHeight = resolveCoolCalendarDayCellHeight(
+        dayCellHeight,
+        CoolTokens.sizeControlLarge.tokenDp(),
+        touchTarget,
+        fontScale,
+      ),
+      edgeOpacity = CoolTokens.lightingEdgeOpacity.toFloat(),
+      highlightOpacity = CoolTokens.lightingHighlightOpacity.toFloat(),
+      disabledOpacity = CoolTokens.opacityDisabled.toFloat(),
+    )
+  }
+  val resolvedWeekdays = remember(weekdays, locale) {
+    if (weekdays.size == 7) weekdays else defaultCoolCalendarWeekdays(locale)
+  }
+  val monthFormatter = remember(locale) {
+    val monthPattern = DateTimePatternGenerator.getInstance(locale).getBestPattern("yMMMM")
+    DateTimeFormatter.ofPattern(monthPattern, locale)
+  }
+  val dateFormatter = remember(locale) {
+    DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG).withLocale(locale)
+  }
+  val resolvedItems = remember(days, selectedDate) { resolveCoolCalendarDayItems(days, selectedDate) }
+  val dayRowCount = (resolvedItems.size + 6) / 7
+  val gridHeight = resolveCoolCalendarGridHeight(metrics.dayCellHeight, dayRowCount, metrics.spaceXs)
 
   CoolGlassSurface(modifier = modifier, material = material, tone = tone) {
     BoxWithConstraints(Modifier.fillMaxWidth()) {
-      val minimumCalendarWidth = 360.dp
+      val minimumCalendarWidth = (metrics.touchTarget * 7) + (metrics.spaceXs * 6)
       val calendarWidth = maxOf(maxWidth, minimumCalendarWidth)
       LazyRow(Modifier.fillMaxWidth()) {
         item {
-          LazyVerticalGrid(
-            columns = GridCells.Fixed(7),
-            modifier = Modifier.width(calendarWidth).height(calendarHeight),
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp),
+          Column(
+            modifier = Modifier.width(calendarWidth),
+            verticalArrangement = Arrangement.spacedBy(metrics.spaceMd),
           ) {
-            item(span = { GridItemSpan(7) }) {
-              if (header == null) {
-                DefaultCoolMonthCalendarHeader(
-                  title = displayedMonth.format(monthFormatter),
-                  labels = accessibilityLabels,
-                  onMonthChange = onMonthChange,
+            if (header == null) {
+              DefaultCoolMonthCalendarHeader(
+                title = displayedMonth.format(monthFormatter),
+                labels = accessibilityLabels,
+                onMonthChange = onMonthChange,
+              )
+            } else {
+              header(displayedMonth, onMonthChange)
+            }
+            Row(
+              modifier = Modifier.fillMaxWidth(),
+              horizontalArrangement = Arrangement.spacedBy(metrics.spaceXs),
+            ) {
+              resolvedWeekdays.forEach { weekday ->
+                Text(
+                  text = weekday,
+                  modifier = Modifier.weight(1f).padding(vertical = metrics.spaceSm),
+                  style = MaterialTheme.typography.labelMedium,
+                  fontWeight = FontWeight.SemiBold,
                 )
-              } else {
-                header(displayedMonth, onMonthChange)
               }
             }
-            items(7) { index ->
-              Text(
-                text = resolvedWeekdays[index],
-                modifier = Modifier.padding(vertical = 8.dp),
-                style = MaterialTheme.typography.labelMedium,
-                fontWeight = FontWeight.SemiBold,
-              )
-            }
-            itemsIndexed(
-              items = resolvedDays,
-              key = { index, day -> "${day.date}:$index" },
-            ) { _, day ->
-              CoolMonthCalendarDayButton(
-                day = day,
-                selectedDate = selectedDate,
-                labels = accessibilityLabels,
-                onDaySelected = onDaySelected,
-                dayContent = dayContent,
-                markerContent = markerContent,
-              )
+            if (resolvedItems.isNotEmpty()) {
+              LazyVerticalGrid(
+                columns = GridCells.Fixed(7),
+                modifier = Modifier.fillMaxWidth().height(gridHeight),
+                horizontalArrangement = Arrangement.spacedBy(metrics.spaceXs),
+                verticalArrangement = Arrangement.spacedBy(metrics.spaceXs),
+              ) {
+                items(items = resolvedItems, key = { it.key }) { item ->
+                  CoolMonthCalendarDayButton(
+                    day = item.day,
+                    selectedDate = selectedDate,
+                    labels = accessibilityLabels,
+                    dateFormatter = dateFormatter,
+                    metrics = metrics,
+                    onDaySelected = onDaySelected,
+                    dayContent = dayContent,
+                    markerContent = markerContent,
+                  )
+                }
+              }
             }
           }
         }
@@ -226,19 +325,25 @@ private fun CoolMonthCalendarDayButton(
   day: CoolCalendarDay,
   selectedDate: LocalDate,
   labels: CoolMonthCalendarAccessibilityLabels,
+  dateFormatter: DateTimeFormatter,
+  metrics: CoolMonthCalendarMetrics,
   onDaySelected: (CoolCalendarDay) -> Unit,
   dayContent: (@Composable (CoolCalendarDay) -> Unit)?,
   markerContent: (@Composable (CoolCalendarMarker) -> Unit)?,
 ) {
   val containerColor = when {
-    day.isSelected -> day.tone.tokenColor().copy(alpha = .88f)
-    day.isToday -> day.tone.tokenColor().copy(alpha = .24f)
+    day.isSelected -> day.tone.tokenColor().copy(alpha = metrics.highlightOpacity)
+    day.isToday -> day.tone.tokenColor().copy(alpha = metrics.edgeOpacity)
     else -> Color.Transparent
   }
-  val contentColor = if (day.isSelected) Color.White else MaterialTheme.colorScheme.onSurface
+  val contentColor = if (day.isSelected) {
+    MaterialTheme.colorScheme.onPrimary
+  } else {
+    MaterialTheme.colorScheme.onSurface
+  }
   val borderColor = if (day.isToday || day.isSelected) day.tone.tokenColor() else Color.Transparent
   val semanticsModifier = Modifier.semantics {
-    contentDescription = day.resolvedAccessibilityLabel(labels)
+    contentDescription = day.resolvedAccessibilityLabel(labels, dateFormatter)
     selected = day.isSelected
     if (day.isDisabled) disabled()
   }
@@ -247,29 +352,30 @@ private fun CoolMonthCalendarDayButton(
     onClick = { dispatchCoolCalendarDaySelection(day, selectedDate, onDaySelected) },
     enabled = !day.isDisabled,
     modifier = semanticsModifier
-      .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
-      .border(1.dp, borderColor, RoundedCornerShape(12.dp)),
-    shape = RoundedCornerShape(12.dp),
+      .height(metrics.dayCellHeight)
+      .sizeIn(minWidth = metrics.touchTarget, minHeight = metrics.touchTarget)
+      .border(metrics.borderWidth, borderColor, RoundedCornerShape(metrics.radius)),
+    shape = RoundedCornerShape(metrics.radius),
     colors = ButtonDefaults.buttonColors(
       containerColor = containerColor,
       contentColor = contentColor,
-      disabledContainerColor = containerColor.copy(alpha = .35f),
-      disabledContentColor = contentColor.copy(alpha = .38f),
+      disabledContainerColor = containerColor.copy(alpha = metrics.disabledOpacity),
+      disabledContentColor = contentColor.copy(alpha = metrics.disabledOpacity),
     ),
-    contentPadding = PaddingValues(4.dp),
+    contentPadding = PaddingValues(metrics.spaceXs),
   ) {
     Column(
       modifier = Modifier.clearAndSetSemantics {},
       horizontalAlignment = Alignment.CenterHorizontally,
-      verticalArrangement = Arrangement.spacedBy(2.dp),
+      verticalArrangement = Arrangement.spacedBy(metrics.borderWidth),
     ) {
       if (dayContent == null) {
-        DefaultCoolMonthCalendarDay(day)
+        DefaultCoolMonthCalendarDay(day, metrics)
       } else {
         dayContent(day)
       }
       if (day.visibleMarkers.isNotEmpty()) {
-        CoolMonthCalendarMarkerRow(day.visibleMarkers, markerContent)
+        CoolMonthCalendarMarkerRow(day.visibleMarkers, markerContent, metrics)
       }
     }
   }
@@ -278,6 +384,7 @@ private fun CoolMonthCalendarDayButton(
 @Composable
 private fun DefaultCoolMonthCalendarDay(
   day: CoolCalendarDay,
+  metrics: CoolMonthCalendarMetrics,
 ) {
   Text(text = day.day.toString(), style = MaterialTheme.typography.bodyMedium)
   day.secondaryText?.let { Text(text = it, style = MaterialTheme.typography.labelSmall) }
@@ -285,8 +392,11 @@ private fun DefaultCoolMonthCalendarDay(
     Text(
       text = it,
       modifier = Modifier
-        .background(day.tone.tokenColor().copy(alpha = .18f), CircleShape)
-        .padding(horizontal = 4.dp, vertical = 1.dp),
+        .background(day.tone.tokenColor().copy(alpha = metrics.edgeOpacity), CircleShape)
+        .padding(
+          horizontal = metrics.spaceXs,
+          vertical = metrics.borderWidth,
+        ),
       style = MaterialTheme.typography.labelSmall,
     )
   }
@@ -296,11 +406,12 @@ private fun DefaultCoolMonthCalendarDay(
 private fun CoolMonthCalendarMarkerRow(
   markers: List<CoolCalendarMarker>,
   markerContent: (@Composable (CoolCalendarMarker) -> Unit)?,
+  metrics: CoolMonthCalendarMetrics,
 ) {
-  Row(horizontalArrangement = Arrangement.spacedBy(3.dp)) {
+  Row(horizontalArrangement = Arrangement.spacedBy(metrics.borderWidth)) {
     markers.forEach { marker ->
       if (markerContent == null) {
-        Box(Modifier.size(6.dp).background(marker.tone.tokenColor(), CircleShape))
+        Box(Modifier.size(metrics.spaceXs).background(marker.tone.tokenColor(), CircleShape))
       } else {
         markerContent(marker)
       }

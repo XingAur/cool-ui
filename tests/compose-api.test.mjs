@@ -52,10 +52,15 @@ test('Compose MonthCalendar exposes controlled typed models and native grid comp
   assert.match(calendar, /\bLazyVerticalGrid\b/);
   assert.match(calendar, /GridCells\.Fixed\(7\)/);
   assert.match(calendar, /DateTimeFormatter[\s\S]*Locale/);
-  assert.match(calendar, /sizeIn\([\s\S]*minWidth\s*=\s*48\.dp[\s\S]*minHeight\s*=\s*48\.dp/);
-  assert.match(calendar, /itemsIndexed\([\s\S]*key\s*=\s*\{\s*index,\s*day\s*->[\s\S]*day\.date[\s\S]*index/);
+  assert.match(calendar, /sizeIn\([\s\S]*minWidth\s*=\s*metrics\.touchTarget[\s\S]*minHeight\s*=\s*metrics\.touchTarget/);
+  assert.match(calendar, /items\(items = resolvedItems, key = \{ it\.key \}\)/);
   assert.doesNotMatch(calendar, /RenderEffect|\.blur\s*\(/);
   assert.doesNotMatch(calendar, /remember\s*\{\s*mutableStateOf\s*\(\s*(?:selectedDate|displayedMonth)/);
+  assert.match(calendar, /dayCellHeight: Dp\? = null/);
+  assert.match(calendar, /@param dayCellHeight[\s\S]*custom dayContent[\s\S]*dayCellHeight/);
+  assert.match(calendar, /LazyRow\([\s\S]*Column\([\s\S]*DefaultCoolMonthCalendarHeader[\s\S]*resolvedWeekdays[\s\S]*LazyVerticalGrid/);
+  assert.doesNotMatch(calendar, /LazyVerticalGrid\([\s\S]*GridItemSpan/);
+  assert.doesNotMatch(calendar, /@Immutable\s*data class CoolCalendarDay/);
 });
 
 test('Compose MonthCalendar accessibility is injectable and Catalog owns its calendar state', async () => {
@@ -72,6 +77,8 @@ test('Compose MonthCalendar accessibility is injectable and Catalog owns its cal
   assert.match(catalog, /displayedMonth[\s\S]*plusMonths|plusMonths[\s\S]*displayedMonth/);
   assert.match(catalog, /selectedDate/);
   assert.match(catalog, /markers\s*=\s*if[\s\S]*listOf\([\s\S]*CoolCalendarMarker/);
+  assert.match(catalog, /catalogFirstDayOfWeek\s*=\s*DayOfWeek\.MONDAY/);
+  assert.match(catalog, /createCalendarDays\([\s\S]*catalogFirstDayOfWeek/);
 });
 
 test('Compose MonthCalendar routes custom day and marker slots independently', async () => {
@@ -80,9 +87,9 @@ test('Compose MonthCalendar routes custom day and marker slots independently', a
   assert.ok(dayButton, 'day button implementation');
   assert.match(
     dayButton,
-    /\)\s*\{\s*Column\([\s\S]*?\)\s*\{\s*if \(dayContent == null\)\s*\{\s*DefaultCoolMonthCalendarDay\(day\)\s*\}\s*else\s*\{\s*dayContent\(day\)\s*\}\s*if \(day\.visibleMarkers\.isNotEmpty\(\)\)\s*\{\s*CoolMonthCalendarMarkerRow\(day\.visibleMarkers, markerContent\)/,
+    /\)\s*\{\s*Column\([\s\S]*?\)\s*\{\s*if \(dayContent == null\)\s*\{\s*DefaultCoolMonthCalendarDay\(day, metrics\)\s*\}\s*else\s*\{\s*dayContent\(day\)\s*\}\s*if \(day\.visibleMarkers\.isNotEmpty\(\)\)\s*\{\s*CoolMonthCalendarMarkerRow\(day\.visibleMarkers, markerContent, metrics\)/,
   );
-  assert.match(calendar, /private fun DefaultCoolMonthCalendarDay\(\s*day: CoolCalendarDay,?\s*\)/);
+  assert.match(calendar, /private fun DefaultCoolMonthCalendarDay\([\s\S]*day: CoolCalendarDay,[\s\S]*metrics: CoolMonthCalendarMetrics/);
   assert.match(calendar, /private fun CoolMonthCalendarMarkerRow\([\s\S]*markers: List<CoolCalendarMarker>[\s\S]*markerContent:/);
 });
 
@@ -93,12 +100,31 @@ test('Compose MonthCalendar preserves native button semantics while clearing vis
   assert.doesNotMatch(calendar, /"LLLL yyyy"/);
   const dayButton = calendar.match(/private fun CoolMonthCalendarDayButton\([\s\S]*?(?=\n@Composable\s*\nprivate fun DefaultCoolMonthCalendarDay)/)?.[0];
   assert.ok(dayButton, 'day button implementation');
-  assert.match(dayButton, /val semanticsModifier = Modifier\.semantics\s*\{[\s\S]*contentDescription = day\.resolvedAccessibilityLabel\(labels\)[\s\S]*selected = day\.isSelected[\s\S]*disabled\(\)/);
+  assert.match(dayButton, /val semanticsModifier = Modifier\.semantics\s*\{[\s\S]*contentDescription = day\.resolvedAccessibilityLabel\(labels, dateFormatter\)[\s\S]*selected = day\.isSelected[\s\S]*disabled\(\)/);
   assert.doesNotMatch(dayButton, /val semanticsModifier = Modifier\.clearAndSetSemantics/);
   assert.match(dayButton, /Button\(\s*onClick = \{ dispatchCoolCalendarDaySelection\([\s\S]*modifier = semanticsModifier[\s\S]*\)\s*\{\s*Column\(\s*modifier = Modifier\.clearAndSetSemantics\s*\{\s*\}/);
   const markerRow = calendar.match(/private fun CoolMonthCalendarMarkerRow\([\s\S]*?(?=\n@Composable|$)/)?.[0];
   assert.ok(markerRow, 'marker row implementation');
   assert.doesNotMatch(markerRow, /contentDescription|semantics/, 'marker visuals must not duplicate parent day semantics');
+});
+
+test('Compose MonthCalendar uses tokens, remembered locale formatters, and occurrence keys', async () => {
+  const calendar = await read('packages/android/src/main/kotlin/dev/coolui/compose/CoolMonthCalendar.kt');
+  for (const token of ['borderHairline', 'radiusSmall', 'spaceXs', 'spaceSm', 'spaceMd', 'sizeTouchTarget', 'sizeControlLarge', 'lightingEdgeOpacity', 'lightingHighlightOpacity', 'opacityDisabled']) {
+    assert.match(calendar, new RegExp(`CoolTokens\\.${token}`), token);
+  }
+  assert.deepEqual(calendar.match(/\b(?!0(?:\.0)?\.dp\b)\d+(?:\.\d+)?\.dp\b/g) ?? [], []);
+  assert.doesNotMatch(calendar, /alpha\s*=\s*(?:\.\d|\d)/);
+  assert.doesNotMatch(calendar, /Color\.White/);
+  assert.match(calendar, /remember\(locale\)[\s\S]*DateTimePatternGenerator/);
+  assert.match(calendar, /remember\(locale\)[\s\S]*ofLocalizedDate\(FormatStyle\.LONG\)/);
+  assert.match(calendar, /remember\(weekdays, locale\)|remember\(locale, weekdays\)/);
+  assert.match(calendar, /remember\(days, selectedDate\)[\s\S]*resolveCoolCalendarDayItems/);
+  assert.match(calendar, /Calendar\.getInstance\(locale\)\.firstDayOfWeek/);
+  assert.match(calendar, /key\s*=\s*\{\s*it\.key\s*\}/);
+  assert.doesNotMatch(calendar, /key\s*=\s*\{\s*index,/);
+  assert.match(calendar, /DateTimeFormatter\.ofLocalizedDate\(FormatStyle\.LONG\)\.withLocale\(locale\)/);
+  assert.match(calendar, /resolvedAccessibilityLabel\(labels, dateFormatter\)/);
 });
 
 test('Android plugin versions are resolved by settings for standalone and Catalog builds', async () => {
