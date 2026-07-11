@@ -26,7 +26,8 @@
               "kind": {"enum": ["provider", "container", "action", "textInput", "booleanInput", "choiceInput", "numericInput", "dateInput", "navigation", "content", "status", "presentation"]},
               "valueType": {"enum": ["none", "string", "boolean", "number", "date"]},
               "events": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
-              "slots": {"type": "array", "items": {"type": "string"}, "uniqueItems": true}
+              "slots": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+              "models": {"type": "array", "items": {"type": "string"}, "uniqueItems": true}
             },
             "additionalProperties": false
           },

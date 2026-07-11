@@ -12,6 +12,16 @@ test('all component tags are generated', async () => {
   assert.equal(manifest['cool-month-calendar'], './dist/components/cool-month-calendar/index');
 });
 
+test('reserved MonthCalendar placeholder has no interaction semantics', async () => {
+  const source = [
+    await readFile(new URL('src/components/cool-month-calendar/index.js', root), 'utf8'),
+    await readFile(new URL('src/components/cool-month-calendar/index.wxml', root), 'utf8'),
+  ].join('\n');
+  assert.match(source, /generationMode: 'reserved'/);
+  assert.match(source, /data-generation-mode="reserved"/);
+  assert.doesNotMatch(source, /handleTap|bindtap=|triggerEvent|activate|role="button"/);
+});
+
 test('shared behavior exposes controlled events and accessibility state inputs', async () => {
   const source = await readFile(new URL('src/behaviors/cool-ui.js', root), 'utf8');
   for (const property of ['themeMode', 'material', 'tone', 'size', 'contrastMode', 'motionMode', 'transparencyMode', 'accessibilityLabel']) {

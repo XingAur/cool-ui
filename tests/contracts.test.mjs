@@ -6,6 +6,11 @@ import { release, releaseVersion } from './release-fixture.mjs';
 const root = new URL('../', import.meta.url);
 const contract = JSON.parse(await readFile(new URL('contracts/components.json', root), 'utf8'));
 const capabilities = JSON.parse(await readFile(new URL('contracts/component-capabilities.json', root), 'utf8'));
+const componentSchema = JSON.parse(await readFile(new URL('contracts/components.schema.json', root), 'utf8'));
+const nonRenderedModes = new Set(['registryOnly', 'reserved']);
+const registryOnlyComponents = new Set(Object.entries(capabilities.generationModes ?? {})
+  .filter(([, modes]) => Object.values(modes).some((mode) => nonRenderedModes.has(mode)))
+  .map(([name]) => name));
 const versionedContracts = [
   'contracts/components.json',
   'contracts/component-capabilities.json',
@@ -55,8 +60,7 @@ test('publishing contract is versioned consistently', async () => {
     assert.equal(versioned.version, releaseVersion, path);
   }
 
-  const schema = JSON.parse(await readFile(new URL('contracts/components.schema.json', root), 'utf8'));
-  assert.equal(schema.properties.version.const, releaseVersion);
+  assert.equal(componentSchema.properties.version.const, releaseVersion);
 });
 
 test('semantic types are stable and ordered', () => {
@@ -74,7 +78,7 @@ test('all planned components exist on every platform', () => {
 
 test('interactive components expose state, value, event, icon and accessibility contracts', () => {
   const requiredStates = ['default', 'pressed', 'focused', 'selected', 'disabled', 'loading', 'error'];
-  for (const component of contract.components.filter(({ interactive, name }) => interactive && name !== 'MonthCalendar')) {
+  for (const component of contract.components.filter(({ interactive, name }) => interactive && !registryOnlyComponents.has(name))) {
     assert.deepEqual(component.states, requiredStates, component.name);
     assert.deepEqual(component.capabilities, ['controlledValue', 'event', 'accessibilityLabel', 'semanticIconSlot'], component.name);
   }
@@ -87,11 +91,13 @@ test('MonthCalendar is the 43rd controlled date component', () => {
   assert.equal(calendar.category, 'content');
   assert.equal(calendar.interactive, true);
   assert.deepEqual(calendar.states, ['default', 'pressed', 'focused', 'selected', 'disabled']);
+  assert.deepEqual(calendar.capabilities, ['controlledValue', 'event', 'accessibilityLabel', 'semanticIconSlot']);
   assert.deepEqual(calendar.api, {
     kind: 'dateInput',
     valueType: 'date',
     events: ['select', 'monthChange'],
     slots: ['header', 'day', 'marker'],
+    models: ['CalendarDay'],
   });
   assert.deepEqual(calendar.maturity, {
     swiftui: 'planned',
@@ -101,15 +107,51 @@ test('MonthCalendar is the 43rd controlled date component', () => {
   });
 });
 
-test('MonthCalendar shares one bounded calendar day model', () => {
-  assert.deepEqual(capabilities.sharedModels?.CalendarDay, {
-    fields: [
-      'date', 'day', 'secondaryText', 'accessibilityLabel', 'isToday',
-      'isSelected', 'isDisabled', 'tone', 'badge', 'markers',
-    ],
-    constraints: {
-      markers: { maxItems: 3 },
+test('MonthCalendar shares machine-validatable calendar day and marker models', () => {
+  const tones = ['neutral', 'accent', 'success', 'warning', 'danger'];
+  assert.deepEqual(capabilities.sharedModels?.CalendarMarker, {
+    type: 'object',
+    required: ['tone'],
+    properties: {
+      tone: { type: 'string', enum: tones },
+      accessibilityLabel: { type: 'string' },
     },
+    additionalProperties: false,
+  });
+  assert.deepEqual(capabilities.sharedModels?.CalendarDay, {
+    type: 'object',
+    required: ['date', 'day'],
+    properties: {
+      date: { type: 'string', pattern: '^\\d{4}-\\d{2}-\\d{2}$' },
+      day: { type: 'integer', minimum: 1, maximum: 31 },
+      secondaryText: { type: 'string' },
+      accessibilityLabel: { type: 'string' },
+      isToday: { type: 'boolean' },
+      isSelected: { type: 'boolean' },
+      isDisabled: { type: 'boolean' },
+      tone: { type: 'string', enum: tones },
+      badge: { type: 'string' },
+      markers: {
+        type: 'array',
+        maxItems: 3,
+        items: { $ref: '#/sharedModels/CalendarMarker' },
+      },
+    },
+    additionalProperties: false,
+  });
+});
+
+test('MonthCalendar generation stays reserved until native implementations land', () => {
+  assert.deepEqual(capabilities.generationModes?.MonthCalendar, {
+    swiftui: 'registryOnly',
+    compose: 'registryOnly',
+    arkui: 'registryOnly',
+    wechat: 'reserved',
+  });
+  assert.deepEqual(componentSchema.properties.components.items.properties.api.properties.models, {
+    type: 'array',
+    items: { type: 'string' },
+    uniqueItems: true,
   });
 });
 

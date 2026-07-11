@@ -5,8 +5,11 @@ import { fileURLToPath } from 'node:url';
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const release = JSON.parse(await readFile(resolve(root, 'contracts/release.json'), 'utf8'));
 const contract = JSON.parse(await readFile(resolve(root, 'contracts/components.json'), 'utf8'));
+const capabilities = JSON.parse(await readFile(resolve(root, 'contracts/component-capabilities.json'), 'utf8'));
 if (contract.version !== release.version) throw new Error(`Component contract ${contract.version} does not match release ${release.version}`);
 const components = contract.components;
+const generationModes = capabilities.generationModes ?? {};
+const generationMode = (name, platform) => generationModes[name]?.[platform] ?? 'generated';
 const componentApiName = (name) => name;
 const kebab = (name) => name.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase();
 
@@ -59,7 +62,11 @@ const ark = `
 // Generated from contracts/components.json. Do not edit.
 import { CoolComponentConfig } from './CoolCore'
 
-${components.map(({ name, interactive }) => `
+export const CoolComponentRegistry: string[] = [
+${components.map(({ name }) => `  "${name}",`).join('\n')}
+]
+
+${components.filter(({ name }) => generationMode(name, 'arkui') !== 'registryOnly').map(({ name, interactive }) => `
 @Component
 export struct Cool${componentApiName(name)} {
   @Prop config: CoolComponentConfig = new CoolComponentConfig("${name}")
@@ -80,6 +87,20 @@ for (const component of components) {
   const tag = `cool-${kebab(component.name)}`;
   manifest[tag] = `./dist/components/${tag}/index`;
   const dir = `packages/wechat/src/components/${tag}`;
+  if (generationMode(component.name, 'wechat') === 'reserved') {
+    await output(`${dir}/index.js`, `
+Component({
+  options: { multipleSlots: true, styleIsolation: 'apply-shared' },
+  data: { componentName: '${component.name}', generationMode: 'reserved' },
+});`);
+    await output(`${dir}/index.json`, JSON.stringify({ component: true, styleIsolation: 'apply-shared' }, null, 2));
+    await output(`${dir}/index.wxml`, `
+<view class="cool-component cool-${kebab(component.name)} cool-reserved-placeholder" data-component="${component.name}" data-generation-mode="reserved">
+  <slot/>
+</view>`);
+    await output(`${dir}/index.wxss`, `@import "../../styles/glass.wxss";`);
+    continue;
+  }
   const role = /Button|Chip|Item|Card|Navigation|TabBar|Segmented|Banner|Dialog|Sheet|Popover/.test(component.name) ? 'button' : 'none';
   const inputType = /TextField|SearchField/.test(component.name) ? 'input'
     : component.name === 'TextArea' ? 'textarea'

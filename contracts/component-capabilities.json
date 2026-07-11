@@ -20,24 +20,49 @@
     "planned": "The public contract is reserved but the platform implementation is not production-ready."
   },
   "sharedModels": {
+    "CalendarMarker": {
+      "type": "object",
+      "required": ["tone"],
+      "properties": {
+        "tone": {
+          "type": "string",
+          "enum": ["neutral", "accent", "success", "warning", "danger"]
+        },
+        "accessibilityLabel": {"type": "string"}
+      },
+      "additionalProperties": false
+    },
     "CalendarDay": {
-      "fields": [
-        "date",
-        "day",
-        "secondaryText",
-        "accessibilityLabel",
-        "isToday",
-        "isSelected",
-        "isDisabled",
-        "tone",
-        "badge",
-        "markers"
-      ],
-      "constraints": {
+      "type": "object",
+      "required": ["date", "day"],
+      "properties": {
+        "date": {"type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$"},
+        "day": {"type": "integer", "minimum": 1, "maximum": 31},
+        "secondaryText": {"type": "string"},
+        "accessibilityLabel": {"type": "string"},
+        "isToday": {"type": "boolean"},
+        "isSelected": {"type": "boolean"},
+        "isDisabled": {"type": "boolean"},
+        "tone": {
+          "type": "string",
+          "enum": ["neutral", "accent", "success", "warning", "danger"]
+        },
+        "badge": {"type": "string"},
         "markers": {
-          "maxItems": 3
+          "type": "array",
+          "maxItems": 3,
+          "items": {"$ref": "#/sharedModels/CalendarMarker"}
         }
-      }
+      },
+      "additionalProperties": false
+    }
+  },
+  "generationModes": {
+    "MonthCalendar": {
+      "swiftui": "registryOnly",
+      "compose": "registryOnly",
+      "arkui": "registryOnly",
+      "wechat": "reserved"
     }
   }
 }

@@ -1,6 +1,52 @@
 // Generated from contracts/components.json. Do not edit.
 import { CoolComponentConfig } from './CoolCore'
 
+export const CoolComponentRegistry: string[] = [
+  "ThemeProvider",
+  "Backdrop",
+  "GlassSurface",
+  "GlassGroup",
+  "Divider",
+  "Button",
+  "IconButton",
+  "FloatingActionButton",
+  "Chip",
+  "TextField",
+  "TextArea",
+  "SearchField",
+  "Toggle",
+  "Checkbox",
+  "RadioGroup",
+  "Slider",
+  "Stepper",
+  "Select",
+  "DatePicker",
+  "TimePicker",
+  "TopBar",
+  "BottomNavigation",
+  "TabBar",
+  "SegmentedControl",
+  "NavigationRail",
+  "Card",
+  "List",
+  "ListItem",
+  "Badge",
+  "Avatar",
+  "Progress",
+  "CircularProgress",
+  "Skeleton",
+  "StatTile",
+  "EmptyState",
+  "Toast",
+  "Banner",
+  "AlertDialog",
+  "BottomSheet",
+  "Popover",
+  "Tooltip",
+  "LoadingOverlay",
+  "MonthCalendar",
+]
+
 
 @Component
 export struct CoolThemeProvider {
@@ -419,15 +465,5 @@ export struct CoolLoadingOverlay {
 
   build() {
     LoadingProgress().accessibilityText(this.config.accessibilityLabel)
-  }
-}
-
-@Component
-export struct CoolMonthCalendar {
-  @Prop config: CoolComponentConfig = new CoolComponentConfig("MonthCalendar")
-  onEvent: (event: string) => void = () => {}
-
-  build() {
-    Button(this.config.label).enabled(!this.config.disabled && !this.config.loading).accessibilityText(this.config.accessibilityLabel).onClick(() => this.onEvent('activate'))
   }
 }

@@ -5,9 +5,14 @@ import test from 'node:test';
 const root = new URL('../', import.meta.url);
 const read = (path) => readFile(new URL(path, root), 'utf8');
 const contract = JSON.parse(await read('contracts/components.json'));
+const capabilities = JSON.parse(await read('contracts/component-capabilities.json'));
 
 const componentApiName = (name) => name;
 const kebab = (name) => name.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase();
+const nonRenderedModes = new Set(['registryOnly', 'reserved']);
+const registryOnlyComponents = Object.entries(capabilities.generationModes ?? {})
+  .filter(([, modes]) => Object.values(modes).some((mode) => nonRenderedModes.has(mode)))
+  .map(([name]) => name);
 
 test('every implemented component has its idiomatic public name on all four platforms', async () => {
   const swiftFiles = await readdir(new URL('packages/swift/Sources/CoolUI/', root));
@@ -22,7 +27,7 @@ test('every implemented component has its idiomatic public name on all four plat
   };
 
   for (const { name } of contract.components) {
-    if (name === 'MonthCalendar') continue;
+    if (registryOnlyComponents.includes(name)) continue;
     assert.match(sources.swiftui, new RegExp(`\\bCool${componentApiName(name)}\\b`), `Swift ${name}`);
     assert.match(sources.compose, new RegExp(`\\bCool${componentApiName(name)}\\b`), `Compose ${name}`);
     assert.match(sources.arkui, new RegExp(`\\bCool${componentApiName(name)}\\b`), `ArkUI ${name}`);
@@ -35,11 +40,20 @@ test('MonthCalendar is reserved in every platform registry', async () => {
   const kotlinRegistry = await read('packages/android/src/main/kotlin/dev/coolui/compose/GeneratedComponents.kt');
   const arkRegistry = await read('packages/arkui/src/main/ets/components/GeneratedComponents.ets');
   const wechatManifest = JSON.parse(await read('packages/wechat/component-manifest.json'));
+  const wechatPlaceholder = [
+    await read('packages/wechat/src/components/cool-month-calendar/index.js'),
+    await read('packages/wechat/src/components/cool-month-calendar/index.wxml'),
+  ].join('\n');
 
+  assert.deepEqual(registryOnlyComponents, ['MonthCalendar']);
   assert.match(swiftRegistry, /"MonthCalendar"/);
   assert.match(kotlinRegistry, /"MonthCalendar"/);
-  assert.match(arkRegistry, /\bCoolMonthCalendar\b/);
+  assert.match(arkRegistry, /"MonthCalendar"/);
+  assert.doesNotMatch(arkRegistry, /export struct CoolMonthCalendar\b/);
   assert.equal(wechatManifest['cool-month-calendar'], './dist/components/cool-month-calendar/index');
+  assert.match(wechatPlaceholder, /generationMode: 'reserved'/);
+  assert.match(wechatPlaceholder, /data-generation-mode="reserved"/);
+  assert.doesNotMatch(wechatPlaceholder, /handleTap|bindtap=|triggerEvent|activate|role="button"/);
 });
 
 test('platform foundations use native glass capabilities and generated tokens', async () => {
