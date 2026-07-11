@@ -1,5 +1,6 @@
 package dev.coolui.compose
 
+import android.icu.text.DateTimePatternGenerator
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -32,6 +33,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.disabled
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
@@ -136,7 +138,8 @@ fun CoolMonthCalendar(
 ) {
   val resolvedDays = days.map { it.resolved(selectedDate) }
   val resolvedWeekdays = if (weekdays.size == 7) weekdays else defaultCoolCalendarWeekdays(locale)
-  val monthFormatter = DateTimeFormatter.ofPattern("LLLL yyyy", locale)
+  val monthPattern = DateTimePatternGenerator.getInstance(locale).getBestPattern("yMMMM")
+  val monthFormatter = DateTimeFormatter.ofPattern(monthPattern, locale)
   val dayRowCount = ((resolvedDays.size + 6) / 7).coerceAtLeast(1)
   val calendarHeight = 112.dp + (96.dp * dayRowCount)
 
@@ -234,7 +237,7 @@ private fun CoolMonthCalendarDayButton(
   }
   val contentColor = if (day.isSelected) Color.White else MaterialTheme.colorScheme.onSurface
   val borderColor = if (day.isToday || day.isSelected) day.tone.tokenColor() else Color.Transparent
-  val semanticsModifier = Modifier.semantics {
+  val semanticsModifier = Modifier.clearAndSetSemantics {
     contentDescription = day.resolvedAccessibilityLabel(labels)
     selected = day.isSelected
     if (day.isDisabled) disabled()
@@ -255,10 +258,18 @@ private fun CoolMonthCalendarDayButton(
     ),
     contentPadding = PaddingValues(4.dp),
   ) {
-    if (dayContent == null) {
-      DefaultCoolMonthCalendarDay(day, labels, markerContent)
-    } else {
-      dayContent(day)
+    Column(
+      horizontalAlignment = Alignment.CenterHorizontally,
+      verticalArrangement = Arrangement.spacedBy(2.dp),
+    ) {
+      if (dayContent == null) {
+        DefaultCoolMonthCalendarDay(day)
+      } else {
+        dayContent(day)
+      }
+      if (day.visibleMarkers.isNotEmpty()) {
+        CoolMonthCalendarMarkerRow(day.visibleMarkers, markerContent)
+      }
     }
   }
 }
@@ -266,37 +277,31 @@ private fun CoolMonthCalendarDayButton(
 @Composable
 private fun DefaultCoolMonthCalendarDay(
   day: CoolCalendarDay,
-  labels: CoolMonthCalendarAccessibilityLabels,
+) {
+  Text(text = day.day.toString(), style = MaterialTheme.typography.bodyMedium)
+  day.secondaryText?.let { Text(text = it, style = MaterialTheme.typography.labelSmall) }
+  day.badge?.let {
+    Text(
+      text = it,
+      modifier = Modifier
+        .background(day.tone.tokenColor().copy(alpha = .18f), CircleShape)
+        .padding(horizontal = 4.dp, vertical = 1.dp),
+      style = MaterialTheme.typography.labelSmall,
+    )
+  }
+}
+
+@Composable
+private fun CoolMonthCalendarMarkerRow(
+  markers: List<CoolCalendarMarker>,
   markerContent: (@Composable (CoolCalendarMarker) -> Unit)?,
 ) {
-  Column(
-    horizontalAlignment = Alignment.CenterHorizontally,
-    verticalArrangement = Arrangement.spacedBy(2.dp),
-  ) {
-    Text(text = day.day.toString(), style = MaterialTheme.typography.bodyMedium)
-    day.secondaryText?.let { Text(text = it, style = MaterialTheme.typography.labelSmall) }
-    day.badge?.let {
-      Text(
-        text = it,
-        modifier = Modifier
-          .background(day.tone.tokenColor().copy(alpha = .18f), CircleShape)
-          .padding(horizontal = 4.dp, vertical = 1.dp),
-        style = MaterialTheme.typography.labelSmall,
-      )
-    }
-    if (day.visibleMarkers.isNotEmpty()) {
-      Row(horizontalArrangement = Arrangement.spacedBy(3.dp)) {
-        day.visibleMarkers.forEach { marker ->
-          Box(Modifier.semantics {
-            contentDescription = marker.accessibilityLabel ?: labels.markerToneLabel(marker.tone)
-          }) {
-            if (markerContent == null) {
-              Box(Modifier.size(6.dp).background(marker.tone.tokenColor(), CircleShape))
-            } else {
-              markerContent(marker)
-            }
-          }
-        }
+  Row(horizontalArrangement = Arrangement.spacedBy(3.dp)) {
+    markers.forEach { marker ->
+      if (markerContent == null) {
+        Box(Modifier.size(6.dp).background(marker.tone.tokenColor(), CircleShape))
+      } else {
+        markerContent(marker)
       }
     }
   }

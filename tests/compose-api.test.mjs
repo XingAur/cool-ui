@@ -74,6 +74,29 @@ test('Compose MonthCalendar accessibility is injectable and Catalog owns its cal
   assert.match(catalog, /markers\s*=\s*if[\s\S]*listOf\([\s\S]*CoolCalendarMarker/);
 });
 
+test('Compose MonthCalendar routes custom day and marker slots independently', async () => {
+  const calendar = await read('packages/android/src/main/kotlin/dev/coolui/compose/CoolMonthCalendar.kt');
+  const dayButton = calendar.match(/private fun CoolMonthCalendarDayButton\([\s\S]*?(?=\n@Composable\s*\nprivate fun DefaultCoolMonthCalendarDay)/)?.[0];
+  assert.ok(dayButton, 'day button implementation');
+  assert.match(
+    dayButton,
+    /\)\s*\{\s*Column\([\s\S]*?\)\s*\{\s*if \(dayContent == null\)\s*\{\s*DefaultCoolMonthCalendarDay\(day\)\s*\}\s*else\s*\{\s*dayContent\(day\)\s*\}\s*if \(day\.visibleMarkers\.isNotEmpty\(\)\)\s*\{\s*CoolMonthCalendarMarkerRow\(day\.visibleMarkers, markerContent\)/,
+  );
+  assert.match(calendar, /private fun DefaultCoolMonthCalendarDay\(\s*day: CoolCalendarDay,?\s*\)/);
+  assert.match(calendar, /private fun CoolMonthCalendarMarkerRow\([\s\S]*markers: List<CoolCalendarMarker>[\s\S]*markerContent:/);
+});
+
+test('Compose MonthCalendar uses locale-natural month order and one day semantics node', async () => {
+  const calendar = await read('packages/android/src/main/kotlin/dev/coolui/compose/CoolMonthCalendar.kt');
+  assert.match(calendar, /DateTimePatternGenerator\.getInstance\(locale\)\.getBestPattern\("yMMMM"\)/);
+  assert.match(calendar, /DateTimeFormatter\.ofPattern\(monthPattern, locale\)/);
+  assert.doesNotMatch(calendar, /"LLLL yyyy"/);
+  assert.match(calendar, /Modifier\.clearAndSetSemantics\s*\{[\s\S]*contentDescription = day\.resolvedAccessibilityLabel\(labels\)[\s\S]*selected = day\.isSelected[\s\S]*disabled\(\)/);
+  const markerRow = calendar.match(/private fun CoolMonthCalendarMarkerRow\([\s\S]*?(?=\n@Composable|$)/)?.[0];
+  assert.ok(markerRow, 'marker row implementation');
+  assert.doesNotMatch(markerRow, /contentDescription|semantics/, 'marker visuals must not duplicate parent day semantics');
+});
+
 test('Android plugin versions are resolved by settings for standalone and Catalog builds', async () => {
   const librarySettings = await read('packages/android/settings.gradle.kts');
   const libraryBuild = await read('packages/android/build.gradle.kts');
