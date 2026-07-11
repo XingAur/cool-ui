@@ -1,4 +1,12 @@
 {
   "component": true,
-  "styleIsolation": "apply-shared"
+  "styleIsolation": "apply-shared",
+  "componentGenerics": {
+    "day": {
+      "default": "./default-day/index"
+    },
+    "marker": {
+      "default": "./default-marker/index"
+    }
+  }
 }

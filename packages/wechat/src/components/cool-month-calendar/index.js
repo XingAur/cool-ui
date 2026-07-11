@@ -14,14 +14,27 @@ function normalizeMarker(marker) {
   return normalized;
 }
 
+function gregorianDayFromISO(value) {
+  if (typeof value !== 'string') return null;
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  if (!match) return null;
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const roundTrip = new Date(Date.UTC(year, month - 1, day));
+  if (year >= 0 && year <= 99) roundTrip.setUTCFullYear(year);
+  if (roundTrip.getUTCFullYear() !== year || roundTrip.getUTCMonth() !== month - 1 || roundTrip.getUTCDate() !== day) return null;
+  return day;
+}
+
 function normalizeDays(days, selectedDate) {
   if (!Array.isArray(days)) return [];
-  const hasControlledSelection = typeof selectedDate === 'string' && selectedDate.length > 0;
+  const hasControlledSelection = gregorianDayFromISO(selectedDate) !== null;
   const viewDays = [];
   days.forEach((item, index) => {
     if (!item || typeof item !== 'object') return;
-    if (typeof item.date !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(item.date)) return;
-    if (!Number.isInteger(item.day) || item.day < 1 || item.day > 31) return;
+    const gregorianDay = gregorianDayFromISO(item.date);
+    if (gregorianDay === null || !Number.isInteger(item.day) || item.day !== gregorianDay) return;
     const secondaryText = typeof item.secondaryText === 'string' ? item.secondaryText : '';
     const accessibilityLabel = typeof item.accessibilityLabel === 'string' ? item.accessibilityLabel : '';
     const normalized = {
@@ -44,7 +57,7 @@ function normalizeDays(days, selectedDate) {
 
 function eventDay(viewDay) {
   const { _index, ...day } = viewDay;
-  return day;
+  return { ...day, markers: day.markers.map((marker) => ({ ...marker })) };
 }
 
 Component({
@@ -56,12 +69,13 @@ Component({
     days: { type: Array, value: [] },
     selectedDate: { type: String, value: '' },
     weekdays: { type: Array, value: ['一', '二', '三', '四', '五', '六', '日'] },
+    useCustomHeader: { type: Boolean, value: false },
   },
   data: { componentName: 'MonthCalendar', interactive: true, viewDays: [] },
   observers: {
     'days, selectedDate': function resolveDays(days, selectedDate) {
       if (!Array.isArray(days)) {
-        this.setData({ days: [], viewDays: [] });
+        this.setData({ viewDays: [] });
         return;
       }
       this.setData({ viewDays: normalizeDays(days, selectedDate) });

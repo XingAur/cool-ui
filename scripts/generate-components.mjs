@@ -177,14 +177,27 @@ function normalizeMarker(marker) {
   return normalized;
 }
 
+function gregorianDayFromISO(value) {
+  if (typeof value !== 'string') return null;
+  const match = /^(\\d{4})-(\\d{2})-(\\d{2})$/.exec(value);
+  if (!match) return null;
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const roundTrip = new Date(Date.UTC(year, month - 1, day));
+  if (year >= 0 && year <= 99) roundTrip.setUTCFullYear(year);
+  if (roundTrip.getUTCFullYear() !== year || roundTrip.getUTCMonth() !== month - 1 || roundTrip.getUTCDate() !== day) return null;
+  return day;
+}
+
 function normalizeDays(days, selectedDate) {
   if (!Array.isArray(days)) return [];
-  const hasControlledSelection = typeof selectedDate === 'string' && selectedDate.length > 0;
+  const hasControlledSelection = gregorianDayFromISO(selectedDate) !== null;
   const viewDays = [];
   days.forEach((item, index) => {
     if (!item || typeof item !== 'object') return;
-    if (typeof item.date !== 'string' || !/^\\d{4}-\\d{2}-\\d{2}$/.test(item.date)) return;
-    if (!Number.isInteger(item.day) || item.day < 1 || item.day > 31) return;
+    const gregorianDay = gregorianDayFromISO(item.date);
+    if (gregorianDay === null || !Number.isInteger(item.day) || item.day !== gregorianDay) return;
     const secondaryText = typeof item.secondaryText === 'string' ? item.secondaryText : '';
     const accessibilityLabel = typeof item.accessibilityLabel === 'string' ? item.accessibilityLabel : '';
     const normalized = {
@@ -207,7 +220,7 @@ function normalizeDays(days, selectedDate) {
 
 function eventDay(viewDay) {
   const { _index, ...day } = viewDay;
-  return day;
+  return { ...day, markers: day.markers.map((marker) => ({ ...marker })) };
 }
 
 Component({
@@ -219,12 +232,13 @@ Component({
     days: { type: Array, value: [] },
     selectedDate: { type: String, value: '' },
     weekdays: { type: Array, value: ['一', '二', '三', '四', '五', '六', '日'] },
+    useCustomHeader: { type: Boolean, value: false },
   },
   data: { componentName: 'MonthCalendar', interactive: true, viewDays: [] },
   observers: {
     'days, selectedDate': function resolveDays(days, selectedDate) {
       if (!Array.isArray(days)) {
-        this.setData({ days: [], viewDays: [] });
+        this.setData({ viewDays: [] });
         return;
       }
       this.setData({ viewDays: normalizeDays(days, selectedDate) });
@@ -255,37 +269,30 @@ function monthCalendarTemplate() {
   return `
 <view class="cool-component cool-glass cool-month-calendar cool-material-{{resolvedMaterial}} cool-tone-{{tone}} cool-size-{{size}} {{disabled ? 'is-disabled' : ''}}" data-component="MonthCalendar">
   <view class="cool-calendar-header">
-    <view class="cool-calendar-header-fallback">
+    <view wx:if="{{!useCustomHeader}}" class="cool-calendar-header-fallback">
       <button class="cool-calendar-nav" data-direction="previous" disabled="{{disabled || loading}}" aria-label="Previous month" bindtap="handleMonthChange">‹</button>
       <text class="cool-calendar-title">{{year}} / {{month}}</text>
       <button class="cool-calendar-nav" data-direction="next" disabled="{{disabled || loading}}" aria-label="Next month" bindtap="handleMonthChange">›</button>
     </view>
-    <slot name="header"/>
+    <slot wx:else name="header"/>
   </view>
-  <view class="cool-calendar-weekdays" role="row">
+  <view class="cool-calendar-grid" role="grid" aria-label="{{resolvedAccessibilityLabel}}">
     <text wx:for="{{weekdays}}" wx:key="*this" class="cool-calendar-weekday" role="columnheader">{{item}}</text>
-  </view>
-  <view class="cool-calendar-grid" role="grid">
     <button
       wx:for="{{viewDays}}"
       wx:key="_index"
-      class="cool-calendar-day cool-calendar-day-tone-{{item.tone}} {{item.isSelected ? 'is-selected' : ''}} {{item.isToday ? 'is-today' : ''}} {{item.isDisabled || disabled ? 'is-disabled' : ''}}"
+      class="cool-calendar-day cool-calendar-day-tone-{{item.tone}} {{item.isSelected ? 'is-selected' : ''}} {{item.isToday ? 'is-today' : ''}} {{item.isDisabled || disabled || loading ? 'is-disabled' : ''}}"
       data-index="{{item._index}}"
-      disabled="{{item.isDisabled || disabled}}"
-      aria-disabled="{{item.isDisabled || disabled}}"
+      disabled="{{item.isDisabled || disabled || loading}}"
+      aria-disabled="{{item.isDisabled || disabled || loading}}"
       aria-selected="{{item.isSelected}}"
       aria-label="{{item.resolvedAccessibilityLabel}}"
+      role="gridcell"
       bindtap="handleDayTap"
     >
-      <view class="cool-calendar-day-fallback">
-        <text class="cool-calendar-day-number">{{item.day}}</text>
-        <text wx:if="{{item.secondaryText}}" class="cool-calendar-secondary">{{item.secondaryText}}</text>
-        <text wx:if="{{item.badge || item.badge === 0}}" class="cool-calendar-badge">{{item.badge}}</text>
-      </view>
-      <slot name="day"/>
+      <day day="{{item}}"/>
       <view class="cool-calendar-markers">
-        <view wx:for="{{item.markers}}" wx:for-item="marker" wx:key="index" class="cool-calendar-marker-fallback cool-calendar-marker cool-calendar-marker-{{marker.tone}}" aria-label="{{marker.accessibilityLabel}}"></view>
-        <slot name="marker"/>
+        <marker wx:for="{{item.markers}}" wx:for-item="marker" wx:key="index" marker="{{marker}}"/>
       </view>
     </button>
   </view>
@@ -328,7 +335,6 @@ function monthCalendarStyles() {
 .cool-calendar-nav::after,
 .cool-calendar-day::after { border: 0; }
 
-.cool-calendar-weekdays,
 .cool-calendar-grid {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
@@ -336,8 +342,7 @@ function monthCalendarStyles() {
   width: 100%;
 }
 
-.cool-calendar-weekdays { margin-top: var(--cool-space-md); }
-.cool-calendar-grid { margin-top: var(--cool-space-xs); }
+.cool-calendar-grid { margin-top: var(--cool-space-md); }
 .cool-calendar-weekday {
   color: var(--cool-color-light-textSecondary);
   font-size: var(--cool-typography-caption);
@@ -363,17 +368,6 @@ function monthCalendarStyles() {
   border-radius: var(--cool-radius-medium);
 }
 
-.cool-calendar-day-fallback { display: flex; flex-direction: column; align-items: center; gap: var(--cool-space-xs); }
-.cool-calendar-day-number { font-size: var(--cool-typography-body); }
-.cool-calendar-secondary { color: var(--cool-color-light-textSecondary); font-size: var(--cool-typography-caption); }
-.cool-calendar-badge {
-  padding: var(--cool-space-xs);
-  color: var(--cool-color-light-text);
-  font-size: var(--cool-typography-caption);
-  background: var(--cool-color-light-surfaceTint);
-  border-radius: var(--cool-radius-pill);
-}
-
 .cool-calendar-day.is-selected { color: var(--cool-color-light-background); background: var(--cool-color-light-accent); border-color: var(--cool-color-light-accent); }
 .cool-calendar-day.is-today { border-width: var(--cool-border-focus); border-color: var(--cool-color-light-accent); }
 .cool-calendar-day.is-disabled { opacity: var(--cool-opacity-disabled); }
@@ -382,17 +376,7 @@ function monthCalendarStyles() {
 .cool-calendar-day-tone-warning { border-color: var(--cool-color-light-warning); }
 .cool-calendar-day-tone-danger { border-color: var(--cool-color-light-danger); }
 
-.cool-calendar-markers { display: flex; align-items: center; justify-content: center; gap: var(--cool-space-xs); }
-.cool-calendar-marker {
-  width: var(--cool-space-xs);
-  height: var(--cool-space-xs);
-  background: var(--cool-color-light-surfaceTint);
-  border-radius: var(--cool-radius-pill);
-}
-.cool-calendar-marker-accent { background: var(--cool-color-light-accent); }
-.cool-calendar-marker-success { background: var(--cool-color-light-success); }
-.cool-calendar-marker-warning { background: var(--cool-color-light-warning); }
-.cool-calendar-marker-danger { background: var(--cool-color-light-danger); }`;
+.cool-calendar-markers { display: flex; align-items: center; justify-content: center; gap: var(--cool-space-xs); }`;
 }
 
 function controlledOptionStyles(componentName) {
@@ -543,9 +527,60 @@ Component({
   }
   if (component.name === 'MonthCalendar') {
     await output(`${dir}/index.js`, monthCalendarScript());
-    await output(`${dir}/index.json`, JSON.stringify({ component: true, styleIsolation: 'apply-shared' }, null, 2));
+    await output(`${dir}/index.json`, JSON.stringify({
+      component: true,
+      styleIsolation: 'apply-shared',
+      componentGenerics: {
+        day: { default: './default-day/index' },
+        marker: { default: './default-marker/index' },
+      },
+    }, null, 2));
     await output(`${dir}/index.wxml`, monthCalendarTemplate());
     await output(`${dir}/index.wxss`, monthCalendarStyles());
+    await output(`${dir}/default-day/index.js`, `
+Component({
+  options: { styleIsolation: 'apply-shared' },
+  properties: { day: { type: Object, value: null } },
+});`);
+    await output(`${dir}/default-day/index.json`, JSON.stringify({ component: true, styleIsolation: 'apply-shared' }, null, 2));
+    await output(`${dir}/default-day/index.wxml`, `
+<view class="cool-calendar-day-fallback">
+  <text class="cool-calendar-day-number">{{day.day}}</text>
+  <text wx:if="{{day.secondaryText}}" class="cool-calendar-secondary">{{day.secondaryText}}</text>
+  <text wx:if="{{day.badge || day.badge === 0}}" class="cool-calendar-badge">{{day.badge}}</text>
+</view>`);
+    await output(`${dir}/default-day/index.wxss`, `
+@import "../../../styles/glass.wxss";
+.cool-calendar-day-fallback { display: flex; flex-direction: column; align-items: center; gap: var(--cool-space-xs); }
+.cool-calendar-day-number { font-size: var(--cool-typography-body); }
+.cool-calendar-secondary { color: var(--cool-color-light-textSecondary); font-size: var(--cool-typography-caption); }
+.cool-calendar-badge {
+  padding: var(--cool-space-xs);
+  color: var(--cool-color-light-text);
+  font-size: var(--cool-typography-caption);
+  background: var(--cool-color-light-surfaceTint);
+  border-radius: var(--cool-radius-pill);
+}`);
+    await output(`${dir}/default-marker/index.js`, `
+Component({
+  options: { styleIsolation: 'apply-shared' },
+  properties: { marker: { type: Object, value: null } },
+});`);
+    await output(`${dir}/default-marker/index.json`, JSON.stringify({ component: true, styleIsolation: 'apply-shared' }, null, 2));
+    await output(`${dir}/default-marker/index.wxml`, `
+<view class="cool-calendar-marker cool-calendar-marker-{{marker.tone}}" aria-label="{{marker.accessibilityLabel}}"></view>`);
+    await output(`${dir}/default-marker/index.wxss`, `
+@import "../../../styles/glass.wxss";
+.cool-calendar-marker {
+  width: var(--cool-space-xs);
+  height: var(--cool-space-xs);
+  background: var(--cool-color-light-surfaceTint);
+  border-radius: var(--cool-radius-pill);
+}
+.cool-calendar-marker-accent { background: var(--cool-color-light-accent); }
+.cool-calendar-marker-success { background: var(--cool-color-light-success); }
+.cool-calendar-marker-warning { background: var(--cool-color-light-warning); }
+.cool-calendar-marker-danger { background: var(--cool-color-light-danger); }`);
     continue;
   }
   if (component.name === 'Button') {
@@ -733,19 +768,19 @@ function padCalendarPart(value) {
 }
 
 function calendarISODate(date) {
-  return [date.getFullYear(), padCalendarPart(date.getMonth() + 1), padCalendarPart(date.getDate())].join('-');
+  return [date.getUTCFullYear(), padCalendarPart(date.getUTCMonth() + 1), padCalendarPart(date.getUTCDate())].join('-');
 }
 
 function createCalendarDays(year, month) {
-  const first = new Date(year, month - 1, 1);
-  const mondayOffset = (first.getDay() + 6) % 7;
+  const first = new Date(Date.UTC(year, month - 1, 1));
+  const mondayOffset = (first.getUTCDay() + 6) % 7;
   return Array.from({ length: 42 }, (_, index) => {
-    const date = new Date(year, month - 1, 1 - mondayOffset + index);
+    const date = new Date(Date.UTC(year, month - 1, 1 - mondayOffset + index));
     const iso = calendarISODate(date);
     const day = {
       date: iso,
-      day: date.getDate(),
-      isDisabled: date.getMonth() !== month - 1,
+      day: date.getUTCDate(),
+      isDisabled: date.getUTCMonth() !== month - 1,
       tone: iso === '2026-07-12' ? 'accent' : 'neutral',
     };
     if (iso === '2026-07-05') day.isDisabled = true;
@@ -798,9 +833,9 @@ Page({
     const direction = event && event.detail && event.detail.direction;
     if (direction !== 'previous' && direction !== 'next') return;
     const offset = direction === 'previous' ? -1 : 1;
-    const displayedMonth = new Date(this.data.calendarYear, this.data.calendarMonth - 1 + offset, 1);
-    const calendarYear = displayedMonth.getFullYear();
-    const calendarMonth = displayedMonth.getMonth() + 1;
+    const displayedMonth = new Date(Date.UTC(this.data.calendarYear, this.data.calendarMonth - 1 + offset, 1));
+    const calendarYear = displayedMonth.getUTCFullYear();
+    const calendarMonth = displayedMonth.getUTCMonth() + 1;
     this.setData({ calendarYear, calendarMonth, calendarDays: createCalendarDays(calendarYear, calendarMonth) });
   },
 });`);

@@ -1,0 +1,1 @@
+<view class="cool-calendar-marker cool-calendar-marker-{{marker.tone}}" aria-label="{{marker.accessibilityLabel}}"></view>

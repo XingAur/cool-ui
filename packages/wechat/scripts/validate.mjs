@@ -12,4 +12,9 @@ for (const component of contract.components) {
   assert.equal(manifest[tag], `./dist/components/${tag}/index`, component.name);
   for (const extension of ['js', 'json', 'wxml', 'wxss']) await access(new URL(`src/components/${tag}/index.${extension}`, root));
 }
+for (const generic of ['default-day', 'default-marker']) {
+  for (const extension of ['js', 'json', 'wxml', 'wxss']) {
+    await access(new URL(`src/components/cool-month-calendar/${generic}/index.${extension}`, root));
+  }
+}
 console.log(`Validated ${Object.keys(manifest).length} WeChat components.`);

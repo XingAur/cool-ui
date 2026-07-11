@@ -1,0 +1,11 @@
+@import "../../../styles/glass.wxss";
+.cool-calendar-marker {
+  width: var(--cool-space-xs);
+  height: var(--cool-space-xs);
+  background: var(--cool-color-light-surfaceTint);
+  border-radius: var(--cool-radius-pill);
+}
+.cool-calendar-marker-accent { background: var(--cool-color-light-accent); }
+.cool-calendar-marker-success { background: var(--cool-color-light-success); }
+.cool-calendar-marker-warning { background: var(--cool-color-light-warning); }
+.cool-calendar-marker-danger { background: var(--cool-color-light-danger); }

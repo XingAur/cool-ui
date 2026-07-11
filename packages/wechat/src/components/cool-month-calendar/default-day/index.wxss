@@ -1,0 +1,11 @@
+@import "../../../styles/glass.wxss";
+.cool-calendar-day-fallback { display: flex; flex-direction: column; align-items: center; gap: var(--cool-space-xs); }
+.cool-calendar-day-number { font-size: var(--cool-typography-body); }
+.cool-calendar-secondary { color: var(--cool-color-light-textSecondary); font-size: var(--cool-typography-caption); }
+.cool-calendar-badge {
+  padding: var(--cool-space-xs);
+  color: var(--cool-color-light-text);
+  font-size: var(--cool-typography-caption);
+  background: var(--cool-color-light-surfaceTint);
+  border-radius: var(--cool-radius-pill);
+}

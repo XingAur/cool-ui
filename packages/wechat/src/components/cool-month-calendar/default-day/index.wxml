@@ -1,0 +1,5 @@
+<view class="cool-calendar-day-fallback">
+  <text class="cool-calendar-day-number">{{day.day}}</text>
+  <text wx:if="{{day.secondaryText}}" class="cool-calendar-secondary">{{day.secondaryText}}</text>
+  <text wx:if="{{day.badge || day.badge === 0}}" class="cool-calendar-badge">{{day.badge}}</text>
+</view>

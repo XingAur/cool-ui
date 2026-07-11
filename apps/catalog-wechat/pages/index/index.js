@@ -3,19 +3,19 @@ function padCalendarPart(value) {
 }
 
 function calendarISODate(date) {
-  return [date.getFullYear(), padCalendarPart(date.getMonth() + 1), padCalendarPart(date.getDate())].join('-');
+  return [date.getUTCFullYear(), padCalendarPart(date.getUTCMonth() + 1), padCalendarPart(date.getUTCDate())].join('-');
 }
 
 function createCalendarDays(year, month) {
-  const first = new Date(year, month - 1, 1);
-  const mondayOffset = (first.getDay() + 6) % 7;
+  const first = new Date(Date.UTC(year, month - 1, 1));
+  const mondayOffset = (first.getUTCDay() + 6) % 7;
   return Array.from({ length: 42 }, (_, index) => {
-    const date = new Date(year, month - 1, 1 - mondayOffset + index);
+    const date = new Date(Date.UTC(year, month - 1, 1 - mondayOffset + index));
     const iso = calendarISODate(date);
     const day = {
       date: iso,
-      day: date.getDate(),
-      isDisabled: date.getMonth() !== month - 1,
+      day: date.getUTCDate(),
+      isDisabled: date.getUTCMonth() !== month - 1,
       tone: iso === '2026-07-12' ? 'accent' : 'neutral',
     };
     if (iso === '2026-07-05') day.isDisabled = true;
@@ -68,9 +68,9 @@ Page({
     const direction = event && event.detail && event.detail.direction;
     if (direction !== 'previous' && direction !== 'next') return;
     const offset = direction === 'previous' ? -1 : 1;
-    const displayedMonth = new Date(this.data.calendarYear, this.data.calendarMonth - 1 + offset, 1);
-    const calendarYear = displayedMonth.getFullYear();
-    const calendarMonth = displayedMonth.getMonth() + 1;
+    const displayedMonth = new Date(Date.UTC(this.data.calendarYear, this.data.calendarMonth - 1 + offset, 1));
+    const calendarYear = displayedMonth.getUTCFullYear();
+    const calendarMonth = displayedMonth.getUTCMonth() + 1;
     this.setData({ calendarYear, calendarMonth, calendarDays: createCalendarDays(calendarYear, calendarMonth) });
   },
 });

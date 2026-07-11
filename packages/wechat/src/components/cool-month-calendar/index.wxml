@@ -1,36 +1,29 @@
 <view class="cool-component cool-glass cool-month-calendar cool-material-{{resolvedMaterial}} cool-tone-{{tone}} cool-size-{{size}} {{disabled ? 'is-disabled' : ''}}" data-component="MonthCalendar">
   <view class="cool-calendar-header">
-    <view class="cool-calendar-header-fallback">
+    <view wx:if="{{!useCustomHeader}}" class="cool-calendar-header-fallback">
       <button class="cool-calendar-nav" data-direction="previous" disabled="{{disabled || loading}}" aria-label="Previous month" bindtap="handleMonthChange">‹</button>
       <text class="cool-calendar-title">{{year}} / {{month}}</text>
       <button class="cool-calendar-nav" data-direction="next" disabled="{{disabled || loading}}" aria-label="Next month" bindtap="handleMonthChange">›</button>
     </view>
-    <slot name="header"/>
+    <slot wx:else name="header"/>
   </view>
-  <view class="cool-calendar-weekdays" role="row">
+  <view class="cool-calendar-grid" role="grid" aria-label="{{resolvedAccessibilityLabel}}">
     <text wx:for="{{weekdays}}" wx:key="*this" class="cool-calendar-weekday" role="columnheader">{{item}}</text>
-  </view>
-  <view class="cool-calendar-grid" role="grid">
     <button
       wx:for="{{viewDays}}"
       wx:key="_index"
-      class="cool-calendar-day cool-calendar-day-tone-{{item.tone}} {{item.isSelected ? 'is-selected' : ''}} {{item.isToday ? 'is-today' : ''}} {{item.isDisabled || disabled ? 'is-disabled' : ''}}"
+      class="cool-calendar-day cool-calendar-day-tone-{{item.tone}} {{item.isSelected ? 'is-selected' : ''}} {{item.isToday ? 'is-today' : ''}} {{item.isDisabled || disabled || loading ? 'is-disabled' : ''}}"
       data-index="{{item._index}}"
-      disabled="{{item.isDisabled || disabled}}"
-      aria-disabled="{{item.isDisabled || disabled}}"
+      disabled="{{item.isDisabled || disabled || loading}}"
+      aria-disabled="{{item.isDisabled || disabled || loading}}"
       aria-selected="{{item.isSelected}}"
       aria-label="{{item.resolvedAccessibilityLabel}}"
+      role="gridcell"
       bindtap="handleDayTap"
     >
-      <view class="cool-calendar-day-fallback">
-        <text class="cool-calendar-day-number">{{item.day}}</text>
-        <text wx:if="{{item.secondaryText}}" class="cool-calendar-secondary">{{item.secondaryText}}</text>
-        <text wx:if="{{item.badge || item.badge === 0}}" class="cool-calendar-badge">{{item.badge}}</text>
-      </view>
-      <slot name="day"/>
+      <day day="{{item}}"/>
       <view class="cool-calendar-markers">
-        <view wx:for="{{item.markers}}" wx:for-item="marker" wx:key="index" class="cool-calendar-marker-fallback cool-calendar-marker cool-calendar-marker-{{marker.tone}}" aria-label="{{marker.accessibilityLabel}}"></view>
-        <slot name="marker"/>
+        <marker wx:for="{{item.markers}}" wx:for-item="marker" wx:key="index" marker="{{marker}}"/>
       </view>
     </button>
   </view>

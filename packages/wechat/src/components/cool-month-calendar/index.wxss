@@ -32,7 +32,6 @@
 .cool-calendar-nav::after,
 .cool-calendar-day::after { border: 0; }
 
-.cool-calendar-weekdays,
 .cool-calendar-grid {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
@@ -40,8 +39,7 @@
   width: 100%;
 }
 
-.cool-calendar-weekdays { margin-top: var(--cool-space-md); }
-.cool-calendar-grid { margin-top: var(--cool-space-xs); }
+.cool-calendar-grid { margin-top: var(--cool-space-md); }
 .cool-calendar-weekday {
   color: var(--cool-color-light-textSecondary);
   font-size: var(--cool-typography-caption);
@@ -67,17 +65,6 @@
   border-radius: var(--cool-radius-medium);
 }
 
-.cool-calendar-day-fallback { display: flex; flex-direction: column; align-items: center; gap: var(--cool-space-xs); }
-.cool-calendar-day-number { font-size: var(--cool-typography-body); }
-.cool-calendar-secondary { color: var(--cool-color-light-textSecondary); font-size: var(--cool-typography-caption); }
-.cool-calendar-badge {
-  padding: var(--cool-space-xs);
-  color: var(--cool-color-light-text);
-  font-size: var(--cool-typography-caption);
-  background: var(--cool-color-light-surfaceTint);
-  border-radius: var(--cool-radius-pill);
-}
-
 .cool-calendar-day.is-selected { color: var(--cool-color-light-background); background: var(--cool-color-light-accent); border-color: var(--cool-color-light-accent); }
 .cool-calendar-day.is-today { border-width: var(--cool-border-focus); border-color: var(--cool-color-light-accent); }
 .cool-calendar-day.is-disabled { opacity: var(--cool-opacity-disabled); }
@@ -87,13 +74,3 @@
 .cool-calendar-day-tone-danger { border-color: var(--cool-color-light-danger); }
 
 .cool-calendar-markers { display: flex; align-items: center; justify-content: center; gap: var(--cool-space-xs); }
-.cool-calendar-marker {
-  width: var(--cool-space-xs);
-  height: var(--cool-space-xs);
-  background: var(--cool-color-light-surfaceTint);
-  border-radius: var(--cool-radius-pill);
-}
-.cool-calendar-marker-accent { background: var(--cool-color-light-accent); }
-.cool-calendar-marker-success { background: var(--cool-color-light-success); }
-.cool-calendar-marker-warning { background: var(--cool-color-light-warning); }
-.cool-calendar-marker-danger { background: var(--cool-color-light-danger); }
