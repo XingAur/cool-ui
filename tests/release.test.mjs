@@ -12,7 +12,8 @@ test('CI separates shared, Apple and HarmonyOS toolchains', async () => {
   assert.match(shared, /packages\/android/);
 
   const apple = await read('.github/workflows/apple.yml');
-  assert.match(apple, /macos-/);
+  assert.match(apple, /runs-on: macos-26/);
+  assert.match(apple, /grep -E '\^Xcode 26/);
   assert.match(apple, /swift test/);
   assert.match(apple, /xcodebuild/);
 
