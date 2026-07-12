@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
-import { access, mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
+import { access, mkdir, mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
@@ -9,6 +10,18 @@ import { releaseVersion } from './release-fixture.mjs';
 
 const root = new URL('../', import.meta.url);
 const read = (path) => readFile(new URL(path, root), 'utf8');
+
+function tarEntries(tarball) {
+  const result = spawnSync('tar', ['-tf', tarball], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+  return result.stdout.trim().split(/\r?\n/);
+}
+
+function tarText(tarball, entry) {
+  const result = spawnSync('tar', ['-xOf', tarball, entry], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr || `Missing ${entry}`);
+  return result.stdout;
+}
 
 test('CI separates shared, Apple and HarmonyOS toolchains', async () => {
   const shared = await read('.github/workflows/ci.yml');
@@ -68,6 +81,7 @@ test('local consumer installs the final cooL UI tarball names', async () => {
     '@cool-ui/tokens': `file:../../artifacts/npm/cool-ui-tokens-${releaseVersion}.tgz`,
     '@cool-ui/wechat': `file:../../artifacts/npm/cool-ui-wechat-${releaseVersion}.tgz`,
   });
+  assert.equal(consumer.scripts.test, 'node verify.mjs');
 
   const generated = spawnSync(process.execPath, ['scripts/generate-sbom.mjs'], {
     cwd: fileURLToPath(root),
@@ -79,7 +93,10 @@ test('local consumer installs the final cooL UI tarball names', async () => {
   assert.equal(sbom.serialNumber, 'urn:uuid:d39319ec-2014-537f-8b7b-f30a49a1803d');
   assert.equal(sbom.metadata.component.name, 'cool-ui');
   assert.equal(sbom.metadata.component.version, releaseVersion);
-  assert.ok(sbom.components.every(({ version }) => version === releaseVersion));
+  assert.equal(sbom.bomFormat, 'CycloneDX');
+  assert.equal(sbom.specVersion, '1.6');
+  assert.ok(sbom.components.length >= 4);
+  assert.ok(sbom.components.every(({ name, version, purl }) => name && version === releaseVersion && purl.includes(`@${releaseVersion}`)));
 
   const repeated = spawnSync(process.execPath, ['scripts/generate-sbom.mjs'], {
     cwd: fileURLToPath(root),
@@ -89,11 +106,27 @@ test('local consumer installs the final cooL UI tarball names', async () => {
   assert.equal(JSON.parse(await read('artifacts/sbom.cdx.json')).serialNumber, sbom.serialNumber);
 });
 
-test('local pack replaces stale tarballs and publishes canonical generated tokens', async () => {
+test('local consumer verifier inspects both package manifests and release-critical content', async () => {
+  const verifier = await read('examples/npm-consumer/verify.mjs');
+  for (const expected of [
+    'generated/tokens.json',
+    'component-manifest.json',
+    'cool-month-calendar/',
+    'cool-button',
+    'cool-tab-bar',
+    'cool-segmented-control',
+  ]) {
+    assert.ok(verifier.includes(expected), expected);
+  }
+});
+
+test('local pack replaces stale tarballs and publishes the complete canonical package boundary', async () => {
   const destination = await mkdtemp(join(tmpdir(), 'cool-ui-pack-'));
   const tokensTarball = join(destination, `cool-ui-tokens-${releaseVersion}.tgz`);
+  const wechatTarball = join(destination, `cool-ui-wechat-${releaseVersion}.tgz`);
   try {
     await writeFile(tokensTarball, 'stale tarball');
+    await writeFile(wechatTarball, 'stale tarball');
     const packed = spawnSync(process.execPath, ['scripts/pack-local.mjs'], {
       cwd: fileURLToPath(root),
       env: { ...process.env, COOL_UI_PACK_DESTINATION: destination },
@@ -101,6 +134,7 @@ test('local pack replaces stale tarballs and publishes canonical generated token
     });
     assert.equal(packed.status, 0, packed.stderr);
     assert.notEqual(await readFile(tokensTarball, 'utf8').catch(() => ''), 'stale tarball');
+    assert.notEqual(await readFile(wechatTarball, 'utf8').catch(() => ''), 'stale tarball');
     assert.match(packed.stdout, new RegExp(`cool-ui-tokens-${releaseVersion.replaceAll('.', '\\.')}\\.tgz`));
     assert.match(packed.stdout, new RegExp(`cool-ui-wechat-${releaseVersion.replaceAll('.', '\\.')}\\.tgz`));
 
@@ -108,9 +142,78 @@ test('local pack replaces stale tarballs and publishes canonical generated token
     assert.equal(extracted.status, 0, extracted.stderr);
     const tokens = JSON.parse(extracted.stdout);
     assert.equal(tokens.meta.version.$value, releaseVersion);
+
+    const manifest = JSON.parse(tarText(wechatTarball, 'package/component-manifest.json'));
+    assert.equal(Object.keys(manifest).length, 43);
+    assert.equal(manifest['cool-month-calendar'], './dist/components/cool-month-calendar/index');
+
+    const entries = tarEntries(wechatTarball);
+    for (const relative of [
+      'index.js', 'index.json', 'index.wxml', 'index.wxss',
+      'default-day/index.js', 'default-day/index.json', 'default-day/index.wxml', 'default-day/index.wxss',
+      'default-marker/index.js', 'default-marker/index.json', 'default-marker/index.wxml', 'default-marker/index.wxss',
+    ]) {
+      assert.ok(entries.includes(`package/dist/components/cool-month-calendar/${relative}`), relative);
+    }
+
+    const calendarJson = JSON.parse(tarText(wechatTarball, 'package/dist/components/cool-month-calendar/index.json'));
+    assert.deepEqual(calendarJson.componentGenerics, {
+      day: { default: './default-day/index' },
+      marker: { default: './default-marker/index' },
+    });
+    assert.match(tarText(wechatTarball, 'package/dist/components/cool-button/index.wxml'), /<button\b/);
+
+    for (const component of ['cool-tab-bar', 'cool-segmented-control']) {
+      const source = tarText(wechatTarball, `package/dist/components/${component}/index.js`);
+      assert.match(source, /triggerEvent\('change', \{ value: option\.value, index \}\)/, component);
+      assert.doesNotMatch(source, /setData\(\{\s*value:/, component);
+    }
   } finally {
     await rm(destination, { recursive: true, force: true });
   }
+});
+
+test('artifact build removes stale packages and checksums every distributable file', async () => {
+  const artifacts = new URL('artifacts/', root);
+  const stale = new URL('npm/cool-ui-wechat-0.1.0.tgz', artifacts);
+  await mkdir(new URL('npm/', artifacts), { recursive: true });
+  await writeFile(stale, 'must be removed');
+
+  const built = spawnSync(process.execPath, ['scripts/build-artifacts.mjs'], {
+    cwd: fileURLToPath(root),
+    encoding: 'utf8',
+  });
+  assert.equal(built.status, 0, built.stderr);
+  await assert.rejects(access(stale));
+
+  const expectedFiles = [
+    'LICENSE',
+    'NOTICE',
+    'licenses.json',
+    'native-validation.json',
+    `npm/cool-ui-tokens-${releaseVersion}.tgz`,
+    `npm/cool-ui-wechat-${releaseVersion}.tgz`,
+    'sbom.cdx.json',
+  ];
+  const checksumLines = (await read('artifacts/SHA256SUMS')).trim().split(/\r?\n/);
+  const checksums = new Map(checksumLines.map((line) => {
+    const match = line.match(/^([0-9a-f]{64})  (.+)$/);
+    assert.ok(match, line);
+    return [match[2], match[1]];
+  }));
+  assert.deepEqual([...checksums.keys()].sort(), expectedFiles.sort());
+  for (const [path, digest] of checksums) {
+    const actual = createHash('sha256').update(await readFile(new URL(`artifacts/${path}`, root))).digest('hex');
+    assert.equal(actual, digest, path);
+  }
+
+  const licenses = JSON.parse(await read('artifacts/licenses.json'));
+  const sbom = JSON.parse(await read('artifacts/sbom.cdx.json'));
+  assert.equal(licenses.project, 'Apache-2.0');
+  assert.deepEqual(
+    licenses.packages.map(({ name, version }) => ({ name, version })),
+    sbom.components.map(({ name, version }) => ({ name, version })),
+  );
 });
 
 test('generators and all four Catalogs derive release metadata from canonical sources', async () => {

@@ -898,6 +898,7 @@ await output('examples/npm-consumer/package.json', JSON.stringify({
   name: 'cool-ui-npm-consumer',
   version: '0.0.0',
   private: true,
+  scripts: { test: 'node verify.mjs' },
   dependencies: {
     '@cool-ui/tokens': `file:../../artifacts/npm/cool-ui-tokens-${release.version}.tgz`,
     '@cool-ui/wechat': `file:../../artifacts/npm/cool-ui-wechat-${release.version}.tgz`,

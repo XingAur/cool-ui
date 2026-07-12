@@ -5,7 +5,7 @@
   "description": "cooL UI native components for WeChat Mini Programs.",
   "license": "Apache-2.0",
   "miniprogram": "dist",
-  "files": ["dist", "README.md"],
+  "files": ["dist", "component-manifest.json", "README.md"],
   "scripts": {
     "build": "node scripts/build.mjs",
     "test": "node --test tests/*.test.mjs",
