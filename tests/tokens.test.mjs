@@ -63,11 +63,13 @@ test('generator emits stable artifacts for all four platforms and CSS', async ()
     ['packages/tokens/generated/kotlin/CoolTokens.kt', /metaVersion:\s*String\s*=\s*"([^"]+)"/],
     ['packages/tokens/generated/arkts/CoolTokens.ets', /metaVersion:\s*"([^"]+)"/],
     ['packages/tokens/generated/wechat/cool-ui-tokens.wxss', /--cool-meta-version:\s*([^;]+);/],
+    ['packages/tokens/generated/wechat/cool-ui-component-tokens.wxss', /--cool-meta-version:\s*([^;]+);/],
     ['packages/tokens/generated/css/cool-ui-tokens.css', /--cool-meta-version:\s*([^;]+);/],
     ['packages/swift/Sources/CoolUI/CoolTokens.swift', /metaVersion\s*=\s*"([^"]+)"/],
     ['packages/android/src/main/kotlin/dev/coolui/tokens/CoolTokens.kt', /metaVersion:\s*String\s*=\s*"([^"]+)"/],
     ['packages/arkui/src/main/ets/tokens/CoolTokens.ets', /metaVersion:\s*"([^"]+)"/],
     ['packages/wechat/src/styles/tokens.wxss', /--cool-meta-version:\s*([^;]+);/],
+    ['packages/wechat/src/styles/component-tokens.wxss', /--cool-meta-version:\s*([^;]+);/],
   ];
   for (const [file, pattern] of versionedOutputs) {
     const contents = await readFile(new URL(file, root), 'utf8');
@@ -78,7 +80,7 @@ test('generator emits stable artifacts for all four platforms and CSS', async ()
   const manifest = JSON.parse(await readFile(new URL('packages/tokens/generated/manifest.json', root), 'utf8'));
   assert.equal(manifest.version, releaseVersion);
   assert.equal(manifest.source, 'src/tokens.json');
-  assert.equal(Object.keys(manifest.outputs).length, 6);
+  assert.equal(Object.keys(manifest.outputs).length, 7);
   assert.ok(manifest.outputs['tokens.json']);
 
   const generatedTokens = JSON.parse(await readFile(new URL('packages/tokens/generated/tokens.json', root), 'utf8'));

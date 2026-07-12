@@ -200,6 +200,20 @@ test('container slots preserve consumer vertical layout', async () => {
   assert.match(styles, /\.cool-list-item\s*>\s*\.cool-content\s*\{[^}]*display:\s*flex;/s);
 });
 
+test('component styles use a component-safe token entry without global page selectors', async () => {
+  const [glassStyles, componentTokens, pageTokens] = await Promise.all([
+    readFile(new URL('src/styles/glass.wxss', root), 'utf8'),
+    readFile(new URL('src/styles/component-tokens.wxss', root), 'utf8'),
+    readFile(new URL('src/styles/tokens.wxss', root), 'utf8'),
+  ]);
+
+  assert.match(glassStyles, /@import "\.\/component-tokens\.wxss";/);
+  assert.doesNotMatch(glassStyles, /@import "\.\/tokens\.wxss";/);
+  assert.match(componentTokens, /^\/\* Generated[^\n]+\*\/\s*\.cool-component,\s*\.cool-theme\s*\{/);
+  assert.doesNotMatch(componentTokens, /(^|[,\s])page\s*[,\{]/m);
+  assert.match(pageTokens, /^\/\* Generated[^\n]+\*\/\s*page,\s*\.cool-theme\s*\{/);
+});
+
 test('WeChat catalog showcases native Button states without replacing the component list', async () => {
   const source = await readFile(new URL('../../apps/catalog-wechat/pages/index/index.wxml', root), 'utf8');
   const pageSource = await readFile(new URL('../../apps/catalog-wechat/pages/index/index.js', root), 'utf8');

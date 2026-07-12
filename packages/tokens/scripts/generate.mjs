@@ -88,6 +88,13 @@ const outputs = {
     '}',
     '',
   ].join('\n'),
+  'wechat/cool-ui-component-tokens.wxss': [
+    '/* Generated from DTCG tokens. Do not edit. */',
+    '.cool-component, .cool-theme {',
+    ...entries.map(({ name, value }) => `  --cool-${name.replaceAll('.', '-')}: ${value};`),
+    '}',
+    '',
+  ].join('\n'),
   'css/cool-ui-tokens.css': [
     '/* Generated from DTCG tokens. Do not edit. */',
     ':root {',

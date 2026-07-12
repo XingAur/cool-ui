@@ -1361,5 +1361,7 @@ const arkToken = await readFile(resolve(root, 'packages/tokens/generated/arkts/C
 await output('packages/arkui/src/main/ets/tokens/CoolTokens.ets', arkToken);
 const wechatToken = await readFile(resolve(root, 'packages/tokens/generated/wechat/cool-ui-tokens.wxss'), 'utf8');
 await output('packages/wechat/src/styles/tokens.wxss', wechatToken);
+const wechatComponentToken = await readFile(resolve(root, 'packages/tokens/generated/wechat/cool-ui-component-tokens.wxss'), 'utf8');
+await output('packages/wechat/src/styles/component-tokens.wxss', wechatComponentToken);
 
 await rm(resolve(root, 'packages/wechat/dist'), { recursive: true, force: true });

@@ -1,4 +1,4 @@
-@import "./tokens.wxss";
+@import "./component-tokens.wxss";
 
 .cool-component {
   position: relative;

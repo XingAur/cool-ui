@@ -23,6 +23,7 @@ const generatedPaths = [
   'packages/arkui/src/main/ets/components/GeneratedComponents.ets',
   'packages/wechat/src/components',
   'packages/wechat/src/styles/tokens.wxss',
+  'packages/wechat/src/styles/component-tokens.wxss',
   'packages/wechat/component-manifest.json',
   ...contract.components.flatMap(({ name }) => [
     `docs/components/${kebab(name)}.md`,
