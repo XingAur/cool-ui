@@ -308,6 +308,7 @@ function coolDayForeground(day: CoolCalendarDay): string {
 }
 
 function coolDayBorderColor(day: CoolCalendarDay): string {
+  if (day.isSelected) return coolOpaqueColor(CoolTokens.colorLightText)
   if (day.isToday) return coolOpaqueColor(CoolTokens.colorLightAccent)
   if (day.tone !== Tone.neutral) return coolOpaqueColor(coolToneColor(day.tone))
   return CoolTokens.colorLightSurfaceTint
@@ -368,6 +369,8 @@ export function CoolMonthCalendarDefaultMarker(marker: CoolCalendarMarker) {
     .width(coolTokenNumber(CoolTokens.spaceSm))
     .height(coolTokenNumber(CoolTokens.spaceSm))
     .fill(coolToneColor(marker.tone))
+    .stroke(coolOpaqueColor(CoolTokens.colorPrimitiveInk900))
+    .strokeWidth(coolTokenNumber(CoolTokens.borderHairline))
 }
 
 @Component
@@ -450,7 +453,7 @@ export struct CoolMonthCalendar {
                 .backgroundColor(coolDayBackground(item.day))
                 .borderRadius(coolTokenNumber(CoolTokens.radiusSmall))
                 .border({
-                  width: item.day.isToday ? coolTokenNumber(CoolTokens.borderFocus) : coolTokenNumber(CoolTokens.borderHairline),
+                  width: item.day.isSelected || item.day.isToday ? coolTokenNumber(CoolTokens.borderFocus) : coolTokenNumber(CoolTokens.borderHairline),
                   color: coolDayBorderColor(item.day)
                 })
                 .accessibilityText(item.spokenAccessibilityText)

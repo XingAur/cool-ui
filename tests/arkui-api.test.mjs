@@ -110,6 +110,30 @@ test('ArkUI MonthCalendar contrast candidates meet WCAG AA for every selected to
   assert.match(calendar, /if\s*\(day\.tone\s*===\s*Tone\.neutral\)\s*return coolOpaqueColor\(CoolTokens\.colorLightSurface\)/);
   assert.match(calendar, /function coolDayForeground[\s\S]*if\s*\(day\.isSelected\)\s*return coolSelectedDayForeground\(day\)[\s\S]*return CoolTokens\.colorLightText/);
   assert.doesNotMatch(calendar, /day\.isSelected\s*\?\s*CoolTokens\.colorPrimitiveWhite92/);
+
+  const adjacentSurfaces = [opaque(values.get('colorLightGlassSurface')), opaque(values.get('colorLightSurface'))];
+  const nonTextIndicators = {
+    selectedOutline: opaque(values.get('colorLightText')),
+    todayOutline: opaque(values.get('colorLightAccent')),
+    markerOutline: opaque(values.get('colorPrimitiveInk900')),
+  };
+  for (const [indicator, color] of Object.entries(nonTextIndicators)) {
+    for (const surface of adjacentSurfaces) {
+      assert.ok(contrast(color, surface) >= 3, `${indicator} against ${surface}`);
+    }
+  }
+  for (const [tone, background] of Object.entries(backgrounds)) {
+    assert.ok(contrast(nonTextIndicators.selectedOutline, background) >= 3, `selected outline against ${tone}`);
+  }
+  for (const markerTone of ['colorLightSuccess', 'colorLightWarning']) {
+    assert.ok(contrast(nonTextIndicators.markerOutline, opaque(values.get(markerTone))) >= 3, `marker outline against ${markerTone}`);
+  }
+  assert.match(calendar, /function coolDayBorderColor[\s\S]*if\s*\(day\.isSelected\)\s*return coolOpaqueColor\(CoolTokens\.colorLightText\)/);
+  assert.match(calendar, /if\s*\(day\.isToday\)\s*return coolOpaqueColor\(CoolTokens\.colorLightAccent\)/);
+  assert.match(calendar, /Circle\(\)[\s\S]*\.fill\(coolToneColor\(marker\.tone\)\)[\s\S]*\.stroke\(coolOpaqueColor\(CoolTokens\.colorPrimitiveInk900\)\)[\s\S]*\.strokeWidth\(coolTokenNumber\(CoolTokens\.borderHairline\)\)/);
+  assert.match(calendar, /width:\s*item\.day\.isSelected\s*\|\|\s*item\.day\.isToday\s*\?\s*coolTokenNumber\(CoolTokens\.borderFocus\)\s*:\s*coolTokenNumber\(CoolTokens\.borderHairline\)/);
+  const borderColor = calendar.slice(calendar.indexOf('function coolDayBorderColor'), calendar.indexOf('function coolDayOpacity'));
+  assert.doesNotMatch(borderColor, /if\s*\(day\.isSelected\)\s*return CoolTokens\.colorLightSurfaceTint/);
 });
 
 test('ArkUI MonthCalendar is strictly controlled and validates emitted requests', async () => {
@@ -175,7 +199,7 @@ test('ArkUI MonthCalendar uses typed defaultable slots and a single token-driven
     /width\(coolTokenNumber\(CoolTokens\.spaceSm\)\)/,
     /columnsGap\(coolTokenNumber\(CoolTokens\.spaceXs\)\)/,
     /padding\(coolTokenNumber\(CoolTokens\.spaceLg\)\)/,
-    /width:\s*item\.day\.isToday\s*\?\s*coolTokenNumber\(CoolTokens\.borderFocus\)\s*:\s*coolTokenNumber\(CoolTokens\.borderHairline\)/,
+    /width:\s*item\.day\.isSelected\s*\|\|\s*item\.day\.isToday\s*\?\s*coolTokenNumber\(CoolTokens\.borderFocus\)\s*:\s*coolTokenNumber\(CoolTokens\.borderHairline\)/,
   ]) {
     assert.match(calendar, parsedUsage);
   }
@@ -259,8 +283,14 @@ test('HarmonyOS CI performs and uploads a real Catalog HAP build after the HAR',
   assert.match(appConfig, /"bundleName"\s*:\s*"dev\.coolui\.catalog"/);
   assert.match(entryPackage, /"@cool-ui\/arkui"\s*:\s*"file:\.\.\/\.\.\/\.\.\/packages\/arkui"/);
   const harIndex = workflow.indexOf('name: Build HAR');
+  const installIndex = workflow.indexOf('name: Install Catalog dependencies');
   const hapIndex = workflow.indexOf('name: Build Catalog HAP');
-  assert.ok(harIndex >= 0 && hapIndex > harIndex);
+  assert.ok(harIndex >= 0 && installIndex > harIndex && hapIndex > installIndex);
+  const installWorkflow = workflow.slice(installIndex, hapIndex);
+  assert.match(installWorkflow, /working-directory:\s*apps\/catalog-arkui/);
+  assert.match(installWorkflow, /ohpm install --all/);
+  assert.match(installWorkflow, /Test-Path ['"]entry\/oh_modules\/@cool-ui\/arkui['"]/);
+  assert.match(installWorkflow, /throw ["']Catalog dependency install did not materialize/);
   const hapWorkflow = workflow.slice(hapIndex);
   assert.match(hapWorkflow, /working-directory:\s*apps\/catalog-arkui/);
   assert.match(hapWorkflow, /run:\s*hvigorw assembleHap --mode module -p product=default/);
