@@ -377,7 +377,9 @@ test('local verification report uses reproducible commands and stable evidence',
   assert.match(report, /node --test tests\/release\.test\.mjs/);
   assert.match(report, /0b03d23806913501b3c5334748511a8581d0f0fd/);
   assert.match(report, /8e5a2d09029a03d5796d846378ef18b0710f6026/);
-  assert.match(report, /cannot self-reference[^\n]*Git history/i);
+  assert.match(report, /Verified functional\/docs source commit:\s*`[0-9a-f]{40}`/i);
+  assert.match(report, /report-only commit[^\n]*does not alter[^\n]*verified source/i);
+  assert.doesNotMatch(report, /cannot self-reference[^\n]*Git history/i);
 });
 
 test('docs package exposes a bilingual VitePress build boundary', async () => {

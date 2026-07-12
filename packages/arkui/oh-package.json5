@@ -6,7 +6,7 @@
   "main": "Index.ets",
   "author": "cooL UI contributors",
   "license": "Apache-2.0",
-  "repository": "https://github.com/coolui/cool-ui",
+  "repository": "https://github.com/XingAur/cool-ui",
   "hooks": {
     "prePublish": "node ../../scripts/guard-public-publish.mjs"
   },

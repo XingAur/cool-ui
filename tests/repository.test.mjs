@@ -38,6 +38,15 @@ test('repository governance is Apache-2.0 and protects unpublished packages', as
   }
 });
 
+test('public repository links stay aligned with the canonical GitHub origin', async () => {
+  const canonicalRepository = 'https://github.com/XingAur/cool-ui';
+  const vitepress = await read('docs/.vitepress/config.mts');
+  const arkui = JSON.parse(await read('packages/arkui/oh-package.json5'));
+  assert.match(vitepress, new RegExp(`link: '${canonicalRepository}'`));
+  assert.equal(arkui.repository, canonicalRepository);
+  assert.doesNotMatch(`${vitepress}\n${arkui.repository}`, /github\.com\/coolui\/cool-ui/i);
+});
+
 test('docs have bilingual entry points and API/state/accessibility sections', async () => {
   for (const path of ['docs/index.md', 'docs/zh/index.md', 'docs/components/index.md', 'docs/zh/components/index.md']) {
     const content = await read(path);
@@ -52,8 +61,25 @@ test('docs have bilingual entry points and API/state/accessibility sections', as
 });
 
 test('MonthCalendar docs define accessibilityLabel as a complete spoken override', async () => {
-  assert.match(await read('docs/components/month-calendar.md'), /accessibilityLabel[^\n]*complete override/i);
-  assert.match(await read('docs/zh/components/month-calendar.md'), /accessibilityLabel[^\n]*完整覆盖/);
+  const [english, chinese, generator, swift, compose, arkui, wechat] = await Promise.all([
+    read('docs/components/month-calendar.md'),
+    read('docs/zh/components/month-calendar.md'),
+    read('scripts/generate-components.mjs'),
+    read('packages/swift/Sources/CoolUI/CoolMonthCalendar.swift'),
+    read('packages/android/src/main/kotlin/dev/coolui/compose/CoolMonthCalendar.kt'),
+    read('packages/arkui/src/main/ets/components/CoolMonthCalendar.ets'),
+    read('packages/wechat/src/components/cool-month-calendar/index.js'),
+  ]);
+  for (const source of [english, generator]) {
+    assert.match(source, /SwiftUI[^\n]*Compose[^\n]*ArkUI[^\n]*WeChat[^\n]*complete override/i);
+  }
+  for (const source of [chinese, generator]) {
+    assert.match(source, /SwiftUI[^\n]*Compose[^\n]*ArkUI[^\n]*WeChat[^\n]*完整覆盖/);
+  }
+  assert.match(swift, /if let accessibilityLabel = model\.accessibilityLabel, !accessibilityLabel\.isEmpty \{\s*return accessibilityLabel/);
+  assert.match(compose, /accessibilityLabel\?\.takeIf\(String::isNotBlank\)\?\.let \{ return it \}/);
+  assert.match(arkui, /model\.accessibilityLabel\.length > 0\) \{\s*return model\.accessibilityLabel/);
+  assert.match(wechat, /resolvedAccessibilityLabel:\s*accessibilityLabel \|\| \[item\.date, secondaryText\]/);
 });
 
 test('every package is version-aligned and local-only', async () => {

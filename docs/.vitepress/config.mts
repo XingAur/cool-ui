@@ -23,7 +23,7 @@ export default defineConfig({
         ],
       },
     ],
-    socialLinks: [{ icon: 'github', link: 'https://github.com/coolui/cool-ui' }],
+    socialLinks: [{ icon: 'github', link: 'https://github.com/XingAur/cool-ui' }],
   },
   markdown: { theme: { light: 'github-light', dark: 'github-dark' } },
   locales: {

@@ -46,7 +46,7 @@ Maturity: SwiftUI **planned**, Compose **planned**, ArkUI **planned**, WeChat **
 
 ## Accessibility and rendering
 
-When `accessibilityLabel` is non-empty, SwiftUI and ArkUI treat it as a complete override and append no secondary text, badge, today state, or marker details. Otherwise native implementations start with a localized or ISO date and append the supported secondary details. WeChat falls back to the ISO date plus `secondaryText`, so provide a localized label when badges, today state, or markers must be read.
+SwiftUI, Compose, ArkUI, and WeChat treat a non-empty `accessibilityLabel` as a complete override and append no secondary text, badge, today state, or marker details. Otherwise native implementations start with a localized or ISO date and append the supported secondary details. WeChat falls back to the ISO date plus `secondaryText`.
 
 Use a single glass surface around the header and grid. Do not add a blur layer to every day cell.
 

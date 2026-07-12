@@ -949,7 +949,7 @@ ${stateRows}
 
 ## Accessibility and rendering
 
-When \`accessibilityLabel\` is non-empty, SwiftUI and ArkUI treat it as a complete override and append no secondary text, badge, today state, or marker details. Otherwise native implementations start with a localized or ISO date and append the supported secondary details. WeChat falls back to the ISO date plus \`secondaryText\`, so provide a localized label when badges, today state, or markers must be read.
+SwiftUI, Compose, ArkUI, and WeChat treat a non-empty \`accessibilityLabel\` as a complete override and append no secondary text, badge, today state, or marker details. Otherwise native implementations start with a localized or ISO date and append the supported secondary details. WeChat falls back to the ISO date plus \`secondaryText\`.
 
 Use a single glass surface around the header and grid. Do not add a blur layer to every day cell.
 
@@ -1100,7 +1100,7 @@ ${stateRows}
 
 ## 无障碍与渲染
 
-当 \`accessibilityLabel\` 非空时，SwiftUI 与 ArkUI 将其作为朗读内容的完整覆盖，不再追加次级文本、徽标、今天状态或标记详情。否则各原生实现从本地化日期或 ISO 日期开始并追加支持的次级信息；微信回退为 ISO 日期加 \`secondaryText\`。
+SwiftUI、Compose、ArkUI 与 WeChat 均将非空 \`accessibilityLabel\` 作为朗读内容的完整覆盖，不再追加次级文本、徽标、今天状态或标记详情。否则各原生实现从本地化日期或 ISO 日期开始并追加支持的次级信息；微信回退为 ISO 日期加 \`secondaryText\`。
 
 日历整体只使用一个玻璃表面，包住头部和网格。不要给每个日期单元添加独立模糊层。
 
