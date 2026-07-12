@@ -115,7 +115,7 @@ Component({
 
 function controlledOptionTemplate(componentName) {
   if (componentName === 'TabBar') return `
-<scroll-view class="cool-component cool-glass cool-tab-bar cool-material-{{resolvedMaterial}} cool-tone-{{tone}} cool-size-{{size}} {{disabled ? 'is-disabled' : ''}} {{loading ? 'is-loading' : ''}} {{error ? 'is-error' : ''}}" data-component="TabBar" scroll-x="{{true}}" enhanced="{{true}}" show-scrollbar="{{false}}" role="tablist" aria-label="{{resolvedAccessibilityLabel}}">
+<scroll-view class="cool-component cool-glass cool-tab-bar cool-material-{{resolvedMaterial}} cool-tone-{{tone}} cool-size-{{size}} cool-motion-{{motionMode}} {{disabled ? 'is-disabled' : ''}} {{loading ? 'is-loading' : ''}} {{error ? 'is-error' : ''}}" data-component="TabBar" scroll-x="{{true}}" enhanced="{{true}}" show-scrollbar="{{false}}" role="tablist" aria-label="{{resolvedAccessibilityLabel}}">
   <view wx:if="{{loading}}" class="cool-loading" aria-label="loading"></view>
   <view class="cool-tab-track">
     <view wx:for="{{viewOptions}}" wx:key="_key" class="cool-page-tab {{item._index === selectedIndex ? 'is-active' : ''}} {{item.disabled || disabled || loading ? 'is-disabled' : ''}}" data-index="{{item._index}}" role="tab" aria-selected="{{item._index === selectedIndex}}" aria-disabled="{{item.disabled || disabled || loading}}" bindtap="handleOptionTap">
@@ -127,7 +127,7 @@ function controlledOptionTemplate(componentName) {
 </scroll-view>`;
 
   return `
-<view class="cool-component cool-glass cool-segmented-control cool-material-{{resolvedMaterial}} cool-tone-{{tone}} cool-size-{{size}} {{disabled ? 'is-disabled' : ''}} {{loading ? 'is-loading' : ''}} {{error ? 'is-error' : ''}}" data-component="SegmentedControl">
+<view class="cool-component cool-glass cool-segmented-control cool-material-{{resolvedMaterial}} cool-tone-{{tone}} cool-size-{{size}} cool-motion-{{motionMode}} {{disabled ? 'is-disabled' : ''}} {{loading ? 'is-loading' : ''}} {{error ? 'is-error' : ''}}" data-component="SegmentedControl">
   <view wx:if="{{loading}}" class="cool-loading" aria-label="loading"></view>
   <view class="cool-segmented-options" role="tablist" aria-label="{{resolvedAccessibilityLabel}}">
     <view wx:for="{{viewOptions}}" wx:key="_key" class="cool-segmented-option {{item._index === selectedIndex ? 'is-active' : ''}} {{item.disabled || disabled || loading ? 'is-disabled' : ''}}" data-index="{{item._index}}" role="tab" aria-selected="{{item._index === selectedIndex}}" aria-disabled="{{item.disabled || disabled || loading}}" bindtap="handleOptionTap">
@@ -294,7 +294,7 @@ Component({
 
 function monthCalendarTemplate() {
   return `
-<view class="cool-component cool-glass cool-month-calendar cool-material-{{resolvedMaterial}} cool-tone-{{tone}} cool-size-{{size}} {{disabled ? 'is-disabled' : ''}}" data-component="MonthCalendar">
+<view class="cool-component cool-glass cool-month-calendar cool-material-{{resolvedMaterial}} cool-tone-{{tone}} cool-size-{{size}} cool-motion-{{motionMode}} {{disabled ? 'is-disabled' : ''}}" data-component="MonthCalendar">
   <view class="cool-calendar-header">
     <view wx:if="{{!useCustomHeader}}" class="cool-calendar-header-fallback">
       <button class="cool-calendar-nav" data-direction="previous" disabled="{{disabled || loading}}" aria-label="Previous month" bindtap="handleMonthChange">‹</button>
@@ -654,7 +654,7 @@ Component({
     await output(`${dir}/index.json`, JSON.stringify({ component: true, styleIsolation: 'apply-shared' }, null, 2));
     await output(`${dir}/index.wxml`, `
 <button
-  class="cool-component cool-glass cool-button-native cool-button cool-material-{{resolvedMaterial}} cool-tone-{{tone}} cool-size-{{size}} {{selected ? 'is-selected' : ''}} {{disabled || loading ? 'is-disabled' : ''}} {{error ? 'is-error' : ''}}"
+  class="cool-component cool-glass cool-button-native cool-button cool-material-{{resolvedMaterial}} cool-tone-{{tone}} cool-size-{{size}} cool-motion-{{motionMode}} {{selected ? 'is-selected' : ''}} {{disabled || loading ? 'is-disabled' : ''}} {{error ? 'is-error' : ''}}"
   data-component="Button"
   open-type="{{openType}}"
   form-type="{{formType}}"
@@ -766,16 +766,16 @@ Component({
   data: { componentName: '${component.name}', interactive: ${component.interactive} },
 });`);
   await output(`${dir}/index.json`, JSON.stringify({ component: true, styleIsolation: 'apply-shared' }, null, 2));
-  const standardTemplate = `<view class="cool-component cool-glass cool-${kebab(component.name)} cool-material-{{resolvedMaterial}} cool-tone-{{tone}} cool-size-{{size}} {{selected ? 'is-selected' : ''}} {{disabled ? 'is-disabled' : ''}} {{error ? 'is-error' : ''}}" data-component="${component.name}">
+  const standardTemplate = `<view class="cool-component cool-glass cool-${kebab(component.name)} cool-material-{{resolvedMaterial}} cool-tone-{{tone}} cool-size-{{size}} cool-motion-{{motionMode}} {{selected ? 'is-selected' : ''}} {{disabled ? 'is-disabled' : ''}} {{error ? 'is-error' : ''}}" data-component="${component.name}">
   <view wx:if="{{loading}}" class="cool-loading" aria-label="loading"></view>
   <slot name="icon"/>
   ${control}
   <text wx:if="{{errorMessage}}" class="cool-error" role="alert">{{errorMessage}}</text>
 </view>`;
   const template = component.name === 'AlertDialog'
-    ? `<view wx:if="{{open}}" class="cool-overlay-backdrop" bindtap="requestDismiss"><view class="cool-component cool-glass cool-alert-dialog cool-material-{{resolvedMaterial}} cool-tone-{{tone}}" role="dialog" aria-modal="true" aria-label="{{resolvedAccessibilityLabel}}" catchtap="noop"><text wx:if="{{label}}" class="cool-label">{{label}}</text><slot/><text wx:if="{{errorMessage}}" class="cool-error" role="alert">{{errorMessage}}</text></view></view>`
+    ? `<view wx:if="{{open}}" class="cool-overlay-backdrop" bindtap="requestDismiss"><view class="cool-component cool-glass cool-alert-dialog cool-material-{{resolvedMaterial}} cool-tone-{{tone}} cool-motion-{{motionMode}}" role="dialog" aria-modal="true" aria-label="{{resolvedAccessibilityLabel}}" catchtap="noop"><text wx:if="{{label}}" class="cool-label">{{label}}</text><slot/><text wx:if="{{errorMessage}}" class="cool-error" role="alert">{{errorMessage}}</text></view></view>`
     : component.name === 'BottomSheet'
-      ? `<view wx:if="{{open}}" class="cool-overlay-backdrop cool-bottom-sheet-backdrop" bindtap="requestDismiss"><view class="cool-component cool-glass cool-bottom-sheet cool-material-{{resolvedMaterial}} cool-tone-{{tone}}" role="dialog" aria-modal="true" aria-label="{{resolvedAccessibilityLabel}}" catchtap="noop"><slot/></view></view>`
+      ? `<view wx:if="{{open}}" class="cool-overlay-backdrop cool-bottom-sheet-backdrop" bindtap="requestDismiss"><view class="cool-component cool-glass cool-bottom-sheet cool-material-{{resolvedMaterial}} cool-tone-{{tone}} cool-motion-{{motionMode}}" role="dialog" aria-modal="true" aria-label="{{resolvedAccessibilityLabel}}" catchtap="noop"><slot/></view></view>`
       : standardTemplate;
   await output(`${dir}/index.wxml`, template);
   await output(`${dir}/index.wxss`, `@import "../../styles/glass.wxss";`);

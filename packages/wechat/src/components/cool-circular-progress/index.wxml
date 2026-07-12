@@ -1,4 +1,4 @@
-<view class="cool-component cool-glass cool-circular-progress cool-material-{{resolvedMaterial}} cool-tone-{{tone}} cool-size-{{size}} {{selected ? 'is-selected' : ''}} {{disabled ? 'is-disabled' : ''}} {{error ? 'is-error' : ''}}" data-component="CircularProgress">
+<view class="cool-component cool-glass cool-circular-progress cool-material-{{resolvedMaterial}} cool-tone-{{tone}} cool-size-{{size}} cool-motion-{{motionMode}} {{selected ? 'is-selected' : ''}} {{disabled ? 'is-disabled' : ''}} {{error ? 'is-error' : ''}}" data-component="CircularProgress">
   <view wx:if="{{loading}}" class="cool-loading" aria-label="loading"></view>
   <slot name="icon"/>
   <view class="cool-content" role="none" aria-label="{{accessibilityLabel}}" bindtap="handleTap"><text wx:if="{{label}}" class="cool-label">{{label}}</text><slot/></view>

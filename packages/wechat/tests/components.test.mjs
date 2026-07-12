@@ -217,6 +217,20 @@ test('component styles use a component-safe token entry without global page sele
   assert.match(pageTokens, /^\/\* Generated[^\n]+\*\/\s*page,\s*\.cool-theme\s*\{/);
 });
 
+test('component WXSS avoids unsupported at-rules and uses the explicit motion mode class', async () => {
+  const glassStyles = await readFile(new URL('src/styles/glass.wxss', root), 'utf8');
+  assert.doesNotMatch(glassStyles, /@(?:media|keyframes)\b/);
+  assert.match(glassStyles, /\.cool-motion-reduced\s*\{[^}]*transition:\s*none;/s);
+
+  for (const component of contract.components) {
+    const tag = `cool-${component.name.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase()}`;
+    const wxml = await readFile(new URL(`src/components/${tag}/index.wxml`, root), 'utf8');
+    if (wxml.includes('cool-glass')) {
+      assert.match(wxml, /cool-motion-\{\{motionMode\}\}/, tag);
+    }
+  }
+});
+
 test('WeChat catalog showcases native Button states without replacing the component list', async () => {
   const source = await readFile(new URL('../../apps/catalog-wechat/pages/index/index.wxml', root), 'utf8');
   const pageSource = await readFile(new URL('../../apps/catalog-wechat/pages/index/index.js', root), 'utf8');
