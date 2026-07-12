@@ -267,16 +267,16 @@ function coolDayOpacity(day: CoolCalendarDay): number {
 export function CoolMonthCalendarDefaultHeader(context: CoolMonthCalendarHeaderContext) {
   Row({ space: coolTokenNumber(CoolTokens.spaceSm) }) {
     Button('‹')
-      .constraintSize({ minWidth: CoolTokens.sizeTouchTarget, minHeight: CoolTokens.sizeTouchTarget })
+      .constraintSize({ minWidth: coolTokenNumber(CoolTokens.sizeTouchTarget), minHeight: coolTokenNumber(CoolTokens.sizeTouchTarget) })
       .accessibilityText(context.previousMonthLabel)
       .onClick(() => context.requestMonthChange(CoolMonthDirection.previous))
     Text(context.displayedMonth)
-      .fontSize(CoolTokens.typographyTitle)
+      .fontSize(coolTokenNumber(CoolTokens.typographyTitle))
       .fontColor(CoolTokens.colorLightText)
       .layoutWeight(1)
       .textAlign(TextAlign.Center)
     Button('›')
-      .constraintSize({ minWidth: CoolTokens.sizeTouchTarget, minHeight: CoolTokens.sizeTouchTarget })
+      .constraintSize({ minWidth: coolTokenNumber(CoolTokens.sizeTouchTarget), minHeight: coolTokenNumber(CoolTokens.sizeTouchTarget) })
       .accessibilityText(context.nextMonthLabel)
       .onClick(() => context.requestMonthChange(CoolMonthDirection.next))
   }
@@ -287,19 +287,19 @@ export function CoolMonthCalendarDefaultHeader(context: CoolMonthCalendarHeaderC
 export function CoolMonthCalendarDefaultDay(day: CoolCalendarDay) {
   Column({ space: coolTokenNumber(CoolTokens.spaceXs) }) {
     Text(`${day.day}`)
-      .fontSize(CoolTokens.typographyBody)
+      .fontSize(coolTokenNumber(CoolTokens.typographyBody))
       .fontColor(coolDayForeground(day))
       .fontWeight(day.isSelected || day.isToday ? FontWeight.Medium : FontWeight.Regular)
     if (day.secondaryText !== undefined && day.secondaryText.length > 0) {
       Text(day.secondaryText)
-        .fontSize(CoolTokens.typographyCaption)
+        .fontSize(coolTokenNumber(CoolTokens.typographyCaption))
         .fontColor(day.isSelected ? CoolTokens.colorPrimitiveWhite92 : CoolTokens.colorLightTextSecondary)
     }
     if (day.badge !== undefined && day.badge.length > 0) {
       Text(day.badge)
-        .fontSize(CoolTokens.typographyCaption)
+        .fontSize(coolTokenNumber(CoolTokens.typographyCaption))
         .fontColor(day.isSelected ? CoolTokens.colorPrimitiveWhite92 : coolToneColor(day.tone))
-        .padding({ left: CoolTokens.spaceXs, right: CoolTokens.spaceXs })
+        .padding({ left: coolTokenNumber(CoolTokens.spaceXs), right: coolTokenNumber(CoolTokens.spaceXs) })
         .borderRadius(coolTokenNumber(CoolTokens.radiusPill))
         .backgroundColor(CoolTokens.colorLightSurfaceTint)
     }
@@ -310,8 +310,8 @@ export function CoolMonthCalendarDefaultDay(day: CoolCalendarDay) {
 @Builder
 export function CoolMonthCalendarDefaultMarker(marker: CoolCalendarMarker) {
   Circle()
-    .width(CoolTokens.spaceSm)
-    .height(CoolTokens.spaceSm)
+    .width(coolTokenNumber(CoolTokens.spaceSm))
+    .height(coolTokenNumber(CoolTokens.spaceSm))
     .fill(coolToneColor(marker.tone))
     .accessibilityText(marker.accessibilityLabel ?? '')
 }
@@ -366,7 +366,7 @@ export struct CoolMonthCalendar {
             ForEach(this.resolvedWeekdays(), (weekday: string) => {
               GridItem() {
                 Text(weekday)
-                  .fontSize(CoolTokens.typographyCaption)
+                  .fontSize(coolTokenNumber(CoolTokens.typographyCaption))
                   .fontColor(CoolTokens.colorLightTextSecondary)
                   .textAlign(TextAlign.Center)
                   .width('100%')
@@ -374,7 +374,7 @@ export struct CoolMonthCalendar {
             })
           }
           .columnsTemplate('1fr 1fr 1fr 1fr 1fr 1fr 1fr')
-          .columnsGap(CoolTokens.spaceXs)
+          .columnsGap(coolTokenNumber(CoolTokens.spaceXs))
           Grid() {
             ForEach(this.resolvedDays(), (item: CoolResolvedCalendarDayItem) => {
               GridItem() {
@@ -388,15 +388,15 @@ export struct CoolMonthCalendar {
                     }
                   }
                   .width('100%')
-                  .padding(CoolTokens.spaceXs)
+                  .padding(coolTokenNumber(CoolTokens.spaceXs))
                 }
-                .constraintSize({ minWidth: CoolTokens.sizeTouchTarget, minHeight: CoolTokens.sizeTouchTarget })
+                .constraintSize({ minWidth: coolTokenNumber(CoolTokens.sizeTouchTarget), minHeight: coolTokenNumber(CoolTokens.sizeTouchTarget) })
                 .width('100%')
                 .opacity(coolDayOpacity(item.day))
                 .backgroundColor(coolDayBackground(item.day))
                 .borderRadius(coolTokenNumber(CoolTokens.radiusSmall))
                 .border({
-                  width: item.day.isToday ? CoolTokens.borderFocus : CoolTokens.borderHairline,
+                  width: item.day.isToday ? coolTokenNumber(CoolTokens.borderFocus) : coolTokenNumber(CoolTokens.borderHairline),
                   color: item.day.isToday ? CoolTokens.colorLightAccent : CoolTokens.colorLightSurfaceTint
                 })
                 .accessibilityText(item.day.accessibilityLabel ?? `${item.day.day}`)
@@ -407,8 +407,8 @@ export struct CoolMonthCalendar {
             }, (item: CoolResolvedCalendarDayItem) => item.key)
           }
           .columnsTemplate('1fr 1fr 1fr 1fr 1fr 1fr 1fr')
-          .columnsGap(CoolTokens.spaceXs)
-          .rowsGap(CoolTokens.spaceXs)
+          .columnsGap(coolTokenNumber(CoolTokens.spaceXs))
+          .rowsGap(coolTokenNumber(CoolTokens.spaceXs))
         }
         .constraintSize({ minWidth: this.calendarGridMinimumWidth() })
       }
@@ -417,10 +417,10 @@ export struct CoolMonthCalendar {
       .scrollBar(BarState.Off)
     }
     .width('100%')
-    .padding(CoolTokens.spaceLg)
+    .padding(coolTokenNumber(CoolTokens.spaceLg))
     .backgroundColor(CoolTokens.colorLightGlassSurface)
     .borderRadius(coolTokenNumber(CoolTokens.radiusLarge))
-    .border({ width: CoolTokens.borderHairline, color: CoolTokens.colorLightSurfaceTint })
+    .border({ width: coolTokenNumber(CoolTokens.borderHairline), color: CoolTokens.colorLightSurfaceTint })
     .backdropBlur(coolTokenNumber(CoolTokens.blurRegular))
   }
 }

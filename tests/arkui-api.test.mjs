@@ -91,13 +91,36 @@ test('ArkUI MonthCalendar uses typed defaultable slots and a single token-driven
   assert.match(calendar, /resolvedWeekdays\(\)[\s\S]*length\s*===\s*7/);
   assert.match(calendar, /Button\(\)[\s\S]*accessibilityText\(item\.day\.accessibilityLabel/);
   assert.match(calendar, /accessibilityText\(item\.day\.accessibilityLabel[^\n]+\)[\s\S]*accessibilitySelected\(item\.day\.isSelected\)[\s\S]*enabled\(!item\.day\.isDisabled\)/);
-  assert.match(calendar, /constraintSize\(\{\s*minWidth:\s*CoolTokens\.sizeTouchTarget,\s*minHeight:\s*CoolTokens\.sizeTouchTarget\s*\}\)/);
+  assert.match(calendar, /constraintSize\(\{\s*minWidth:\s*coolTokenNumber\(CoolTokens\.sizeTouchTarget\),\s*minHeight:\s*coolTokenNumber\(CoolTokens\.sizeTouchTarget\)\s*\}\)/);
   assert.match(calendar, /private calendarGridMinimumWidth\(\):\s*number[\s\S]*coolTokenNumber\(CoolTokens\.sizeTouchTarget\)\s*\*\s*7[\s\S]*coolTokenNumber\(CoolTokens\.spaceXs\)\s*\*\s*6/);
   assert.match(calendar, /this\.header\([\s\S]*Scroll\(\)\s*\{\s*Column[\s\S]*this\.resolvedWeekdays\(\)[\s\S]*this\.resolvedDays\(\)[\s\S]*constraintSize\(\{\s*minWidth:\s*this\.calendarGridMinimumWidth\(\)\s*\}\)[\s\S]*scrollable\(ScrollDirection\.Horizontal\)/);
   assert.doesNotMatch(calendar, /\.maxLines\(|\.textOverflow\(/);
   assert.equal((calendar.match(/\.backdropBlur\(/g) ?? []).length, 1);
   assert.doesNotMatch(calendar, /(?:backgroundColor|fontColor|borderColor)\(['"]#/);
   assert.doesNotMatch(calendar, /(?:padding|margin|borderRadius|columnsGap|rowsGap|backdropBlur)\(\s*\d/);
+
+  assert.doesNotMatch(calendar, /\.fontSize\(CoolTokens\./);
+  assert.doesNotMatch(calendar, /\.constraintSize\(\{[^}]*:\s*CoolTokens\./);
+  assert.doesNotMatch(calendar, /\.(?:columnsGap|rowsGap|padding|width|height)\(CoolTokens\./);
+  assert.doesNotMatch(calendar, /\b(?:minWidth|minHeight|width|height|left|right|top|bottom|space):\s*CoolTokens\./);
+  const dimensionLines = calendar.split('\n').filter((line) => (
+    /\.(?:fontSize|padding|width|height|columnsGap|rowsGap|borderRadius|backdropBlur)\(|\b(?:minWidth|minHeight|width|height|left|right|top|bottom|space):/.test(line)
+  ));
+  for (const line of dimensionLines) {
+    const parsedDimensions = line
+      .replaceAll(/coolTokenNumber\(CoolTokens\.\w+\)/g, '')
+      .replaceAll(/CoolTokens\.color\w+/g, '');
+    assert.doesNotMatch(parsedDimensions, /CoolTokens\./, line.trim());
+  }
+  for (const parsedUsage of [
+    /fontSize\(coolTokenNumber\(CoolTokens\.typographyTitle\)\)/,
+    /width\(coolTokenNumber\(CoolTokens\.spaceSm\)\)/,
+    /columnsGap\(coolTokenNumber\(CoolTokens\.spaceXs\)\)/,
+    /padding\(coolTokenNumber\(CoolTokens\.spaceLg\)\)/,
+    /width:\s*item\.day\.isToday\s*\?\s*coolTokenNumber\(CoolTokens\.borderFocus\)\s*:\s*coolTokenNumber\(CoolTokens\.borderHairline\)/,
+  ]) {
+    assert.match(calendar, parsedUsage);
+  }
 });
 
 test('ArkUI native generation, exports, validation, and Catalog fixture stay integrated', async () => {
