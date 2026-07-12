@@ -31,5 +31,5 @@ const nativeValidation = {
   note: 'Native commands run in their dedicated CI jobs; this report records local toolchain availability and does not substitute source bundles for AAR or HAR files.',
 };
 await writeFile(resolve(artifacts, 'native-validation.json'), `${JSON.stringify(nativeValidation, null, 2)}\n`, 'utf8');
-// SHA256 checksums are written last so every release metadata file is covered.
+// Host-specific native-validation.json remains diagnostic-only and is intentionally excluded from distributable SHA256 checksums.
 runNode('scripts/write-checksums.mjs');

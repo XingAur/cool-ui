@@ -87,8 +87,25 @@ function tarText(tarball, entry) {
 test('CI separates shared, Apple and HarmonyOS toolchains', async () => {
   const shared = await read('.github/workflows/ci.yml');
   assert.match(shared, /ubuntu-latest/);
-  assert.match(shared, /pnpm test/);
+  const sharedCommands = [
+    'pnpm tokens:check',
+    'pnpm test',
+    'pnpm docs:build',
+    'pnpm artifacts',
+    'node --test tests/release.test.mjs',
+    'sha256sum --check SHA256SUMS',
+    'actions/upload-artifact@v4',
+  ];
+  let previousIndex = -1;
+  for (const command of sharedCommands) {
+    const index = shared.indexOf(command);
+    assert.ok(index > previousIndex, `${command} must appear in shared-job order`);
+    previousIndex = index;
+  }
+  assert.doesNotMatch(shared, /pnpm pack:local/);
+  assert.match(shared, /path:\s*artifacts\/\*\*/);
   assert.match(shared, /packages\/android/);
+  assert.match(shared, /gradle -p packages\/android test compileDebugAndroidTestKotlin publishReleasePublicationToLocalArtifactsRepository/);
 
   const apple = await read('.github/workflows/apple.yml');
   assert.match(apple, /runs-on: macos-26/);
@@ -100,6 +117,23 @@ test('CI separates shared, Apple and HarmonyOS toolchains', async () => {
   assert.match(harmony, /self-hosted/);
   assert.match(harmony, /Windows/);
   assert.match(harmony, /assembleHar/);
+  assert.match(harmony, /Get-Command hvigorw[\s\S]*hvigorw --version/);
+  assert.match(harmony, /working-directory:\s*packages\/arkui[\s\S]*ohpm install --all[\s\S]*assembleHar/);
+  assert.match(harmony, /assembleHar[\s\S]*working-directory:\s*apps\/catalog-arkui[\s\S]*ohpm install --all[\s\S]*assembleHap/);
+});
+
+test('HarmonyOS projects pin the stable Harmony 6 Hvigor model and plugin', async () => {
+  for (const directory of ['packages/arkui', 'apps/catalog-arkui']) {
+    const manifest = JSON.parse(await read(`${directory}/oh-package.json5`));
+    const config = JSON.parse(await read(`${directory}/hvigor/hvigor-config.json5`));
+    assert.equal(manifest.modelVersion, '5.0.0', `${directory} modelVersion`);
+    assert.equal(config.hvigorVersion, '6.0.6', `${directory} hvigorVersion`);
+    assert.equal(config.dependencies['@ohos/hvigor-ohos-plugin'], '6.0.6', `${directory} plugin`);
+    assert.doesNotMatch(`${config.hvigorVersion} ${config.dependencies['@ohos/hvigor-ohos-plugin']}`, /(?:alpha|beta|rc)/i);
+  }
+  const readme = await read('packages/arkui/README.md');
+  assert.match(readme, /Hvigor 6\.0\.6[\s\S]*@ohos\/hvigor-ohos-plugin[^\n]*6\.0\.6/);
+  assert.match(readme, /HAR[\s\S]*pending/i);
 });
 
 test('artifact workflow produces metadata without public registry commands', async () => {
@@ -207,8 +241,19 @@ test('isolated artifact build verifies packages and an offline consumer without 
     assert.equal(sbom.bomFormat, 'CycloneDX');
     assert.equal(sbom.specVersion, '1.6');
     assert.equal(sbom.metadata.component.version, releaseVersion);
-    assert.ok(sbom.components.length >= 4);
-    assert.ok(sbom.components.every(({ name, version, purl }) => name && version === releaseVersion && purl.includes(`@${releaseVersion}`)));
+    const expectedComponents = [
+      { name: '@cool-ui/tokens', purl: `pkg:npm/%40cool-ui/tokens@${releaseVersion}` },
+      { name: '@cool-ui/wechat', purl: `pkg:npm/%40cool-ui/wechat@${releaseVersion}` },
+      { name: 'Swift CoolUI', purl: `pkg:swift/github.com/XingAur/cool-ui@${releaseVersion}` },
+      { name: 'Maven dev.coolui:coolui-compose', purl: `pkg:maven/dev.coolui/coolui-compose@${releaseVersion}` },
+      { name: '@cool-ui/arkui', purl: `pkg:ohpm/%40cool-ui/arkui@${releaseVersion}` },
+    ];
+    assert.deepEqual(
+      sbom.components.map(({ name, version, purl }) => ({ name, version, purl })),
+      expectedComponents.map((component) => ({ ...component, version: releaseVersion })),
+    );
+    assert.equal(sbom.metadata.component.name, 'cool-ui');
+    assert.ok(sbom.components.every(({ name }) => name !== 'cool-ui'), 'root application belongs only in metadata');
 
     const report = await readFile(resolve(fixture, 'docs/releases/0.2.0-verification.md'), 'utf8');
     assert.match(report, new RegExp(tokensSha256));
@@ -226,7 +271,6 @@ test('isolated artifact build verifies packages and an offline consumer without 
       'LICENSE',
       'NOTICE',
       'licenses.json',
-      'native-validation.json',
       `npm/${tokensName}`,
       `npm/${wechatName}`,
       'sbom.cdx.json',
@@ -237,6 +281,8 @@ test('isolated artifact build verifies packages and an offline consumer without 
       assert.ok(match, line);
       return [match[2], match[1]];
     }));
+    assert.equal(checksums.size, 6);
+    assert.equal(checksums.has('native-validation.json'), false);
     assert.deepEqual([...checksums.keys()].sort(), [...expectedFiles].sort());
     for (const [path, digest] of checksums) {
       const actual = createHash('sha256').update(await readFile(resolve(artifacts, path))).digest('hex');
@@ -246,9 +292,11 @@ test('isolated artifact build verifies packages and an offline consumer without 
     const licenses = JSON.parse(await readFile(resolve(artifacts, 'licenses.json'), 'utf8'));
     assert.equal(licenses.project, 'Apache-2.0');
     assert.deepEqual(
-      licenses.packages.map(({ name, version }) => ({ name, version })),
-      sbom.components.map(({ name, version }) => ({ name, version })),
+      licenses.packages.map(({ name, version, license }) => ({ name, version, license })),
+      expectedComponents.map(({ name }) => ({ name, version: releaseVersion, license: 'Apache-2.0' })),
     );
+    assert.match(report, /native-validation\.json[^\n]*excluded[^\n]*host-specific/i);
+    assert.match(report, /exactly six distributable files/i);
 
     const consumer = resolve(fixture, 'examples/npm-consumer');
     const lockfile = spawnPnpm(['--dir', consumer, '--ignore-workspace', 'install', '--offline', '--no-frozen-lockfile', '--lockfile-only', '--config.node-linker=hoisted'], { cwd: fixture, env: fakeNpmEnvironment });

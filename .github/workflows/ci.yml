@@ -23,13 +23,16 @@ jobs:
         with: { node-version: 22, cache: pnpm }
       - run: pnpm install --frozen-lockfile
       - run: pnpm tokens:check
-      - run: pnpm test:contracts
+      - run: pnpm test
       - run: pnpm --dir packages/wechat build
       - run: pnpm --dir packages/wechat test
       - run: pnpm docs:build
-      - run: pnpm pack:local
+      - run: pnpm artifacts
+      - run: node --test tests/release.test.mjs
+      - run: sha256sum --check SHA256SUMS
+        working-directory: artifacts
       - uses: actions/upload-artifact@v4
-        with: { name: npm-packages, path: artifacts/npm/*.tgz }
+        with: { name: coolui-release-artifacts, path: artifacts/** }
 
   android:
     runs-on: ubuntu-latest
@@ -41,6 +44,6 @@ jobs:
       - run: sdkmanager "platforms;android-31" "platforms;android-36" "build-tools;36.0.0"
       - uses: gradle/actions/setup-gradle@v4
         with: { gradle-version: 9.4.1 }
-      - run: gradle -p packages/android test publishReleasePublicationToLocalArtifactsRepository
+      - run: gradle -p packages/android test compileDebugAndroidTestKotlin publishReleasePublicationToLocalArtifactsRepository
       - uses: actions/upload-artifact@v4
         with: { name: coolui-compose, path: packages/android/build/repo/** }

@@ -1,4 +1,5 @@
 {
+  "modelVersion": "5.0.0",
   "name": "@cool-ui/arkui",
   "version": "0.2.0",
   "description": "cooL UI native ArkUI components for HarmonyOS 6.",

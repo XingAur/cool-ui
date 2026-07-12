@@ -6,8 +6,7 @@ import { fileURLToPath } from 'node:url';
 const root = resolve(fileURLToPath(new URL('../', import.meta.url)));
 const release = JSON.parse(await readFile(resolve(root, 'contracts/release.json'), 'utf8'));
 await mkdir(resolve(root, 'artifacts'), { recursive: true });
-const manifests = ['package.json', 'packages/tokens/package.json', 'packages/wechat/package.json', 'packages/arkui/oh-package.json5'];
-const components = [];
+const manifests = ['packages/tokens/package.json', 'packages/wechat/package.json', 'packages/arkui/oh-package.json5'];
 
 const URL_NAMESPACE = '6ba7b811-9dad-11d1-80b4-00c04fd430c8';
 
@@ -21,18 +20,28 @@ function uuidV5(namespace, name) {
   return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
 }
 
+const packages = new Map();
 for (const relative of manifests) {
   const raw = await readFile(resolve(root, relative), 'utf8');
   const pkg = JSON.parse(raw.replace(/^\s*\/\/.*$/gm, '').replace(/,\s*([}\]])/g, '$1'));
   if (pkg.version !== release.version) throw new Error(`${relative} version ${pkg.version} does not match release ${release.version}`);
-  components.push({
-    type: relative === 'package.json' ? 'application' : 'library',
-    name: pkg.name,
-    version: release.version,
-    licenses: [{ license: { id: pkg.license ?? 'Apache-2.0' } }],
-    purl: `pkg:generic/${encodeURIComponent(pkg.name)}@${release.version}`,
-  });
+  packages.set(relative, pkg);
 }
+
+const component = (name, purl, license = 'Apache-2.0') => ({
+  type: 'library',
+  name,
+  version: release.version,
+  licenses: [{ license: { id: license } }],
+  purl,
+});
+const components = [
+  component('@cool-ui/tokens', `pkg:npm/%40cool-ui/tokens@${release.version}`, packages.get('packages/tokens/package.json').license),
+  component('@cool-ui/wechat', `pkg:npm/%40cool-ui/wechat@${release.version}`, packages.get('packages/wechat/package.json').license),
+  component('Swift CoolUI', `pkg:swift/github.com/XingAur/cool-ui@${release.version}`),
+  component('Maven dev.coolui:coolui-compose', `pkg:maven/dev.coolui/coolui-compose@${release.version}`),
+  component('@cool-ui/arkui', `pkg:ohpm/%40cool-ui/arkui@${release.version}`, packages.get('packages/arkui/oh-package.json5').license),
+];
 
 const sbom = {
   bomFormat: 'CycloneDX',

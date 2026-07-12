@@ -11,7 +11,7 @@ async function files(directory) {
   for (const entry of await readdir(directory, { withFileTypes: true })) {
     const path = resolve(directory, entry.name);
     if (entry.isDirectory()) output.push(...await files(path));
-    else if (entry.name !== 'SHA256SUMS') output.push(path);
+    else if (entry.name !== 'SHA256SUMS' && entry.name !== 'native-validation.json') output.push(path);
   }
   return output;
 }

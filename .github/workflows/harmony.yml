@@ -19,6 +19,20 @@ jobs:
         with: { node-version: 22 }
       - run: pnpm install --frozen-lockfile
       - run: pnpm --dir packages/arkui test
+      - name: Verify DevEco toolchain
+        shell: powershell
+        run: |
+          if (-not (Get-Command hvigorw -ErrorAction SilentlyContinue)) {
+            throw "Hvigor is required on the self-hosted HarmonyOS/DevEco runner."
+          }
+          if (-not (Get-Command ohpm -ErrorAction SilentlyContinue)) {
+            throw "OHPM is required on the self-hosted HarmonyOS/DevEco runner."
+          }
+          hvigorw --version
+          ohpm --version
+      - name: Install HAR dependencies
+        working-directory: packages/arkui
+        run: ohpm install --all
       - name: Verify OHPM prepublish guard
         working-directory: packages/arkui
         shell: powershell
