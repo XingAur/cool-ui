@@ -6,22 +6,12 @@ import { tmpdir } from 'node:os';
 import { basename, dirname, join, relative, resolve, sep } from 'node:path';
 import test, { after } from 'node:test';
 import { fileURLToPath } from 'node:url';
+import { spawnPnpm } from './helpers/portable-pnpm.mjs';
 import { releaseVersion } from './release-fixture.mjs';
 
 const root = new URL('../', import.meta.url);
 const rootPath = fileURLToPath(root);
 const read = (path) => readFile(new URL(path, root), 'utf8');
-
-function spawnPnpm(args, cwd) {
-  const pnpmEntrypoint = process.env.npm_execpath;
-  const executable = pnpmEntrypoint ? process.execPath : process.platform === 'win32' ? 'powershell.exe' : 'pnpm';
-  const commandArgs = pnpmEntrypoint
-    ? [pnpmEntrypoint, ...args]
-    : process.platform === 'win32'
-      ? ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', resolve(process.env.APPDATA, 'npm/pnpm.ps1'), ...args]
-      : args;
-  return spawnSync(executable, commandArgs, { cwd, encoding: 'utf8' });
-}
 
 async function createTrackedFixture() {
   const listed = spawnSync('git', ['ls-files', '--cached', '-z'], { cwd: rootPath, encoding: 'buffer' });
@@ -182,6 +172,8 @@ test('isolated artifact build verifies packages and an offline consumer without 
     assert.equal(manifest['cool-month-calendar'], './dist/components/cool-month-calendar/index');
 
     const entries = tarEntries(wechatTarball);
+    const tokensSha256 = createHash('sha256').update(await readFile(tokensTarball)).digest('hex');
+    const wechatSha256 = createHash('sha256').update(await readFile(wechatTarball)).digest('hex');
     for (const relativePath of [
       'index.js', 'index.json', 'index.wxml', 'index.wxss',
       'default-day/index.js', 'default-day/index.json', 'default-day/index.wxml', 'default-day/index.wxss',
@@ -210,6 +202,18 @@ test('isolated artifact build verifies packages and an offline consumer without 
     assert.equal(sbom.metadata.component.version, releaseVersion);
     assert.ok(sbom.components.length >= 4);
     assert.ok(sbom.components.every(({ name, version, purl }) => name && version === releaseVersion && purl.includes(`@${releaseVersion}`)));
+
+    const report = await readFile(resolve(fixture, 'docs/releases/0.2.0-verification.md'), 'utf8');
+    assert.match(report, new RegExp(tokensSha256));
+    assert.match(report, new RegExp(wechatSha256));
+    assert.match(report, new RegExp(`${entries.length} entries`));
+    assert.match(report, new RegExp(`component count: ${sbom.components.length}`, 'i'));
+    assert.match(report, new RegExp(sbom.serialNumber));
+    assert.match(report, /### Swift[\s\S]*pending/i);
+    assert.match(report, /### HarmonyOS[\s\S]*HAR[\s\S]*HAP[\s\S]*pending/i);
+    assert.match(report, /no public[\s\S]{0,120}(?:publish|publication)/i);
+    assert.doesNotMatch(report, /\b\d+\/\d+\b/);
+    assert.match(report, /node --test tests\/release\.test\.mjs` \| PASS; all release tests passed/i);
 
     const expectedFiles = [
       'LICENSE',
@@ -240,11 +244,12 @@ test('isolated artifact build verifies packages and an offline consumer without 
     );
 
     const consumer = resolve(fixture, 'examples/npm-consumer');
-    const lockfile = spawnPnpm(['--dir', consumer, '--ignore-workspace', 'install', '--offline', '--no-frozen-lockfile', '--lockfile-only', '--config.node-linker=hoisted'], fixture);
+    const fakeNpmEnvironment = { ...process.env, npm_execpath: resolve(fixture, 'fake/npm-cli.js') };
+    const lockfile = spawnPnpm(['--dir', consumer, '--ignore-workspace', 'install', '--offline', '--no-frozen-lockfile', '--lockfile-only', '--config.node-linker=hoisted'], { cwd: fixture, env: fakeNpmEnvironment });
     assert.equal(lockfile.status, 0, lockfile.stderr || lockfile.stdout);
-    const installed = spawnPnpm(['--dir', consumer, '--ignore-workspace', 'install', '--offline', '--frozen-lockfile', '--config.node-linker=hoisted'], fixture);
+    const installed = spawnPnpm(['--dir', consumer, '--ignore-workspace', 'install', '--offline', '--frozen-lockfile', '--config.node-linker=hoisted'], { cwd: fixture, env: fakeNpmEnvironment });
     assert.equal(installed.status, 0, installed.stderr || installed.stdout);
-    const consumed = spawnPnpm(['--dir', consumer, '--ignore-workspace', 'test'], fixture);
+    const consumed = spawnPnpm(['--dir', consumer, '--ignore-workspace', 'test'], { cwd: fixture, env: fakeNpmEnvironment });
     assert.equal(consumed.status, 0, consumed.stderr || consumed.stdout);
     assert.match(consumed.stdout, /Verified npm tarballs in a clean local consumer\./);
   } finally {
