@@ -8,6 +8,9 @@ hero:
     - theme: brand
       text: Explore components
       link: /components/
+    - theme: alt
+      text: Read the 0.2 release notes
+      link: /releases/0.2.0
 features:
   - title: One semantic contract
     details: Shared tokens, states, accessibility and icon meanings across four native implementations.

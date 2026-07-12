@@ -912,7 +912,7 @@ MonthCalendar is a strictly controlled month-grid renderer. The consumer owns th
 
 ## Controlled data contract
 
-\`selectedDate\` is the authoritative selection. An empty or invalid value means that no day is selected; the component never falls back to \`CoolCalendarDay.isSelected\`.
+SwiftUI \`Binding<Date>\` and Compose \`LocalDate\` values are always non-empty and valid typed dates; each passed value is authoritative. Only ArkUI and WeChat string APIs treat an empty or invalid string as no selection. No platform falls back to \`CoolCalendarDay.isSelected\`.
 
 | CoolCalendarDay field | Meaning |
 | --- | --- |
@@ -1063,7 +1063,7 @@ MonthCalendar 是严格受控的月历网格。调用方拥有展示月份、选
 
 ## 受控数据契约
 
-\`selectedDate\` 是唯一权威的选中值。空值或非法值表示没有日期被选中，组件不会回退到 \`CoolCalendarDay.isSelected\`。
+SwiftUI \`Binding<Date>\` 与 Compose \`LocalDate\` 都是非空且合法的类型化日期；传入值是权威选中值。只有 ArkUI 与微信的字符串 API 把空字符串或非法字符串解释为无选中。任何平台都不会回退到 \`CoolCalendarDay.isSelected\`。
 
 | CoolCalendarDay 字段 | 含义 |
 | --- | --- |
@@ -1080,7 +1080,7 @@ MonthCalendar 是严格受控的月历网格。调用方拥有展示月份、选
 
 cooL UI 不计算公历网格、农历、节假日或调休/工作日安排。这些业务规则和本地化文字由调用方负责。
 
-## 四端 API
+## 四端 API 对照
 
 | 平台 | 受控 API | 请求与插槽 |
 | --- | --- | --- |
@@ -1206,6 +1206,65 @@ Page({
 `;
 }
 
+const englishComponentLinks = components
+  .map((component) => `- [${component.name}](./${kebab(component.name)}.md) — ${component.category}`)
+  .join('\n');
+const chineseComponentLinks = components
+  .map((component) => `- [${component.name}](./${kebab(component.name)}.md) — ${component.category} 类组件`)
+  .join('\n');
+
+await output('docs/components/index.md', `
+# cooL UI components
+
+All ${components.length} components follow the shared naming and state contract. SwiftUI, Compose, and ArkUI APIs use the \`Cool\` prefix; WeChat components use the \`cool-\` element prefix.
+
+## API matrix
+
+| Concept | SwiftUI | Compose | ArkUI | WeChat |
+| --- | --- | --- | --- | --- |
+| Button | \`CoolButton\` | \`CoolButton\` | \`CoolButton\` | \`<cool-button>\` |
+| Surface | \`CoolGlassSurface\` | \`CoolGlassSurface\` | \`CoolGlassSurface\` | \`<cool-glass-surface>\` |
+| Theme | \`CoolThemeProvider\` | \`CoolTheme\` | \`CoolThemeProvider\` | \`<cool-theme-provider>\` |
+
+## State matrix
+
+Interactive values are controlled and changes are emitted through native platform events.
+
+## Accessibility
+
+Every interactive component exposes an accessibility label, preserves native focus semantics, and uses a minimum platform touch target.
+
+## Component reference
+
+${englishComponentLinks}
+`);
+
+await output('docs/zh/components/index.md', `
+# cooL UI 组件
+
+全部 ${components.length} 个组件遵循共享的命名和状态契约。SwiftUI、Compose 与 ArkUI API 使用 \`Cool\` 前缀，微信组件使用 \`cool-\` 标签前缀。
+
+## 四端 API 对照
+
+| 规范名 | SwiftUI | Compose | ArkUI | 微信小程序 |
+| --- | --- | --- | --- | --- |
+| Button | \`CoolButton\` | \`CoolButton\` | \`CoolButton\` | \`<cool-button>\` |
+| GlassSurface | \`CoolGlassSurface\` | \`CoolGlassSurface\` | \`CoolGlassSurface\` | \`<cool-glass-surface>\` |
+| ThemeProvider | \`CoolThemeProvider\` | \`CoolTheme\` | \`CoolThemeProvider\` | \`<cool-theme-provider>\` |
+
+## 状态矩阵
+
+交互值由调用方控制，变化通过平台原生事件返回。
+
+## 无障碍与可访问性
+
+每个交互组件都提供无障碍标签、保留原生焦点语义，并使用平台最小触控目标。
+
+## 组件参考
+
+${chineseComponentLinks}
+`);
+
 for (const component of components) {
   const swiftName = `Cool${componentApiName(component.name)}`;
   const nativeName = `Cool${componentApiName(component.name)}`;
@@ -1259,7 +1318,7 @@ ${nativeName}(/* typed platform parameters */)
   await output(`docs/zh/components/${kebab(component.name)}.md`, `
 # ${component.name}
 
-${component.name} 属于 ${component.category} 组件。组件契约统一几何与语义，各端实现保留平台原生行为。
+${component.name} 是 ${component.category} 类组件。组件契约统一几何和语义，各端实现保留平台原生行为。
 
 ## 四端 API 对照
 
@@ -1275,9 +1334,9 @@ ${component.name} 属于 ${component.category} 组件。组件契约统一几何
 | --- | --- | --- | --- | --- |
 ${stateRows}
 
-## 可访问性
+## 无障碍
 
-请提供本地化无障碍标签。标为 beta 或 planned 的能力仍需完成仓库就绪度矩阵列出的平台验证。
+请提供本地化的无障碍标签。标为 beta 或 planned 的能力仍需完成仓库就绪度矩阵列出的原生平台验证。
 
 ## 示例
 

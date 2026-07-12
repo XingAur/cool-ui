@@ -183,3 +183,10 @@ test('WeChat MonthCalendar treats selectedDate as the only selection authority',
   assert.match(source, /isSelected:\s*hasControlledSelection\s*&&\s*item\.date\s*===\s*selectedDate/);
   assert.doesNotMatch(source, /Boolean\(item\.isSelected\)/);
 });
+
+test('changelog assigns typed and WeChat calendar customization to the correct platforms', async () => {
+  const source = await read('CHANGELOG.md');
+  assert.match(source, /typed customization slots[^\n]*SwiftUI[^\n]*Compose[^\n]*ArkUI/i);
+  assert.doesNotMatch(source, /typed customization slots[^\n]*WeChat/i);
+  assert.match(source, /WeChat[^\n]*named slot[^\n]*componentGenerics/i);
+});

@@ -4,13 +4,17 @@ import test from 'node:test';
 
 const root = new URL('../', import.meta.url);
 const read = (path) => readFile(new URL(path, root), 'utf8');
-const mojibake = /鏄|灞|锛|鈥|寰俊|€|鈭|灞炰簬|鍥涚|绀轰緥|鍙|鎴愮啛|鍘熺敓鐜荤拑/;
+const mojibake = /鏄|灞|锛|鈥|寰俊|€|鈭|�|灞炰簬|鍥涚|绀轰緥|鍙|鎴愮啛|鍘熺敓|缁勪欢|鏃犻殰|鐗堟湰/;
+const kebab = (name) => name.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase();
+const markdownLinks = (source) => [...source.matchAll(/\[([^\]]+)\]\(([^)]+)\)/g)].map(([, label, link]) => ({ label, link }));
 
 test('English and Chinese entry points contain no encoding corruption', async () => {
   for (const path of ['README.md', 'README.zh-CN.md']) assert.doesNotMatch(await read(path), mojibake, path);
-  assert.doesNotMatch(await read('docs/zh/index.md'), mojibake, 'docs/zh/index.md');
-  for (const file of await readdir(new URL('docs/zh/components/', root))) {
-    assert.doesNotMatch(await read(`docs/zh/components/${file}`), mojibake, file);
+  const chineseMarkdown = (await readdir(new URL('docs/zh/', root), { recursive: true }))
+    .filter((path) => path.endsWith('.md'))
+    .map((path) => `docs/zh/${path.replaceAll('\\', '/')}`);
+  for (const path of [...chineseMarkdown, 'docs/.vitepress/config.mts']) {
+    assert.doesNotMatch(await read(path), mojibake, path);
   }
 });
 
@@ -29,8 +33,8 @@ test('component docs report contract maturity instead of unconditional support',
 
 test('MonthCalendar has explicit bilingual controlled-data guidance instead of generic placeholders', async () => {
   const pages = [
-    ['docs/components/month-calendar.md', /selectedDate.*authoritative selection/],
-    ['docs/zh/components/month-calendar.md', /selectedDate.*唯一权威的选中值/],
+    ['docs/components/month-calendar.md', /each passed value is authoritative/],
+    ['docs/zh/components/month-calendar.md', /传入值是权威选中值/],
   ];
   const dayFields = [
     'date', 'day', 'secondaryText', 'accessibilityLabel', 'isToday',
@@ -40,7 +44,7 @@ test('MonthCalendar has explicit bilingual controlled-data guidance instead of g
   for (const [path, controlledStatement] of pages) {
     const source = await read(path);
     assert.match(source, controlledStatement, `${path} controlled selection`);
-    assert.match(source, /empty|invalid|空值|非法值/i, `${path} empty and invalid selection`);
+    assert.match(source, /empty|invalid|空值|非法值|空字符串|非法字符串/i, `${path} empty and invalid selection`);
     assert.match(source, /consumer|parent|调用方|父级/i, `${path} parent-owned updates`);
     for (const field of dayFields) assert.match(source, new RegExp(`\\b${field}\\b`), `${path} ${field}`);
     assert.match(source, /markers[^\n]*(?:3|three|三个|最多)/i, `${path} marker limit`);
@@ -63,6 +67,13 @@ test('MonthCalendar has explicit bilingual controlled-data guidance instead of g
     assert.match(source, /HAR[^\n]*(?:pending|待验证)/i, `${path} honest ArkUI maturity`);
     assert.doesNotMatch(source, /typed platform parameters|类型安全的平台参数|placeholder|TODO|TBD/i, `${path} copyable examples`);
   }
+
+  const english = await read('docs/components/month-calendar.md');
+  assert.match(english, /SwiftUI[^\n]*Binding<Date>[^\n]*Compose[^\n]*LocalDate[^\n]*(?:non-empty|valid)/i);
+  assert.match(english, /Only ArkUI and WeChat[^\n]*(?:empty|invalid)[^\n]*no (?:day|selection)/i);
+  const chinese = await read('docs/zh/components/month-calendar.md');
+  assert.match(chinese, /SwiftUI[^\n]*Binding<Date>[^\n]*Compose[^\n]*LocalDate[^\n]*(?:非空|合法)/);
+  assert.match(chinese, /只有 ArkUI 与微信[^\n]*(?:空字符串|非法字符串)[^\n]*无选中/);
 });
 
 test('root and platform READMEs describe the 0.2.0 local-only 43-component boundary honestly', async () => {
@@ -124,5 +135,53 @@ test('WeChat consumer examples respect the package miniprogram root', async () =
     const source = await read(path);
     assert.doesNotMatch(source, /@cool-ui\/wechat\/dist\//, `${path} must not repeat the miniprogram root`);
     assert.match(source, expectedPath, path);
+  }
+});
+
+test('VitePress navigation exposes bilingual component and 0.2 release routes', async () => {
+  const { default: config } = await import(new URL('../docs/.vitepress/config.mts', import.meta.url));
+  const rootLinks = [
+    ...config.themeConfig.nav,
+    ...config.themeConfig.sidebar.flatMap((group) => group.items ?? []),
+  ].map(({ link }) => link);
+  assert.ok(rootLinks.includes('/components/'));
+  assert.ok(rootLinks.includes('/releases/0.2.0'));
+
+  const zhTheme = config.locales.zh.themeConfig;
+  const zhLinks = [
+    ...zhTheme.nav,
+    ...zhTheme.sidebar.flatMap((group) => group.items ?? []),
+  ].map(({ link }) => link);
+  assert.ok(zhLinks.includes('/zh/components/'));
+  assert.ok(zhLinks.includes('/zh/releases/0.2.0'));
+
+  assert.match(await read('docs/index.md'), /link:\s*\/releases\/0\.2\.0/);
+  assert.match(await read('docs/zh/index.md'), /link:\s*\/zh\/releases\/0\.2\.0/);
+  await read('docs/zh/releases/0.2.0.md');
+});
+
+test('bilingual component indexes link every contract component', async () => {
+  const contract = JSON.parse(await read('contracts/components.json'));
+  for (const [path, prefix] of [['docs/components/index.md', './'], ['docs/zh/components/index.md', './']]) {
+    const links = markdownLinks(await read(path));
+    const componentLinks = new Set(links.map(({ link }) => link));
+    for (const component of contract.components) {
+      assert.ok(componentLinks.has(`${prefix}${kebab(component.name)}.md`), `${path} ${component.name}`);
+    }
+    assert.equal([...componentLinks].filter((link) => link.startsWith(prefix) && link.endsWith('.md')).length, contract.components.length);
+    assert.ok(componentLinks.has('./month-calendar.md'));
+  }
+});
+
+test('all generated Chinese component pages use UTF-8 Chinese section headings', async () => {
+  const contract = JSON.parse(await read('contracts/components.json'));
+  for (const component of contract.components) {
+    const path = `docs/zh/components/${kebab(component.name)}.md`;
+    const source = await read(path);
+    assert.match(source, new RegExp(`^# ${component.name}$`, 'm'), path);
+    assert.match(source, /^## 四端 API 对照$/m, path);
+    assert.match(source, /^## 状态矩阵$/m, path);
+    assert.match(source, /^## 无障碍/m, path);
+    assert.doesNotMatch(source, mojibake, path);
   }
 });

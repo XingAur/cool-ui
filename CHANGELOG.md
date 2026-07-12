@@ -4,7 +4,8 @@ All notable changes to cooL UI are documented here. The project follows Semantic
 
 ## 0.2.0
 
-- Added controlled MonthCalendar implementations, extreme-state Catalog fixtures, and typed customization slots on SwiftUI, Compose, ArkUI, and WeChat.
+- Added controlled MonthCalendar implementations, extreme-state Catalog fixtures, and typed customization slots on SwiftUI, Compose, and ArkUI.
+- Added WeChat customization through a named slot for the header and `componentGenerics` for day and marker renderers.
 - Replaced the WeChat Button shell with a native `<button>` and capability passthrough; this is a deliberate 0.x breaking improvement for DOM, form, and native event behavior.
 - Made WeChat TabBar and SegmentedControl controlled components whose events request parent-owned state updates.
 - Established `contracts/release.json` and the canonical release pipeline as the single version source for generated packages, Catalogs, local artifacts, and documentation.

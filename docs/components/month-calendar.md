@@ -4,7 +4,7 @@ MonthCalendar is a strictly controlled month-grid renderer. The consumer owns th
 
 ## Controlled data contract
 
-`selectedDate` is the authoritative selection. An empty or invalid value means that no day is selected; the component never falls back to `CoolCalendarDay.isSelected`.
+SwiftUI `Binding<Date>` and Compose `LocalDate` values are always non-empty and valid typed dates; each passed value is authoritative. Only ArkUI and WeChat string APIs treat an empty or invalid string as no selection. No platform falls back to `CoolCalendarDay.isSelected`.
 
 | CoolCalendarDay field | Meaning |
 | --- | --- |

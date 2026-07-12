@@ -4,7 +4,7 @@ MonthCalendar 是严格受控的月历网格。调用方拥有展示月份、选
 
 ## 受控数据契约
 
-`selectedDate` 是唯一权威的选中值。空值或非法值表示没有日期被选中，组件不会回退到 `CoolCalendarDay.isSelected`。
+SwiftUI `Binding<Date>` 与 Compose `LocalDate` 都是非空且合法的类型化日期；传入值是权威选中值。只有 ArkUI 与微信的字符串 API 把空字符串或非法字符串解释为无选中。任何平台都不会回退到 `CoolCalendarDay.isSelected`。
 
 | CoolCalendarDay 字段 | 含义 |
 | --- | --- |
@@ -21,7 +21,7 @@ MonthCalendar 是严格受控的月历网格。调用方拥有展示月份、选
 
 cooL UI 不计算公历网格、农历、节假日或调休/工作日安排。这些业务规则和本地化文字由调用方负责。
 
-## 四端 API
+## 四端 API 对照
 
 | 平台 | 受控 API | 请求与插槽 |
 | --- | --- | --- |

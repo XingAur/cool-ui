@@ -8,6 +8,9 @@ hero:
     - theme: brand
       text: 浏览组件
       link: /zh/components/
+    - theme: alt
+      text: 阅读 0.2 发布说明
+      link: /zh/releases/0.2.0
 features:
   - title: 单一语义契约
     details: 四端共享令牌、状态、无障碍和语义图标。
