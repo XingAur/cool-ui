@@ -190,14 +190,17 @@ test('Button styles use shared tokens for all native interaction states', async 
 
 test('container slots preserve consumer vertical layout', async () => {
   const styles = await readFile(new URL('src/styles/glass.wxss', root), 'utf8');
-  const containerRule = styles.match(/\.cool-backdrop\s*>\s*\.cool-content,[^}]+\{([^}]+)\}/s)?.[0] ?? '';
+  const generator = await readFile(new URL('../../scripts/generate-components.mjs', root), 'utf8');
+  const containerRule = styles.match(/\.cool-container-content\s*\{([^}]+)\}/s)?.[0] ?? '';
 
   for (const selector of ['cool-backdrop', 'cool-glass-surface', 'cool-card', 'cool-glass-group', 'cool-list']) {
-    assert.match(containerRule, new RegExp(`\\.${selector}\\s*>\\s*\\.cool-content`), selector);
+    const wxml = await readFile(new URL(`src/components/${selector}/index.wxml`, root), 'utf8');
+    assert.match(wxml, /class="cool-content cool-container-content"/, selector);
   }
   assert.match(containerRule, /display:\s*block;/);
   assert.match(containerRule, /width:\s*100%;/);
-  assert.match(styles, /\.cool-list-item\s*>\s*\.cool-content\s*\{[^}]*display:\s*flex;/s);
+  assert.doesNotMatch(styles, />/, 'component WXSS must avoid unsupported child combinators');
+  assert.match(generator, /blockContentComponents\.has\(component\.name\)/);
 });
 
 test('component styles use a component-safe token entry without global page selectors', async () => {

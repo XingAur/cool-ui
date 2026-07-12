@@ -13,6 +13,7 @@ const generationMode = (name, platform) => generationModes[name]?.[platform] ?? 
 const componentApiName = (name) => name;
 const kebab = (name) => name.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase();
 const controlledOptionComponents = new Set(['TabBar', 'SegmentedControl']);
+const blockContentComponents = new Set(['Backdrop', 'GlassSurface', 'Card', 'GlassGroup', 'List']);
 
 async function output(path, contents) {
   const target = resolve(root, path);
@@ -755,7 +756,7 @@ Component({
         ? `<view class="cool-stepper"><button size="mini" data-delta="-1" disabled="{{disabled}}" bindtap="handleStep">−</button><text>{{value}}</text><button size="mini" data-delta="1" disabled="{{disabled}}" bindtap="handleStep">+</button></view>`
       : inputType === 'picker'
         ? `<picker mode="${pickerMode}" range="{{options}}" value="{{value}}" disabled="{{disabled}}" bindchange="handleNativeChange"><view class="cool-picker-value">{{displayValue || label}}</view></picker>`
-      : `<view class="cool-content" role="${role}" aria-label="{{accessibilityLabel}}" bindtap="handleTap"><text wx:if="{{label}}" class="cool-label">{{label}}</text><slot/></view>`;
+      : `<view class="cool-content${blockContentComponents.has(component.name) ? ' cool-container-content' : ''}" role="${role}" aria-label="{{accessibilityLabel}}" bindtap="handleTap"><text wx:if="{{label}}" class="cool-label">{{label}}</text><slot/></view>`;
   await output(`${dir}/index.js`, `
 const coolBehavior = require('../../behaviors/cool-ui');
 
