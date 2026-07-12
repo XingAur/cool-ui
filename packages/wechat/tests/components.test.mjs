@@ -188,6 +188,18 @@ test('Button styles use shared tokens for all native interaction states', async 
   assert.doesNotMatch(source, /border-radius:\s*\d|backdrop-filter:\s*blur\(\d/i);
 });
 
+test('container slots preserve consumer vertical layout', async () => {
+  const styles = await readFile(new URL('src/styles/glass.wxss', root), 'utf8');
+  const containerRule = styles.match(/\.cool-backdrop\s*>\s*\.cool-content,[^}]+\{([^}]+)\}/s)?.[0] ?? '';
+
+  for (const selector of ['cool-backdrop', 'cool-glass-surface', 'cool-card', 'cool-glass-group', 'cool-list']) {
+    assert.match(containerRule, new RegExp(`\\.${selector}\\s*>\\s*\\.cool-content`), selector);
+  }
+  assert.match(containerRule, /display:\s*block;/);
+  assert.match(containerRule, /width:\s*100%;/);
+  assert.match(styles, /\.cool-list-item\s*>\s*\.cool-content\s*\{[^}]*display:\s*flex;/s);
+});
+
 test('WeChat catalog showcases native Button states without replacing the component list', async () => {
   const source = await readFile(new URL('../../apps/catalog-wechat/pages/index/index.wxml', root), 'utf8');
   const pageSource = await readFile(new URL('../../apps/catalog-wechat/pages/index/index.js', root), 'utf8');

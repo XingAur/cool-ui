@@ -32,6 +32,15 @@
 .cool-tone-danger, .is-error { border-color: var(--cool-color-light-danger); }
 .is-disabled { opacity: var(--cool-opacity-disabled); }
 .cool-content { display: flex; align-items: center; gap: var(--cool-space-sm); min-height: inherit; }
+.cool-backdrop > .cool-content,
+.cool-glass-surface > .cool-content,
+.cool-card > .cool-content,
+.cool-glass-group > .cool-content,
+.cool-list > .cool-content {
+  display: block;
+  width: 100%;
+}
+.cool-list-item > .cool-content { display: flex; }
 .cool-native-input { width: 100%; min-height: inherit; color: inherit; }
 .cool-native-textarea { min-height: calc(var(--cool-size-controlLarge) * 2); }
 .cool-stepper { display: flex; align-items: center; justify-content: space-between; gap: var(--cool-space-sm); }
