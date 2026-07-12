@@ -111,6 +111,8 @@ test('CI separates shared, Apple and HarmonyOS toolchains', async () => {
   assert.match(apple, /runs-on: macos-26/);
   assert.match(apple, /grep -E '\^Xcode 26/);
   assert.match(apple, /swift test/);
+  assert.match(apple, /tee swift-test\.log/);
+  assert.match(apple, /::error title=Swift test failed/);
   assert.match(apple, /xcodebuild/);
 
   const harmony = await read('.github/workflows/harmony.yml');
@@ -213,8 +215,12 @@ test('isolated artifact build verifies packages and an offline consumer without 
     assert.equal(manifest['cool-month-calendar'], './dist/components/cool-month-calendar/index');
 
     const entries = tarEntries(wechatTarball);
-    const tokensSha256 = createHash('sha256').update(await readFile(tokensTarball)).digest('hex');
-    const wechatSha256 = createHash('sha256').update(await readFile(wechatTarball)).digest('hex');
+    const tokensArchive = await readFile(tokensTarball);
+    const wechatArchive = await readFile(wechatTarball);
+    assert.equal(tokensArchive[9], 3, 'tokens tgz must use a canonical Unix gzip OS byte');
+    assert.equal(wechatArchive[9], 3, 'WeChat tgz must use a canonical Unix gzip OS byte');
+    const tokensSha256 = createHash('sha256').update(tokensArchive).digest('hex');
+    const wechatSha256 = createHash('sha256').update(wechatArchive).digest('hex');
     for (const relativePath of [
       'index.js', 'index.json', 'index.wxml', 'index.wxss',
       'default-day/index.js', 'default-day/index.json', 'default-day/index.wxml', 'default-day/index.wxss',

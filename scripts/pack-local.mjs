@@ -1,4 +1,4 @@
-import { copyFile, mkdir, mkdtemp, readFile, rm } from 'node:fs/promises';
+import { copyFile, mkdir, mkdtemp, open, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { basename, dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -16,6 +16,22 @@ function runPnpm(pnpmArgs) {
   if (result.stderr) process.stderr.write(result.stderr);
   if (result.status !== 0) process.exit(result.status ?? 1);
   return result.stdout;
+}
+
+async function canonicalizeGzipOperatingSystem(archivePath) {
+  const handle = await open(archivePath, 'r+');
+  try {
+    const header = Buffer.alloc(10);
+    const { bytesRead } = await handle.read(header, 0, header.length, 0);
+    if (bytesRead !== header.length || header[0] !== 0x1f || header[1] !== 0x8b || header[2] !== 0x08) {
+      throw new Error(`Unexpected gzip header: ${archivePath}`);
+    }
+    if (header[9] !== 0x03) {
+      await handle.write(Buffer.from([0x03]), 0, 1, 9);
+    }
+  } finally {
+    await handle.close();
+  }
 }
 
 const manifestPaths = [
@@ -52,6 +68,7 @@ try {
     const target = resolve(destination, archiveName);
     await rm(target, { force: true });
     await copyFile(packedPath, target);
+    await canonicalizeGzipOperatingSystem(target);
     console.log(target);
   }
 } finally {
