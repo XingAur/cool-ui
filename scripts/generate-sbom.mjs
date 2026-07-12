@@ -38,8 +38,8 @@ const component = (name, purl, license = 'Apache-2.0') => ({
 const components = [
   component('@cool-ui/tokens', `pkg:npm/%40cool-ui/tokens@${release.version}`, packages.get('packages/tokens/package.json').license),
   component('@cool-ui/wechat', `pkg:npm/%40cool-ui/wechat@${release.version}`, packages.get('packages/wechat/package.json').license),
-  component('Swift CoolUI', `pkg:swift/github.com/XingAur/cool-ui@${release.version}`),
-  component('Maven dev.coolui:coolui-compose', `pkg:maven/dev.coolui/coolui-compose@${release.version}`),
+  component('CoolUI', `pkg:swift/github.com/XingAur/cool-ui@${release.version}`),
+  component('dev.coolui:coolui-compose', `pkg:maven/dev.coolui/coolui-compose@${release.version}`),
   component('@cool-ui/arkui', `pkg:ohpm/%40cool-ui/arkui@${release.version}`, packages.get('packages/arkui/oh-package.json5').license),
 ];
 

@@ -244,8 +244,8 @@ test('isolated artifact build verifies packages and an offline consumer without 
     const expectedComponents = [
       { name: '@cool-ui/tokens', purl: `pkg:npm/%40cool-ui/tokens@${releaseVersion}` },
       { name: '@cool-ui/wechat', purl: `pkg:npm/%40cool-ui/wechat@${releaseVersion}` },
-      { name: 'Swift CoolUI', purl: `pkg:swift/github.com/XingAur/cool-ui@${releaseVersion}` },
-      { name: 'Maven dev.coolui:coolui-compose', purl: `pkg:maven/dev.coolui/coolui-compose@${releaseVersion}` },
+      { name: 'CoolUI', purl: `pkg:swift/github.com/XingAur/cool-ui@${releaseVersion}` },
+      { name: 'dev.coolui:coolui-compose', purl: `pkg:maven/dev.coolui/coolui-compose@${releaseVersion}` },
       { name: '@cool-ui/arkui', purl: `pkg:ohpm/%40cool-ui/arkui@${releaseVersion}` },
     ];
     assert.deepEqual(
