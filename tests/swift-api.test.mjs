@@ -120,8 +120,9 @@ test('SwiftUI MonthCalendar exposes controlled models and native grid compositio
 });
 
 test('SwiftUI MonthCalendar uses AA selected ink and explicit labels fully override synthesized speech', async () => {
-  const [calendar, tokens] = await Promise.all([
+  const [calendar, swiftTests, tokens] = await Promise.all([
     read('packages/swift/Sources/CoolUI/CoolMonthCalendar.swift'),
+    read('packages/swift/Tests/CoolUITests/CoolUITests.swift'),
     read('packages/tokens/src/tokens.json').then(JSON.parse),
   ]);
   const resolveColor = (value) => value.startsWith('{')
@@ -149,6 +150,8 @@ test('SwiftUI MonthCalendar uses AA selected ink and explicit labels fully overr
   assert.match(calendar, /CoolTokens\.colorPrimitiveInk900/);
   assert.doesNotMatch(calendar, /foregroundStyle\(toneColor\(model\.tone\)\)/);
   assert.match(calendar, /if let accessibilityLabel = model\.accessibilityLabel, !accessibilityLabel\.isEmpty \{\s*return accessibilityLabel\s*\}/);
+  assert.match(swiftTests, /localizedAccessibilityLabel\(overrideDay\) == "一月一日"/);
+  assert.doesNotMatch(swiftTests, /一月一日, 强调标记/);
 });
 
 test('Swift Catalog owns a controlled 42-cell MonthCalendar fixture', async () => {

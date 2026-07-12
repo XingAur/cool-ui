@@ -243,7 +243,6 @@ import SwiftUI
   let day = CoolCalendarDay(
     date: date,
     day: 1,
-    accessibilityLabel: "一月一日",
     markers: [
       CoolCalendarMarker(tone: .accent),
       CoolCalendarMarker(tone: .warning),
@@ -266,5 +265,12 @@ import SwiftUI
   #expect(parentLabel.contains("强调标记"))
   #expect(parentLabel.contains("警告标记"))
   #expect(parentLabel.contains("自定义危险标记"))
-  #expect(parentLabel == "一月一日, 强调标记, 警告标记, 自定义危险标记")
+
+  let overrideDay = CoolCalendarDay(
+    date: date,
+    day: 1,
+    accessibilityLabel: "一月一日",
+    markers: [CoolCalendarMarker(tone: .danger)]
+  )
+  #expect(calendar.localizedAccessibilityLabel(overrideDay) == "一月一日")
 }
