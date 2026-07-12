@@ -1,6 +1,12 @@
 # CoolUI for SwiftUI
 
-Add the repository root as a Swift Package dependency. The package targets iOS/iPadOS 26 and uses SwiftUI Liquid Glass through `glassEffect` and `GlassEffectContainer`.
+Version `0.2.0` exposes 43 components. The APIs remain `planned` until the native compile, accessibility, Catalog, and golden-image gates are complete.
+
+Add a local checkout of the repository root as a SwiftPM dependency. The package targets iOS/iPadOS 26 and uses Apple Liquid Glass through `glassEffect` and `GlassEffectContainer`.
+
+```swift
+.package(path: "../cool-ui")
+```
 
 ```swift
 import CoolUI

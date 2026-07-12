@@ -8,16 +8,16 @@ The goal is shared geometry, semantic color, state, and motion rhythm—not pixe
 
 ## Current status
 
-Version `0.2.0` is an alpha snapshot and is intentionally not published to public registries. The old runtime string renderer has been removed from SwiftUI and Compose. ArkUI now selects native primitives during generation rather than routing every API through one runtime switch. WeChat inputs use native controls, and dialog/sheet components have controlled overlay and dismissal semantics.
+Version `0.2.0` is a local-only alpha snapshot with 43 components and is intentionally not published to public registries. MonthCalendar is available as a controlled API on all four targets. The old runtime string renderer has been removed from SwiftUI and Compose. ArkUI now selects native primitives during generation rather than routing every API through one runtime switch. WeChat inputs use native controls, and dialog/sheet components have controlled overlay and dismissal semantics.
 
 All component maturity values remain `planned` until the relevant native compile, behavioral, accessibility, Catalog smoke, and golden-image gates pass. Passing Node source-contract tests alone is not presented as native-platform verification.
 
 | Target | Implementation | Required verification before stable |
 | --- | --- | --- |
-| SwiftUI | 42 named, type-safe APIs; native `Binding`, `Button`, `TabView`, alerts, sheets, popovers, `glassEffect`, and `GlassEffectContainer` | Xcode 26 compile/UI tests, accessibility audit, simulator goldens |
-| Compose | Typed controlled inputs/actions and Material navigation/presentation APIs; background-only `RenderEffect` in `CoolBackdrop` | Android CI compile/UI tests, screenshot and performance regression |
-| ArkUI | 42 generated API names with generation-time native primitive selection | DevEco/HarmonyOS 6 HAR build, typed API expansion, Hypium and Catalog smoke |
-| WeChat | 42 native custom-component tags, native form controls, controlled events, reduced-transparency fallback, dialog/sheet overlays | WeChat DevTools smoke, focus/reader checks, visual goldens |
+| SwiftUI | 43 named, type-safe APIs; native `Binding`, `Button`, `TabView`, alerts, sheets, popovers, `glassEffect`, and `GlassEffectContainer` | Xcode 26 compile/UI tests, accessibility audit, simulator goldens |
+| Compose | 43 typed APIs with controlled inputs/actions and Material navigation/presentation APIs; background-only `RenderEffect` in `CoolBackdrop` | Android CI compile/UI tests, screenshot and performance regression |
+| ArkUI | 43 generated API names with generation-time native primitive selection | DevEco/HarmonyOS 6 HAR build, typed API expansion, Hypium and Catalog smoke |
+| WeChat | 43 native custom-component tags, native form controls, controlled events, reduced-transparency fallback, dialog/sheet overlays | WeChat DevTools smoke, focus/reader checks, visual goldens |
 
 cooL UI is a component library inspired by SwiftUI's compositional API style. It does **not** and cannot copy all of SwiftUI: navigation stacks, layout protocol internals, environment propagation, platform lifecycle, every modifier, and Apple-private rendering are outside this package's scope.
 
@@ -31,10 +31,10 @@ cooL UI is a component library inspired by SwiftUI's compositional API style. It
 
 ## Install locally
 
-Swift Package Manager can consume the repository root directly:
+SwiftPM can consume a local checkout of the repository root directly:
 
 ```swift
-.package(url: "https://github.com/XingAur/cool-ui.git", branch: "main")
+.package(path: "../cool-ui")
 ```
 
 For npm artifacts and native local repositories:
@@ -47,7 +47,9 @@ pnpm pack:local
 pnpm artifacts
 ```
 
-Public registry publication is deliberately absent from these commands. Local outputs are written under `artifacts/`; `native-validation.json` records which native toolchains were actually available.
+The npm tarballs are written as `artifacts/npm/cool-ui-tokens-0.2.0.tgz` and `artifacts/npm/cool-ui-wechat-0.2.0.tgz`. Compose publishes to the local Maven repository with `gradle -p packages/android publishReleasePublicationToLocalArtifactsRepository`. ArkUI can be assembled with `hvigorw assembleHar --mode module -p product=default`, but the real HarmonyOS 6 HAR result remains pending until DevEco is available. Public registry publication is deliberately absent from this canonical release pipeline; `native-validation.json` records which native toolchains were actually available.
+
+WeChat `cool-button` renders one native `<button>`. Its `open-type` behavior is limited by the active WeChat base library and platform permissions. Its internal `<form>` supports the component's own `form-type`, `submit`, and `reset` flow, but cannot submit a consumer-owned outer form.
 
 ## Repository map
 
@@ -62,7 +64,7 @@ Use Node 22, pnpm 10, JDK 17/Android SDK 31 and 36, Xcode 26/Swift 6.2, and a no
 
 ## Glass implementation
 
-SwiftUI uses Apple-provided Liquid Glass APIs. Compose applies `RenderEffect` only to the background supplied to `CoolBackdrop`; `CoolGlassSurface` uses a translucent tonal surface so text and controls are never blurred with their own container. ArkUI and WeChat use their platform backdrop capabilities and fall back to an opaque semantic surface when transparency is reduced.
+SwiftUI uses Apple-provided Liquid Glass APIs on supported Apple systems. Compose, ArkUI, and WeChat provide perceptually equivalent material treatments rather than claiming Apple Liquid Glass. Compose applies `RenderEffect` only to the background supplied to `CoolBackdrop`; `CoolGlassSurface` uses a translucent tonal surface so text and controls are never blurred with their own container. ArkUI and WeChat use their platform backdrop capabilities and fall back to an opaque semantic surface when transparency is reduced.
 
 Avoid nesting arbitrary real-time blur nodes. Put related surfaces in one `CoolGlassGroup` and provide a shared backdrop. Performance or accessibility policy may select `solidFallback`.
 

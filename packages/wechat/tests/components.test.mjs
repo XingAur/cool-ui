@@ -519,15 +519,15 @@ test('MonthCalendar normalizes controlled days without mutating consumer input',
     { tone: 'neutral' },
   ]);
 
-  const uncontrolledWrites = [];
-  observer.call({ setData(update) { uncontrolledWrites.push(update); } }, [
+  const emptySelectionWrites = [];
+  observer.call({ setData(update) { emptySelectionWrites.push(update); } }, [
     { date: '2026-07-12', day: 12, accessibilityLabel: '', isSelected: true },
   ], '');
-  assert.deepEqual(plainData(uncontrolledWrites[0].viewDays), [{
+  assert.deepEqual(plainData(emptySelectionWrites[0].viewDays), [{
     date: '2026-07-12', day: 12, markers: [], tone: 'neutral', isDisabled: false,
-    isToday: false, isSelected: true, resolvedAccessibilityLabel: '2026-07-12', _index: 0,
+    isToday: false, isSelected: false, resolvedAccessibilityLabel: '2026-07-12', _index: 0,
   }]);
-  assert.deepEqual(plainData(uncontrolledWrites[0].viewWeeks), [plainData(uncontrolledWrites[0].viewDays)]);
+  assert.deepEqual(plainData(emptySelectionWrites[0].viewWeeks), [plainData(emptySelectionWrites[0].viewDays)]);
 });
 
 test('MonthCalendar groups normalized days into seven-day viewWeeks and keeps a short final week', async () => {
@@ -566,9 +566,9 @@ test('MonthCalendar validates Gregorian ISO dates, matching day numbers, and sel
   observer.call({ setData(update) { invalidSelectionWrites.push(update); } }, days, '2026-02-31');
   const invalidSelectionDays = plainData(invalidSelectionWrites[0].viewDays);
   assert.deepEqual(invalidSelectionDays.map((day) => day.date), ['0000-02-29', '2024-02-29', '2026-04-30']);
-  assert.equal(invalidSelectionDays[0].isSelected, true, 'year 0000 follows proleptic Gregorian leap-year arithmetic');
+  assert.equal(invalidSelectionDays[0].isSelected, false, 'invalid selectedDate means no selection');
   assert.equal(invalidSelectionDays[1].isSelected, false);
-  assert.equal(invalidSelectionDays[2].isSelected, true, 'invalid selectedDate must not override day.isSelected');
+  assert.equal(invalidSelectionDays[2].isSelected, false, 'invalid selectedDate must not fall back to day.isSelected');
 
   const validSelectionWrites = [];
   observer.call({ setData(update) { validSelectionWrites.push(update); } }, days, '2024-02-29');

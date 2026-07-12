@@ -153,3 +153,33 @@ test('repository root is directly consumable by Swift Package Manager', async ()
   assert.match(consumer, /package: "cool-ui"/);
   assert.match(await read('examples/swift-consumer/Sources/Demo/main.swift'), /import CoolUI/);
 });
+
+test('0.2.0 release notes describe canonical local-only delivery without a pending bump', async () => {
+  const changelog = await read('CHANGELOG.md');
+  const releaseNote = await read('docs/releases/0.2.0.md');
+  for (const source of [changelog, releaseNote]) {
+    assert.match(source, /0\.2\.0/);
+    assert.match(source, /MonthCalendar/);
+    assert.match(source, /WeChat[^\n]*Button/i);
+    assert.match(source, /0\.x[^\n]*breaking/i);
+    assert.match(source, /TabBar[^\n]*SegmentedControl|SegmentedControl[^\n]*TabBar/i);
+    assert.match(source, /controlled/i);
+    assert.match(source, /canonical[^\n]*release/i);
+    assert.match(source, /ARGB/i);
+    assert.match(source, /local-only|not published|not publicly published/i);
+  }
+  assert.match(releaseNote, /Changesets[^\n]*0\.2\.0/i);
+});
+
+test('docs package exposes a bilingual VitePress build boundary', async () => {
+  const pkg = JSON.parse(await read('docs/package.json'));
+  assert.equal(pkg.scripts.build, 'vitepress build .');
+  assert.match(await read('docs/index.md'), /\/components\//);
+  assert.match(await read('docs/zh/index.md'), /\/zh\/components\//);
+});
+
+test('WeChat MonthCalendar treats selectedDate as the only selection authority', async () => {
+  const source = await read('packages/wechat/src/components/cool-month-calendar/index.js');
+  assert.match(source, /isSelected:\s*hasControlledSelection\s*&&\s*item\.date\s*===\s*selectedDate/);
+  assert.doesNotMatch(source, /Boolean\(item\.isSelected\)/);
+});

@@ -221,7 +221,7 @@ function normalizeDays(days, selectedDate) {
       tone: normalizedTone(item.tone),
       isDisabled: Boolean(item.isDisabled),
       isToday: Boolean(item.isToday),
-      isSelected: hasControlledSelection ? item.date === selectedDate : Boolean(item.isSelected),
+      isSelected: hasControlledSelection && item.date === selectedDate,
       resolvedAccessibilityLabel: accessibilityLabel || [item.date, secondaryText].filter(Boolean).join(' ') || String(item.day),
       _index: index,
     };
@@ -893,6 +893,308 @@ await output('examples/npm-consumer/package.json', JSON.stringify({
   },
 }, null, 2));
 
+function monthCalendarEnglishDocs(maturity, stateRows) {
+  return `
+# MonthCalendar
+
+MonthCalendar is a strictly controlled month-grid renderer. The consumer owns the displayed month, selected date, and visible day records. Selection and navigation callbacks are requests: the parent must update its state and pass the new value back.
+
+## Controlled data contract
+
+\`selectedDate\` is the authoritative selection. An empty or invalid value means that no day is selected; the component never falls back to \`CoolCalendarDay.isSelected\`.
+
+| CoolCalendarDay field | Meaning |
+| --- | --- |
+| \`date\` | Swift \`Date\`, Compose \`LocalDate\`, or ISO \`YYYY-MM-DD\` on ArkUI and WeChat |
+| \`day\` | Gregorian day number, 1–31 |
+| \`secondaryText\` | Optional consumer-provided secondary label |
+| \`accessibilityLabel\` | Optional localized spoken override |
+| \`isToday\` | Consumer-provided today state |
+| \`isSelected\` | Serialized field; controlled selection still wins |
+| \`isDisabled\` | Prevents selection requests |
+| \`tone\` | Semantic tone |
+| \`badge\` | Optional compact badge |
+| \`markers\` | Zero to 3 \`CoolCalendarMarker\` values; extra markers are clipped |
+
+cooL UI does not calculate Gregorian grids, lunar dates, holidays, or work-rest/shift-day schedules. Those policies and localized strings belong to the consumer.
+
+## Four-platform API
+
+| Platform | Controlled API | Requests and slots |
+| --- | --- | --- |
+| SwiftUI | \`Binding<Date> selection\`, \`Binding<Date> displayedMonth\`, \`[CoolCalendarDay]\` | \`onSelect\`, \`onMonthChange\`; typed \`CoolMonthCalendarHeaderContext\`, day, and \`CoolCalendarMarker\` builders |
+| Compose | \`LocalDate selectedDate\`, \`YearMonth displayedMonth\`, \`List<CoolCalendarDay>\` | \`onDaySelected\`, \`onMonthChange\`; \`header\`, \`dayContent\`, and \`markerContent\` lambdas |
+| ArkUI | ISO \`selectedDate\`, \`displayedMonth\` (\`YYYY-MM\`), \`CoolCalendarDay[]\` | \`onSelect\`, \`onMonthChange\`; typed \`@BuilderParam\` \`header\`, \`day\`, and \`marker\` |
+| WeChat | \`year\`, \`month\`, \`days\`, \`selected-date\` | \`bind:select\`, \`bind:monthchange\`; \`header\` named slot; \`componentGenerics\` maps \`day\` and \`marker\` |
+
+WeChat payloads are exactly \`select: { day: CoolCalendarDay }\` and \`monthchange: { direction: 'previous' | 'next' }\`.
+
+Maturity: SwiftUI **${maturity.swiftui}**, Compose **${maturity.compose}**, ArkUI **${maturity.arkui}**, WeChat **${maturity.wechat}**. ArkUI source contracts are verified, but the HarmonyOS 6 HAR build is still **pending**; documentation alone does not make a platform stable.
+
+## State matrix
+
+| State | SwiftUI | Compose | ArkUI | WeChat |
+| --- | --- | --- | --- | --- |
+${stateRows}
+
+## Accessibility and rendering
+
+When \`accessibilityLabel\` is absent, native implementations start with a localized or ISO date and append the supported secondary details. WeChat falls back to the ISO date plus \`secondaryText\`, so provide a localized label when badges, today state, or markers must be read.
+
+Use a single glass surface around the header and grid. Do not add a blur layer to every day cell.
+
+## SwiftUI
+
+\`\`\`swift
+@State private var selectedDate = Date()
+@State private var displayedMonth = Date()
+
+CoolMonthCalendar(
+  selection: $selectedDate,
+  displayedMonth: $displayedMonth,
+  days: calendarDays,
+  onSelect: { selectedDate = $0.date },
+  onMonthChange: { direction in
+    let offset = direction == .previous ? -1 : 1
+    if let month = Calendar.autoupdatingCurrent.date(byAdding: .month, value: offset, to: displayedMonth) {
+      displayedMonth = month
+    }
+  }
+)
+\`\`\`
+
+The full initializer supplies \`CoolMonthCalendarHeaderContext\`, \`CoolCalendarDay\`, and \`CoolCalendarMarker\` to custom builders. \`context.requestMonthChange(_:)\` emits a request; the parent still updates the binding.
+
+## Compose
+
+\`\`\`kotlin
+var selectedDate by remember { mutableStateOf(LocalDate.of(2026, 7, 12)) }
+var displayedMonth by remember { mutableStateOf(YearMonth.of(2026, 7)) }
+
+CoolMonthCalendar(
+  selectedDate = selectedDate,
+  displayedMonth = displayedMonth,
+  days = calendarDays,
+  onDaySelected = { selectedDate = it.date },
+  onMonthChange = { direction ->
+    displayedMonth = if (direction == CoolMonthDirection.Previous) displayedMonth.minusMonths(1) else displayedMonth.plusMonths(1)
+  },
+)
+\`\`\`
+
+## ArkUI
+
+\`\`\`ts
+@State selectedDate: string = '2026-07-12'
+@State displayedMonth: string = '2026-07'
+
+CoolMonthCalendar({
+  selectedDate: this.selectedDate,
+  displayedMonth: this.displayedMonth,
+  days: createCalendarDays(this.displayedMonth),
+  onSelect: (day: CoolCalendarDay) => { this.selectedDate = day.date },
+  onMonthChange: (direction: CoolMonthDirection) => {
+    this.displayedMonth = shiftMonth(this.displayedMonth, direction)
+  }
+})
+\`\`\`
+
+## WeChat Mini Program
+
+\`\`\`json
+{
+  "usingComponents": {
+    "cool-month-calendar": "@cool-ui/wechat/dist/components/cool-month-calendar/index",
+    "calendar-day": "/components/calendar-day/index",
+    "calendar-marker": "/components/calendar-marker/index"
+  }
+}
+\`\`\`
+
+\`\`\`html
+<cool-month-calendar
+  year="{{calendarYear}}"
+  month="{{calendarMonth}}"
+  days="{{calendarDays}}"
+  selected-date="{{calendarSelectedDate}}"
+  use-custom-header="{{true}}"
+  generic:day="calendar-day"
+  generic:marker="calendar-marker"
+  bind:select="onCalendarSelect"
+  bind:monthchange="onCalendarMonthChange"
+>
+  <view slot="header">{{calendarYear}} / {{calendarMonth}}</view>
+</cool-month-calendar>
+\`\`\`
+
+\`\`\`js
+Page({
+  onCalendarSelect(event) {
+    this.setData({ calendarSelectedDate: event.detail.day.date })
+  },
+  onCalendarMonthChange(event) {
+    const offset = event.detail.direction === 'previous' ? -1 : 1
+    const next = new Date(Date.UTC(this.data.calendarYear, this.data.calendarMonth - 1 + offset, 1))
+    const calendarYear = next.getUTCFullYear()
+    const calendarMonth = next.getUTCMonth() + 1
+    this.setData({ calendarYear, calendarMonth, calendarDays: createCalendarDays(calendarYear, calendarMonth) })
+  },
+})
+\`\`\`
+`;
+}
+
+function monthCalendarChineseDocs(maturity, stateRows) {
+  return `
+# MonthCalendar
+
+MonthCalendar 是严格受控的月历网格。调用方拥有展示月份、选中日期和所有可见日期数据；选择与月份切换回调只表达请求，父级必须更新状态并把新值传回组件。
+
+## 受控数据契约
+
+\`selectedDate\` 是唯一权威的选中值。空值或非法值表示没有日期被选中，组件不会回退到 \`CoolCalendarDay.isSelected\`。
+
+| CoolCalendarDay 字段 | 含义 |
+| --- | --- |
+| \`date\` | Swift 使用 \`Date\`，Compose 使用 \`LocalDate\`，ArkUI 与微信使用 ISO \`YYYY-MM-DD\` |
+| \`day\` | 1–31 的公历日序号 |
+| \`secondaryText\` | 调用方提供的可选次级文本 |
+| \`accessibilityLabel\` | 可选的本地化朗读覆盖文本 |
+| \`isToday\` | 调用方提供的“今天”状态 |
+| \`isSelected\` | 序列化字段；受控选中值仍优先 |
+| \`isDisabled\` | 禁止发送选择请求 |
+| \`tone\` | 语义色调 |
+| \`badge\` | 可选的紧凑徽标 |
+| \`markers\` | 0 至 3 个 \`CoolCalendarMarker\`，超出的标记会被截断 |
+
+cooL UI 不计算公历网格、农历、节假日或调休/工作日安排。这些业务规则和本地化文字由调用方负责。
+
+## 四端 API
+
+| 平台 | 受控 API | 请求与插槽 |
+| --- | --- | --- |
+| SwiftUI | \`Binding<Date> selection\`、\`Binding<Date> displayedMonth\`、\`[CoolCalendarDay]\` | \`onSelect\`、\`onMonthChange\`；类型化 \`CoolMonthCalendarHeaderContext\`、日期和 \`CoolCalendarMarker\` Builder |
+| Compose | \`LocalDate selectedDate\`、\`YearMonth displayedMonth\`、\`List<CoolCalendarDay>\` | \`onDaySelected\`、\`onMonthChange\`；\`header\`、\`dayContent\`、\`markerContent\` lambda |
+| ArkUI | ISO \`selectedDate\`、\`displayedMonth\`（\`YYYY-MM\`）、\`CoolCalendarDay[]\` | \`onSelect\`、\`onMonthChange\`；类型化 \`@BuilderParam\`：\`header\`、\`day\`、\`marker\` |
+| 微信小程序 | \`year\`、\`month\`、\`days\`、\`selected-date\` | \`bind:select\`、\`bind:monthchange\`；\`header\` 具名插槽；\`componentGenerics\` 映射 \`day\` 和 \`marker\` |
+
+微信事件详情严格为 \`select: { day: CoolCalendarDay }\` 与 \`monthchange: { direction: 'previous' | 'next' }\`。
+
+成熟度：SwiftUI **${maturity.swiftui}**、Compose **${maturity.compose}**、ArkUI **${maturity.arkui}**、微信小程序 **${maturity.wechat}**。ArkUI 已完成源码契约验证，但 HarmonyOS 6 HAR 构建仍为**待验证（pending）**；仅凭文档不会把平台标为 stable。
+
+## 状态矩阵
+
+| 状态 | SwiftUI | Compose | ArkUI | 微信小程序 |
+| --- | --- | --- | --- | --- |
+${stateRows}
+
+## 无障碍与渲染
+
+没有 \`accessibilityLabel\` 时，各原生实现从本地化日期或 ISO 日期开始并追加支持的次级信息。微信回退为 ISO 日期加 \`secondaryText\`；如果徽标、今天状态或标记必须被朗读，请提供完整的本地化标签。
+
+日历整体只使用一个玻璃表面，包住头部和网格。不要给每个日期单元添加独立模糊层。
+
+## SwiftUI
+
+\`\`\`swift
+@State private var selectedDate = Date()
+@State private var displayedMonth = Date()
+
+CoolMonthCalendar(
+  selection: $selectedDate,
+  displayedMonth: $displayedMonth,
+  days: calendarDays,
+  onSelect: { selectedDate = $0.date },
+  onMonthChange: { direction in
+    let offset = direction == .previous ? -1 : 1
+    if let month = Calendar.autoupdatingCurrent.date(byAdding: .month, value: offset, to: displayedMonth) {
+      displayedMonth = month
+    }
+  }
+)
+\`\`\`
+
+完整初始化器会把 \`CoolMonthCalendarHeaderContext\`、\`CoolCalendarDay\`、\`CoolCalendarMarker\` 传给自定义 Builder。\`context.requestMonthChange(_:)\` 只发送请求，父级仍需更新 Binding。
+
+## Compose
+
+\`\`\`kotlin
+var selectedDate by remember { mutableStateOf(LocalDate.of(2026, 7, 12)) }
+var displayedMonth by remember { mutableStateOf(YearMonth.of(2026, 7)) }
+
+CoolMonthCalendar(
+  selectedDate = selectedDate,
+  displayedMonth = displayedMonth,
+  days = calendarDays,
+  onDaySelected = { selectedDate = it.date },
+  onMonthChange = { direction ->
+    displayedMonth = if (direction == CoolMonthDirection.Previous) displayedMonth.minusMonths(1) else displayedMonth.plusMonths(1)
+  },
+)
+\`\`\`
+
+## ArkUI
+
+\`\`\`ts
+@State selectedDate: string = '2026-07-12'
+@State displayedMonth: string = '2026-07'
+
+CoolMonthCalendar({
+  selectedDate: this.selectedDate,
+  displayedMonth: this.displayedMonth,
+  days: createCalendarDays(this.displayedMonth),
+  onSelect: (day: CoolCalendarDay) => { this.selectedDate = day.date },
+  onMonthChange: (direction: CoolMonthDirection) => {
+    this.displayedMonth = shiftMonth(this.displayedMonth, direction)
+  }
+})
+\`\`\`
+
+## 微信小程序
+
+\`\`\`json
+{
+  "usingComponents": {
+    "cool-month-calendar": "@cool-ui/wechat/dist/components/cool-month-calendar/index",
+    "calendar-day": "/components/calendar-day/index",
+    "calendar-marker": "/components/calendar-marker/index"
+  }
+}
+\`\`\`
+
+\`\`\`html
+<cool-month-calendar
+  year="{{calendarYear}}"
+  month="{{calendarMonth}}"
+  days="{{calendarDays}}"
+  selected-date="{{calendarSelectedDate}}"
+  use-custom-header="{{true}}"
+  generic:day="calendar-day"
+  generic:marker="calendar-marker"
+  bind:select="onCalendarSelect"
+  bind:monthchange="onCalendarMonthChange"
+>
+  <view slot="header">{{calendarYear}} / {{calendarMonth}}</view>
+</cool-month-calendar>
+\`\`\`
+
+\`\`\`js
+Page({
+  onCalendarSelect(event) {
+    this.setData({ calendarSelectedDate: event.detail.day.date })
+  },
+  onCalendarMonthChange(event) {
+    const offset = event.detail.direction === 'previous' ? -1 : 1
+    const next = new Date(Date.UTC(this.data.calendarYear, this.data.calendarMonth - 1 + offset, 1))
+    const calendarYear = next.getUTCFullYear()
+    const calendarMonth = next.getUTCMonth() + 1
+    this.setData({ calendarYear, calendarMonth, calendarDays: createCalendarDays(calendarYear, calendarMonth) })
+  },
+})
+\`\`\`
+`;
+}
+
 for (const component of components) {
   const swiftName = `Cool${componentApiName(component.name)}`;
   const nativeName = `Cool${componentApiName(component.name)}`;
@@ -901,6 +1203,11 @@ for (const component of components) {
   const stateRows = component.interactive
     ? component.states.map((state) => `| ${state} | ${maturity.swiftui} | ${maturity.compose} | ${maturity.arkui} | ${maturity.wechat} |`).join('\n')
     : `| display | ${maturity.swiftui} | ${maturity.compose} | ${maturity.arkui} | ${maturity.wechat} |`;
+  if (component.name === 'MonthCalendar') {
+    await output('docs/components/month-calendar.md', monthCalendarEnglishDocs(maturity, stateRows));
+    await output('docs/zh/components/month-calendar.md', monthCalendarChineseDocs(maturity, stateRows));
+    continue;
+  }
   await output(`docs/components/${kebab(component.name)}.md`, `
 # ${component.name}
 

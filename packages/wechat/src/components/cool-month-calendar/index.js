@@ -58,7 +58,7 @@ function normalizeDays(days, selectedDate) {
       tone: normalizedTone(item.tone),
       isDisabled: Boolean(item.isDisabled),
       isToday: Boolean(item.isToday),
-      isSelected: hasControlledSelection ? item.date === selectedDate : Boolean(item.isSelected),
+      isSelected: hasControlledSelection && item.date === selectedDate,
       resolvedAccessibilityLabel: accessibilityLabel || [item.date, secondaryText].filter(Boolean).join(' ') || String(item.day),
       _index: index,
     };
