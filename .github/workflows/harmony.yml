@@ -36,3 +36,8 @@ jobs:
         run: hvigorw assembleHar --mode module -p product=default
       - uses: actions/upload-artifact@v4
         with: { name: coolui-arkui-har, path: packages/arkui/build/**/outputs/**/*.har }
+      - name: Build Catalog HAP
+        working-directory: apps/catalog-arkui
+        run: hvigorw assembleHap --mode module -p product=default
+      - uses: actions/upload-artifact@v4
+        with: { name: coolui-arkui-catalog-hap, path: apps/catalog-arkui/entry/build/**/outputs/**/*.hap }

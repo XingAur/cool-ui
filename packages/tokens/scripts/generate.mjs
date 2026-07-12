@@ -43,6 +43,12 @@ function numberValue(value) {
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
+function arkColorValue(token, value) {
+  const text = String(value);
+  if (token.$type !== 'color' || !/^#[0-9a-fA-F]{8}$/.test(text)) return value;
+  return `#${text.slice(7, 9)}${text.slice(1, 7)}`.toUpperCase();
+}
+
 const entries = [...tokens.keys()].sort().map((name) => ({ name, id: identifier(name), token: tokens.get(name), value: resolveValue(name) }));
 const outputs = {
   'tokens.json': `${JSON.stringify(source, null, 2)}\n`,
@@ -71,7 +77,7 @@ const outputs = {
   'arkts/CoolTokens.ets': [
     '// Generated from DTCG tokens. Do not edit.',
     'export const CoolTokens = {',
-    ...entries.map(({ id, value }) => `  ${id}: ${JSON.stringify(value)},`),
+    ...entries.map(({ id, token, value }) => `  ${id}: ${JSON.stringify(arkColorValue(token, value))},`),
     '} as const;',
     '',
   ].join('\n'),

@@ -49,7 +49,7 @@ export class CoolCalendarDay {
     this.isDisabled = isDisabled
     this.tone = resolveCoolTone(tone)
     this.badge = badge
-    this.markers = markers.map((marker: CoolCalendarMarker) => {
+    this.markers = markers.slice(0, 3).map((marker: CoolCalendarMarker) => {
       return new CoolCalendarMarker(marker.tone, marker.accessibilityLabel)
     })
   }
@@ -116,10 +116,12 @@ export class CoolMonthCalendarHeaderContext {
 export class CoolResolvedCalendarDayItem {
   day: CoolCalendarDay
   key: string
+  spokenAccessibilityText: string
 
-  constructor(day: CoolCalendarDay, key: string) {
+  constructor(day: CoolCalendarDay, key: string, spokenAccessibilityText: string) {
     this.day = day
     this.key = key
+    this.spokenAccessibilityText = spokenAccessibilityText
   }
 }
 
@@ -216,6 +218,7 @@ export function resolveCoolCalendarDays(
   labels: CoolMonthCalendarAccessibilityLabels = new CoolMonthCalendarAccessibilityLabels()
 ): CoolResolvedCalendarDayItem[] {
   const hasControlledSelection = isCoolGregorianDate(selectedDate)
+  let selectedMatchFound = false
   const occurrences: Map<string, number> = new Map<string, number>()
   const resolved: CoolResolvedCalendarDayItem[] = []
   days.forEach((model: CoolCalendarDay) => {
@@ -224,19 +227,22 @@ export function resolveCoolCalendarDays(
     const markers = model.markers.slice(0, 3).map((marker: CoolCalendarMarker) => cloneCoolCalendarMarker(marker))
     const occurrence = occurrences.get(model.date) ?? 0
     occurrences.set(model.date, occurrence + 1)
+    const isSelected = hasControlledSelection && !selectedMatchFound && model.date === selectedDate
+    if (isSelected) selectedMatchFound = true
+    const spokenAccessibilityText = resolvedCoolAccessibilityLabel(model, labels, markers)
     const day = new CoolCalendarDay(
       model.date,
       model.day,
       model.secondaryText,
-      resolvedCoolAccessibilityLabel(model, labels, markers),
+      model.accessibilityLabel,
       model.isToday,
-      hasControlledSelection ? model.date === selectedDate : model.isSelected,
+      isSelected,
       model.isDisabled,
       resolveCoolTone(model.tone),
       model.badge,
       markers
     )
-    resolved.push(new CoolResolvedCalendarDayItem(day, `${model.date}#${occurrence}`))
+    resolved.push(new CoolResolvedCalendarDayItem(day, `${model.date}#${occurrence}`, spokenAccessibilityText))
   })
   return resolved
 }
@@ -247,20 +253,69 @@ function defaultCoolWeekdays(): string[] {
   return COOL_DEFAULT_WEEKDAYS.slice()
 }
 
+function coolOpaqueColor(color: string): string {
+  if (color.length !== 9 || color.charAt(0) !== '#') return color
+  return `#FF${color.substring(3, 9)}`
+}
+
+function coolArgbChannel(color: string, start: number): number {
+  if (color.length !== 9 || color.charAt(0) !== '#') return 0
+  const value = Number.parseInt(color.substring(start, start + 2), 16)
+  return Number.isFinite(value) ? value / 255 : 0
+}
+
+function coolLinearizedChannel(channel: number): number {
+  if (channel <= 0.04045) return channel / 12.92
+  return Math.pow((channel + 0.055) / 1.055, 2.4)
+}
+
+export function coolRelativeLuminance(color: string): number {
+  const red = coolLinearizedChannel(coolArgbChannel(color, 3))
+  const green = coolLinearizedChannel(coolArgbChannel(color, 5))
+  const blue = coolLinearizedChannel(coolArgbChannel(color, 7))
+  return (0.2126 * red) + (0.7152 * green) + (0.0722 * blue)
+}
+
+export function coolContrastRatio(foreground: string, background: string): number {
+  const foregroundLuminance = coolRelativeLuminance(foreground)
+  const backgroundLuminance = coolRelativeLuminance(background)
+  const lighter = Math.max(foregroundLuminance, backgroundLuminance)
+  const darker = Math.min(foregroundLuminance, backgroundLuminance)
+  return (lighter + 0.05) / (darker + 0.05)
+}
+
+function coolSelectedDayBackground(day: CoolCalendarDay): string {
+  if (day.tone === Tone.neutral) return coolOpaqueColor(CoolTokens.colorLightSurface)
+  return coolOpaqueColor(coolToneColor(day.tone))
+}
+
+function coolSelectedDayForeground(day: CoolCalendarDay): string {
+  const background = coolSelectedDayBackground(day)
+  const ink = coolOpaqueColor(CoolTokens.colorPrimitiveInk900)
+  const ice = coolOpaqueColor(CoolTokens.colorPrimitiveIce0)
+  if (coolContrastRatio(ink, background) >= coolContrastRatio(ice, background)) return ink
+  return ice
+}
+
 function coolDayBackground(day: CoolCalendarDay): string {
-  if (day.isSelected) return CoolTokens.colorLightAccent
+  if (day.isSelected) return coolSelectedDayBackground(day)
   return CoolTokens.colorLightSurfaceTint
 }
 
 function coolDayForeground(day: CoolCalendarDay): string {
-  if (day.isSelected) return CoolTokens.colorPrimitiveWhite92
-  if (day.tone === Tone.neutral) return CoolTokens.colorLightText
-  return coolToneColor(day.tone)
+  if (day.isSelected) return coolSelectedDayForeground(day)
+  return CoolTokens.colorLightText
+}
+
+function coolDayBorderColor(day: CoolCalendarDay): string {
+  if (day.isToday) return coolOpaqueColor(CoolTokens.colorLightAccent)
+  if (day.tone !== Tone.neutral) return coolOpaqueColor(coolToneColor(day.tone))
+  return CoolTokens.colorLightSurfaceTint
 }
 
 function coolDayOpacity(day: CoolCalendarDay): number {
   if (day.isDisabled) return CoolTokens.opacityDisabled
-  return coolTokenNumber(CoolTokens.borderHairline)
+  return 1
 }
 
 @Builder
@@ -293,12 +348,12 @@ export function CoolMonthCalendarDefaultDay(day: CoolCalendarDay) {
     if (day.secondaryText !== undefined && day.secondaryText.length > 0) {
       Text(day.secondaryText)
         .fontSize(coolTokenNumber(CoolTokens.typographyCaption))
-        .fontColor(day.isSelected ? CoolTokens.colorPrimitiveWhite92 : CoolTokens.colorLightTextSecondary)
+        .fontColor(day.isSelected ? coolDayForeground(day) : CoolTokens.colorLightTextSecondary)
     }
     if (day.badge !== undefined && day.badge.length > 0) {
       Text(day.badge)
         .fontSize(coolTokenNumber(CoolTokens.typographyCaption))
-        .fontColor(day.isSelected ? CoolTokens.colorPrimitiveWhite92 : coolToneColor(day.tone))
+        .fontColor(day.isSelected ? coolDayForeground(day) : CoolTokens.colorLightText)
         .padding({ left: coolTokenNumber(CoolTokens.spaceXs), right: coolTokenNumber(CoolTokens.spaceXs) })
         .borderRadius(coolTokenNumber(CoolTokens.radiusPill))
         .backgroundColor(CoolTokens.colorLightSurfaceTint)
@@ -313,7 +368,6 @@ export function CoolMonthCalendarDefaultMarker(marker: CoolCalendarMarker) {
     .width(coolTokenNumber(CoolTokens.spaceSm))
     .height(coolTokenNumber(CoolTokens.spaceSm))
     .fill(coolToneColor(marker.tone))
-    .accessibilityText(marker.accessibilityLabel ?? '')
 }
 
 @Component
@@ -397,9 +451,9 @@ export struct CoolMonthCalendar {
                 .borderRadius(coolTokenNumber(CoolTokens.radiusSmall))
                 .border({
                   width: item.day.isToday ? coolTokenNumber(CoolTokens.borderFocus) : coolTokenNumber(CoolTokens.borderHairline),
-                  color: item.day.isToday ? CoolTokens.colorLightAccent : CoolTokens.colorLightSurfaceTint
+                  color: coolDayBorderColor(item.day)
                 })
-                .accessibilityText(item.day.accessibilityLabel ?? `${item.day.day}`)
+                .accessibilityText(item.spokenAccessibilityText)
                 .accessibilitySelected(item.day.isSelected)
                 .enabled(!item.day.isDisabled)
                 .onClick(() => this.requestSelection(item.day))

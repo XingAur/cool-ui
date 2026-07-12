@@ -44,15 +44,72 @@ test('ArkUI exposes native serializable MonthCalendar models and pure resolvers'
   assert.match(calendar, /for\s*\(let index = 0; index < value\.length; index \+= 1\)[\s\S]*isCoolDateDigit/);
   assert.match(calendar, /export function resolveCoolCalendarDays\b/);
   assert.match(calendar, /gregorianDay\s*!==\s*model\.day/);
-  assert.match(calendar, /\.slice\(0,\s*3\)/);
   assert.match(calendar, /resolveCoolTone\(/);
-  assert.match(calendar, /hasControlledSelection\s*\?\s*model\.date\s*===\s*selectedDate\s*:\s*model\.isSelected/);
+  assert.match(calendar, /this\.markers\s*=\s*markers\.slice\(0,\s*3\)\.map\([\s\S]*new CoolCalendarMarker/);
+  assert.match(calendar, /let selectedMatchFound\s*=\s*false/);
+  assert.match(calendar, /const isSelected\s*=\s*hasControlledSelection\s*&&\s*!selectedMatchFound\s*&&\s*model\.date\s*===\s*selectedDate/);
+  assert.match(calendar, /if\s*\(isSelected\)\s*selectedMatchFound\s*=\s*true/);
   assert.match(calendar, /marker\.accessibilityLabel[\s\S]*markerToneLabel\(marker\.tone\)/);
   assert.match(calendar, /secondaryText[\s\S]*badge[\s\S]*markers/);
   assert.doesNotMatch(calendar, /if\s*\(model\.accessibilityLabel[^\n]+\)\s*return model\.accessibilityLabel/);
-  assert.match(calendar, /new CoolCalendarDay\(/);
-  assert.match(calendar, /model\.markers\.slice\(0,\s*3\)\.map\([\s\S]*new CoolCalendarMarker/);
+  assert.match(calendar, /class CoolResolvedCalendarDayItem\b[\s\S]*spokenAccessibilityText:\s*string/);
+  assert.match(calendar, /const spokenAccessibilityText\s*=\s*resolvedCoolAccessibilityLabel\(model,\s*labels,\s*markers\)/);
+  assert.match(calendar, /new CoolCalendarDay\([\s\S]*model\.secondaryText,\s*model\.accessibilityLabel,\s*model\.isToday,\s*isSelected,/);
+  assert.match(calendar, /new CoolResolvedCalendarDayItem\(day,\s*`\$\{model\.date\}#\$\{occurrence\}`,\s*spokenAccessibilityText\)/);
+  const resolver = calendar.slice(calendar.indexOf('export function resolveCoolCalendarDays'), calendar.indexOf('const COOL_DEFAULT_WEEKDAYS'));
+  assert.doesNotMatch(resolver, /model\.isSelected/);
   assert.doesNotMatch(calendar, /model\.(?:date|day|secondaryText|accessibilityLabel|isToday|isSelected|isDisabled|tone|badge|markers)\s*(?<!=)=(?!=)/);
+});
+
+test('ArkUI MonthCalendar preserves canonical callback payloads and separates spoken accessibility text', async () => {
+  const calendar = await read('packages/arkui/src/main/ets/components/CoolMonthCalendar.ets');
+  const defaultMarker = calendar.slice(calendar.indexOf('export function CoolMonthCalendarDefaultMarker'), calendar.indexOf('@Component'));
+  const requestSelection = calendar.slice(calendar.indexOf('private requestSelection'), calendar.indexOf('private requestMonthChange'));
+
+  assert.match(calendar, /this\.markers\s*=\s*markers\.slice\(0,\s*3\)\.map\([\s\S]*new CoolCalendarMarker\(marker\.tone,\s*marker\.accessibilityLabel\)/);
+  assert.match(requestSelection, /this\.onSelect\(cloneCoolCalendarDay\(day\)\)/);
+  assert.doesNotMatch(defaultMarker, /accessibilityText/);
+  assert.match(calendar, /\.accessibilityText\(item\.spokenAccessibilityText\)/);
+  assert.doesNotMatch(calendar, /\.accessibilityText\(item\.day\.accessibilityLabel/);
+});
+
+test('ArkUI MonthCalendar contrast candidates meet WCAG AA for every selected tone', async () => {
+  const [calendar, generatedTokens] = await Promise.all([
+    read('packages/arkui/src/main/ets/components/CoolMonthCalendar.ets'),
+    read('packages/tokens/generated/arkts/CoolTokens.ets'),
+  ]);
+  const values = new Map([...generatedTokens.matchAll(/^\s+(\w+):\s*"(#[0-9A-F]{8})",$/gm)].map((match) => [match[1], match[2]]));
+  const opaque = (argb) => `#FF${argb.slice(3)}`;
+  const luminance = (argb) => {
+    const channel = (start) => {
+      const value = Number.parseInt(argb.slice(start, start + 2), 16) / 255;
+      return value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
+    };
+    return (0.2126 * channel(3)) + (0.7152 * channel(5)) + (0.0722 * channel(7));
+  };
+  const contrast = (foreground, background) => {
+    const first = luminance(foreground);
+    const second = luminance(background);
+    return (Math.max(first, second) + 0.05) / (Math.min(first, second) + 0.05);
+  };
+  const backgrounds = {
+    neutral: opaque(values.get('colorLightSurface')),
+    accent: opaque(values.get('colorLightAccent')),
+    success: opaque(values.get('colorLightSuccess')),
+    warning: opaque(values.get('colorLightWarning')),
+    danger: opaque(values.get('colorLightDanger')),
+  };
+  const candidates = [opaque(values.get('colorPrimitiveInk900')), opaque(values.get('colorPrimitiveIce0'))];
+  for (const [tone, background] of Object.entries(backgrounds)) {
+    assert.ok(Math.max(...candidates.map((foreground) => contrast(foreground, background))) >= 4.5, tone);
+  }
+
+  assert.match(calendar, /export function coolRelativeLuminance\(/);
+  assert.match(calendar, /export function coolContrastRatio\(/);
+  assert.match(calendar, /CoolTokens\.colorPrimitiveInk900[\s\S]*CoolTokens\.colorPrimitiveIce0/);
+  assert.match(calendar, /if\s*\(day\.tone\s*===\s*Tone\.neutral\)\s*return coolOpaqueColor\(CoolTokens\.colorLightSurface\)/);
+  assert.match(calendar, /function coolDayForeground[\s\S]*if\s*\(day\.isSelected\)\s*return coolSelectedDayForeground\(day\)[\s\S]*return CoolTokens\.colorLightText/);
+  assert.doesNotMatch(calendar, /day\.isSelected\s*\?\s*CoolTokens\.colorPrimitiveWhite92/);
 });
 
 test('ArkUI MonthCalendar is strictly controlled and validates emitted requests', async () => {
@@ -89,8 +146,9 @@ test('ArkUI MonthCalendar uses typed defaultable slots and a single token-driven
   assert.match(calendar, /Grid\(\)[\s\S]*columnsTemplate\([^\n]*1fr[^\n]*1fr[^\n]*1fr[^\n]*1fr[^\n]*1fr[^\n]*1fr[^\n]*1fr/);
   assert.match(calendar, /ForEach\(this\.resolvedDays\(\),[\s\S]*item\.key/);
   assert.match(calendar, /resolvedWeekdays\(\)[\s\S]*length\s*===\s*7/);
-  assert.match(calendar, /Button\(\)[\s\S]*accessibilityText\(item\.day\.accessibilityLabel/);
-  assert.match(calendar, /accessibilityText\(item\.day\.accessibilityLabel[^\n]+\)[\s\S]*accessibilitySelected\(item\.day\.isSelected\)[\s\S]*enabled\(!item\.day\.isDisabled\)/);
+  assert.match(calendar, /Button\(\)[\s\S]*accessibilityText\(item\.spokenAccessibilityText\)/);
+  assert.match(calendar, /accessibilityText\(item\.spokenAccessibilityText\)[\s\S]*accessibilitySelected\(item\.day\.isSelected\)[\s\S]*enabled\(!item\.day\.isDisabled\)/);
+  assert.match(calendar, /function coolDayOpacity[\s\S]*if\s*\(day\.isDisabled\)\s*return CoolTokens\.opacityDisabled[\s\S]*return 1/);
   assert.match(calendar, /constraintSize\(\{\s*minWidth:\s*coolTokenNumber\(CoolTokens\.sizeTouchTarget\),\s*minHeight:\s*coolTokenNumber\(CoolTokens\.sizeTouchTarget\)\s*\}\)/);
   assert.match(calendar, /private calendarGridMinimumWidth\(\):\s*number[\s\S]*coolTokenNumber\(CoolTokens\.sizeTouchTarget\)\s*\*\s*7[\s\S]*coolTokenNumber\(CoolTokens\.spaceXs\)\s*\*\s*6/);
   assert.match(calendar, /this\.header\([\s\S]*Scroll\(\)\s*\{\s*Column[\s\S]*this\.resolvedWeekdays\(\)[\s\S]*this\.resolvedDays\(\)[\s\S]*constraintSize\(\{\s*minWidth:\s*this\.calendarGridMinimumWidth\(\)\s*\}\)[\s\S]*scrollable\(ScrollDirection\.Horizontal\)/);
@@ -174,9 +232,38 @@ test('ArkUI native generation, exports, validation, and Catalog fixture stay int
 });
 
 test('ArkUI package validator accepts the native MonthCalendar source', () => {
-  assert.doesNotThrow(() => execFileSync(
+  const output = execFileSync(
     process.execPath,
     ['packages/arkui/scripts/validate.mjs'],
     { cwd: new URL('..', import.meta.url), encoding: 'utf8', stdio: 'pipe' },
-  ));
+  );
+  assert.match(output, /ArkUI source validation passed/);
+  assert.doesNotMatch(output, /build (?:passed|succeeded|successful)/i);
+});
+
+test('HarmonyOS CI performs and uploads a real Catalog HAP build after the HAR', async () => {
+  const [workflow, appHvigor, entryHvigor, appProfile, entryProfile, appConfig, entryPackage] = await Promise.all([
+    read('.github/workflows/harmony.yml'),
+    read('apps/catalog-arkui/hvigorfile.ts'),
+    read('apps/catalog-arkui/entry/hvigorfile.ts'),
+    read('apps/catalog-arkui/build-profile.json5'),
+    read('apps/catalog-arkui/entry/build-profile.json5'),
+    read('apps/catalog-arkui/AppScope/app.json5'),
+    read('apps/catalog-arkui/entry/oh-package.json5'),
+  ]);
+
+  assert.match(appHvigor, /appTasks/);
+  assert.match(entryHvigor, /hapTasks/);
+  assert.match(appProfile, /"name"\s*:\s*"entry"[\s\S]*"srcPath"\s*:\s*"\.\/entry"/);
+  assert.match(entryProfile, /"apiType"\s*:\s*"stageMode"[\s\S]*"name"\s*:\s*"default"/);
+  assert.match(appConfig, /"bundleName"\s*:\s*"dev\.coolui\.catalog"/);
+  assert.match(entryPackage, /"@cool-ui\/arkui"\s*:\s*"file:\.\.\/\.\.\/\.\.\/packages\/arkui"/);
+  const harIndex = workflow.indexOf('name: Build HAR');
+  const hapIndex = workflow.indexOf('name: Build Catalog HAP');
+  assert.ok(harIndex >= 0 && hapIndex > harIndex);
+  const hapWorkflow = workflow.slice(hapIndex);
+  assert.match(hapWorkflow, /working-directory:\s*apps\/catalog-arkui/);
+  assert.match(hapWorkflow, /run:\s*hvigorw assembleHap --mode module -p product=default/);
+  assert.match(hapWorkflow, /name:\s*coolui-arkui-catalog-hap/);
+  assert.match(hapWorkflow, /path:\s*apps\/catalog-arkui\/entry\/build\/\*\*\/outputs\/\*\*\/\*\.hap/);
 });

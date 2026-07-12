@@ -25,4 +25,4 @@ for (const { name } of contract.components) {
   }
 }
 await access(new URL('src/main/module.json5', root));
-console.log(`Validated ${contract.components.length} ArkUI component registrations.`);
+console.log(`ArkUI source validation passed for ${contract.components.length} component registrations.`);

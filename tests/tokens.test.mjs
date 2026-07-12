@@ -36,6 +36,27 @@ test('all DTCG aliases resolve to a declared token', async () => {
   }
 });
 
+test('ArkTS converts eight-digit DTCG colors from RGBA to ARGB without changing other platforms', async () => {
+  const [generatedArk, packageArk, swift, kotlin, wxss, css] = await Promise.all([
+    readFile(new URL('packages/tokens/generated/arkts/CoolTokens.ets', root), 'utf8'),
+    readFile(new URL('packages/arkui/src/main/ets/tokens/CoolTokens.ets', root), 'utf8'),
+    readFile(new URL('packages/tokens/generated/swift/CoolTokens.swift', root), 'utf8'),
+    readFile(new URL('packages/tokens/generated/kotlin/CoolTokens.kt', root), 'utf8'),
+    readFile(new URL('packages/tokens/generated/wechat/cool-ui-tokens.wxss', root), 'utf8'),
+    readFile(new URL('packages/tokens/generated/css/cool-ui-tokens.css', root), 'utf8'),
+  ]);
+
+  for (const ark of [generatedArk, packageArk]) {
+    assert.match(ark, /colorLightAccent:\s*"#FF0A84FF"/);
+    assert.match(ark, /colorLightGlassSurface:\s*"#B8FFFFFF"/);
+    assert.doesNotMatch(ark, /colorLightAccent:\s*"#0A84FFFF"/);
+  }
+  for (const unchanged of [swift, kotlin, wxss, css]) {
+    assert.match(unchanged, /#0A84FFFF/);
+    assert.match(unchanged, /#FFFFFFB8/);
+  }
+});
+
 test('generator emits stable artifacts for all four platforms and CSS', async () => {
   const versionedOutputs = [
     ['packages/tokens/generated/swift/CoolTokens.swift', /metaVersion\s*=\s*"([^"]+)"/],
