@@ -39,4 +39,10 @@ jobs:
       - name: Build iOS Catalog
         run: xcodebuild -project apps/catalog-swift/CoolUICatalog.xcodeproj -scheme CoolUICatalog -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 17 Pro' CODE_SIGNING_ALLOWED=NO build
       - uses: actions/upload-artifact@v4
-        with: { name: swift-test-results, path: packages/swift/.build/** }
+        if: always()
+        with:
+          name: swift-test-results
+          path: |
+            swift-test.log
+            packages/swift/.build/**
+          include-hidden-files: true

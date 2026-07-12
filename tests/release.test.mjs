@@ -113,6 +113,9 @@ test('CI separates shared, Apple and HarmonyOS toolchains', async () => {
   assert.match(apple, /swift test/);
   assert.match(apple, /tee swift-test\.log/);
   assert.match(apple, /::error title=Swift test failed/);
+  assert.match(apple, /if: always\(\)/);
+  assert.match(apple, /path:[\s\S]*swift-test\.log/);
+  assert.match(apple, /include-hidden-files: true/);
   assert.match(apple, /xcodebuild/);
 
   const harmony = await read('.github/workflows/harmony.yml');
@@ -267,7 +270,9 @@ test('isolated artifact build verifies packages and an offline consumer without 
     assert.match(report, new RegExp(`${entries.length} entries`));
     assert.match(report, new RegExp(`component count: ${sbom.components.length}`, 'i'));
     assert.match(report, new RegExp(sbom.serialNumber));
-    assert.match(report, /### Swift[\s\S]*pending/i);
+    const swiftReport = report.match(/### Swift\s+([\s\S]*?)\s+### HarmonyOS/)?.[1] ?? '';
+    assert.match(swiftReport, /Windows[\s\S]*Apple CI[\s\S]*(?:success|verified)/i);
+    assert.doesNotMatch(swiftReport, /pending/i);
     assert.match(report, /### HarmonyOS[\s\S]*HAR[\s\S]*HAP[\s\S]*pending/i);
     assert.match(report, /no public[\s\S]{0,120}(?:publish|publication)/i);
     assert.doesNotMatch(report, /\b\d+\/\d+\b/);
