@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os';
 import { resolve } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { resolvePnpmCommand, spawnPnpm } from './helpers/portable-pnpm.mjs';
+import { resolvePnpmCommand, spawnPnpm } from '../scripts/lib/portable-pnpm.mjs';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 

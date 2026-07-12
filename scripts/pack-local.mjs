@@ -1,23 +1,16 @@
 import { copyFile, mkdir, mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { basename, dirname, join, resolve } from 'node:path';
-import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { spawnPnpm } from './lib/portable-pnpm.mjs';
 
 const root = resolve(fileURLToPath(new URL('../', import.meta.url)));
 const destination = resolve(process.env.COOL_UI_PACK_DESTINATION ?? resolve(root, 'artifacts/npm'));
 const release = JSON.parse(await readFile(resolve(root, 'contracts/release.json'), 'utf8'));
 await mkdir(destination, { recursive: true });
-const pnpmEntrypoint = process.env.npm_execpath;
-const executable = pnpmEntrypoint ? process.execPath : process.platform === 'win32' ? 'powershell.exe' : 'pnpm';
 
 function runPnpm(pnpmArgs) {
-  const args = pnpmEntrypoint
-    ? [pnpmEntrypoint, ...pnpmArgs]
-    : process.platform === 'win32'
-      ? ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', resolve(process.env.APPDATA, 'npm/pnpm.ps1'), ...pnpmArgs]
-      : pnpmArgs;
-  const result = spawnSync(executable, args, { cwd: root, encoding: 'utf8' });
+  const result = spawnPnpm(pnpmArgs, { cwd: root });
   if (result.error) throw result.error;
   if (result.stdout) process.stdout.write(result.stdout);
   if (result.stderr) process.stderr.write(result.stderr);

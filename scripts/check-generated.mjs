@@ -2,17 +2,13 @@ import { spawnSync } from 'node:child_process';
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { spawnPnpm } from './lib/portable-pnpm.mjs';
 
 const root = resolve(fileURLToPath(new URL('../', import.meta.url)));
-const pnpmEntrypoint = process.env.npm_execpath;
-const executable = pnpmEntrypoint ? process.execPath : process.platform === 'win32' ? 'powershell.exe' : 'pnpm';
-const args = pnpmEntrypoint
-  ? [pnpmEntrypoint, 'generate']
-  : process.platform === 'win32'
-    ? ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', resolve(process.env.APPDATA, 'npm/pnpm.ps1'), 'generate']
-    : ['generate'];
-const generated = spawnSync(executable, args, { cwd: root, stdio: 'inherit' });
+const generated = spawnPnpm(['generate'], { cwd: root });
 if (generated.error) throw generated.error;
+if (generated.stdout) process.stdout.write(generated.stdout);
+if (generated.stderr) process.stderr.write(generated.stderr);
 if (generated.status !== 0) process.exit(generated.status ?? 1);
 
 const contract = JSON.parse(await readFile(resolve(root, 'contracts/components.json'), 'utf8'));

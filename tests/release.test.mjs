@@ -6,7 +6,7 @@ import { tmpdir } from 'node:os';
 import { basename, dirname, join, relative, resolve, sep } from 'node:path';
 import test, { after } from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { spawnPnpm } from './helpers/portable-pnpm.mjs';
+import { spawnPnpm } from '../scripts/lib/portable-pnpm.mjs';
 import { releaseVersion } from './release-fixture.mjs';
 
 const root = new URL('../', import.meta.url);
@@ -14,7 +14,7 @@ const rootPath = fileURLToPath(root);
 const read = (path) => readFile(new URL(path, root), 'utf8');
 
 async function createTrackedFixture() {
-  const listed = spawnSync('git', ['ls-files', '--cached', '-z'], { cwd: rootPath, encoding: 'buffer' });
+  const listed = spawnSync('git', ['ls-files', '--cached', '--others', '--exclude-standard', '-z'], { cwd: rootPath, encoding: 'buffer' });
   assert.equal(listed.status, 0, listed.stderr?.toString('utf8'));
   const fixture = await mkdtemp(join(tmpdir(), 'cool-ui-release-fixture-'));
   assert.equal(dirname(fixture), resolve(tmpdir()), `Unsafe fixture path: ${fixture}`);
@@ -25,6 +25,12 @@ async function createTrackedFixture() {
       const source = resolve(rootPath, path);
       const target = resolve(fixture, path);
       assert.ok(target.startsWith(`${fixture}${sep}`), `Unsafe fixture target: ${target}`);
+      try {
+        await access(source);
+      } catch (error) {
+        if (error.code === 'ENOENT') continue;
+        throw error;
+      }
       await mkdir(dirname(target), { recursive: true });
       await copyFile(source, target);
     }
@@ -156,7 +162,8 @@ test('isolated artifact build verifies packages and an offline consumer without 
     await writeFile(tokensTarball, 'stale tarball');
     await writeFile(wechatTarball, 'stale tarball');
 
-    const built = spawnSync(process.execPath, ['scripts/build-artifacts.mjs'], { cwd: fixture, encoding: 'utf8' });
+    const fakeNpmEnvironment = { ...process.env, npm_execpath: resolve(fixture, 'fake/npm-cli.js') };
+    const built = spawnSync(process.execPath, ['scripts/build-artifacts.mjs'], { cwd: fixture, env: fakeNpmEnvironment, encoding: 'utf8' });
     assert.equal(built.status, 0, built.stderr || built.stdout);
     await assert.rejects(access(staleSentinel));
     await assert.rejects(access(staleVersion));
@@ -244,7 +251,6 @@ test('isolated artifact build verifies packages and an offline consumer without 
     );
 
     const consumer = resolve(fixture, 'examples/npm-consumer');
-    const fakeNpmEnvironment = { ...process.env, npm_execpath: resolve(fixture, 'fake/npm-cli.js') };
     const lockfile = spawnPnpm(['--dir', consumer, '--ignore-workspace', 'install', '--offline', '--no-frozen-lockfile', '--lockfile-only', '--config.node-linker=hoisted'], { cwd: fixture, env: fakeNpmEnvironment });
     assert.equal(lockfile.status, 0, lockfile.stderr || lockfile.stdout);
     const installed = spawnPnpm(['--dir', consumer, '--ignore-workspace', 'install', '--offline', '--frozen-lockfile', '--config.node-linker=hoisted'], { cwd: fixture, env: fakeNpmEnvironment });
