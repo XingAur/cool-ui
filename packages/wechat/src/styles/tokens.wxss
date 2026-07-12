@@ -1,5 +1,5 @@
 /* Generated from DTCG tokens. Do not edit. */
-page, .cool-theme {
+.cool-theme {
   --cool-blur-clear: 8px;
   --cool-blur-prominent: 32px;
   --cool-blur-regular: 20px;

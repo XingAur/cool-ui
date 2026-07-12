@@ -214,7 +214,8 @@ test('component styles use a component-safe token entry without global page sele
   assert.doesNotMatch(glassStyles, /@import "\.\/tokens\.wxss";/);
   assert.match(componentTokens, /^\/\* Generated[^\n]+\*\/\s*\.cool-component,\s*\.cool-theme\s*\{/);
   assert.doesNotMatch(componentTokens, /(^|[,\s])page\s*[,\{]/m);
-  assert.match(pageTokens, /^\/\* Generated[^\n]+\*\/\s*page,\s*\.cool-theme\s*\{/);
+  assert.match(pageTokens, /^\/\* Generated[^\n]+\*\/\s*\.cool-theme\s*\{/);
+  assert.doesNotMatch(pageTokens, /(^|[,\s])page\s*[,\{]/m);
 });
 
 test('component WXSS avoids unsupported at-rules and uses the explicit motion mode class', async () => {

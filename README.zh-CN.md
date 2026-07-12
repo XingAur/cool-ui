@@ -51,6 +51,8 @@ pnpm artifacts
 
 微信 `cool-button` 渲染一个原生 `<button>`。`open-type` 能力受当前微信基础库、平台权限和审核规则限制。组件内部 `<form>` 只负责自身 `form-type`、`submit` 与 `reset` 流程，不能提交调用方外层表单。
 
+微信小程序需全局导入一次 `@cool-ui/wechat/styles/tokens.wxss`，并在每个使用 cooL UI 的页面根节点添加 `class="cool-theme"`。生成的令牌入口不再使用全局 `page` 选择器，避免页面样式共享到自定义组件后触发微信“不允许标签选择器”警告。
+
 ## 仓库结构
 
 - `contracts/`：组件、图标、无障碍和性能契约。

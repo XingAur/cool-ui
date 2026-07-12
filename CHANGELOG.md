@@ -10,6 +10,7 @@ All notable changes to cooL UI are documented here. The project follows Semantic
 - Made WeChat TabBar and SegmentedControl controlled components whose events request parent-owned state updates.
 - Established `contracts/release.json` and the canonical release pipeline as the single version source for generated packages, Catalogs, local artifacts, and documentation.
 - Corrected ArkUI ARGB channel parsing and selected-day contrast behavior.
+- Scoped WeChat page tokens to `.cool-theme`, removing the unsupported global `page` selector when consumer styles are shared into custom components.
 - Kept 0.2.0 local-only and not published to public npm, Maven Central, OHPM, or other registries.
 
 ## 0.1.0

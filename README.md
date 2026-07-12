@@ -51,6 +51,8 @@ The npm tarballs are written as `artifacts/npm/cool-ui-tokens-0.2.0.tgz` and `ar
 
 WeChat `cool-button` renders one native `<button>`. Its `open-type` behavior is limited by the active WeChat base library and platform permissions. Its internal `<form>` supports the component's own `form-type`, `submit`, and `reset` flow, but cannot submit a consumer-owned outer form.
 
+Import `@cool-ui/wechat/styles/tokens.wxss` once and add `class="cool-theme"` to each page root that consumes cooL UI. The generated token entry intentionally avoids the global `page` selector because WeChat rejects tag selectors when page styles are shared into custom components.
+
 ## Repository map
 
 - `contracts/` — component, icon, accessibility, and performance contracts.

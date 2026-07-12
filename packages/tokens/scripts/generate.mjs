@@ -83,7 +83,7 @@ const outputs = {
   ].join('\n'),
   'wechat/cool-ui-tokens.wxss': [
     '/* Generated from DTCG tokens. Do not edit. */',
-    'page, .cool-theme {',
+    '.cool-theme {',
     ...entries.map(({ name, value }) => `  --cool-${name.replaceAll('.', '-')}: ${value};`),
     '}',
     '',
