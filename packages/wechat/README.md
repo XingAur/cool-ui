@@ -5,8 +5,8 @@ Version `0.2.0` exposes 43 components as native WeChat Mini Program custom compo
 ```json
 {
   "usingComponents": {
-    "cool-button": "@cool-ui/wechat/dist/components/cool-button/index",
-    "cool-glass-surface": "@cool-ui/wechat/dist/components/cool-glass-surface/index"
+    "cool-button": "@cool-ui/wechat/components/cool-button/index",
+    "cool-glass-surface": "@cool-ui/wechat/components/cool-glass-surface/index"
   }
 }
 ```

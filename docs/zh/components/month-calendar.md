@@ -111,7 +111,7 @@ CoolMonthCalendar({
 ```json
 {
   "usingComponents": {
-    "cool-month-calendar": "@cool-ui/wechat/dist/components/cool-month-calendar/index",
+    "cool-month-calendar": "@cool-ui/wechat/components/cool-month-calendar/index",
     "calendar-day": "/components/calendar-day/index",
     "calendar-marker": "/components/calendar-marker/index"
   }

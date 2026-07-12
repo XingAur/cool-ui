@@ -62,6 +62,7 @@ function normalizeDays(days, selectedDate) {
       resolvedAccessibilityLabel: accessibilityLabel || [item.date, secondaryText].filter(Boolean).join(' ') || String(item.day),
       _index: index,
     };
+    if (typeof item.accessibilityLabel === 'string') normalized.accessibilityLabel = item.accessibilityLabel;
     if (secondaryText) normalized.secondaryText = secondaryText;
     if (typeof item.badge === 'string' || typeof item.badge === 'number') normalized.badge = item.badge;
     viewDays.push(normalized);
@@ -70,8 +71,18 @@ function normalizeDays(days, selectedDate) {
 }
 
 function eventDay(viewDay) {
-  const { _index, ...day } = viewDay;
-  return { ...day, markers: day.markers.map((marker) => ({ ...marker })) };
+  return {
+    date: viewDay.date,
+    day: viewDay.day,
+    secondaryText: viewDay.secondaryText,
+    accessibilityLabel: viewDay.accessibilityLabel,
+    isToday: viewDay.isToday,
+    isSelected: viewDay.isSelected,
+    isDisabled: viewDay.isDisabled,
+    tone: viewDay.tone,
+    badge: viewDay.badge,
+    markers: viewDay.markers.map((marker) => ({ ...marker })),
+  };
 }
 
 Component({

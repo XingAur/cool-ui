@@ -111,3 +111,18 @@ test('WeChat README states native Button form and open-type boundaries', async (
   assert.match(source, /cannot submit an outer form/i);
   assert.match(source, /platform|base library|微信/i);
 });
+
+test('WeChat consumer examples respect the package miniprogram root', async () => {
+  const metadata = JSON.parse(await read('packages/wechat/package.json'));
+  assert.equal(metadata.miniprogram, 'dist');
+  const examples = [
+    ['packages/wechat/README.md', /@cool-ui\/wechat\/components\/cool-button\/index/],
+    ['docs/components/month-calendar.md', /@cool-ui\/wechat\/components\/cool-month-calendar\/index/],
+    ['docs/zh/components/month-calendar.md', /@cool-ui\/wechat\/components\/cool-month-calendar\/index/],
+  ];
+  for (const [path, expectedPath] of examples) {
+    const source = await read(path);
+    assert.doesNotMatch(source, /@cool-ui\/wechat\/dist\//, `${path} must not repeat the miniprogram root`);
+    assert.match(source, expectedPath, path);
+  }
+});

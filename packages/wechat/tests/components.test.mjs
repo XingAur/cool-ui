@@ -509,6 +509,7 @@ test('MonthCalendar normalizes controlled days without mutating consumer input',
   assert.deepEqual(viewDays[0].markers, []);
   assert.equal(viewDays[1]._index, 3);
   assert.equal(viewDays[1].resolvedAccessibilityLabel, '2026-07-12 Today');
+  assert.equal(viewDays[1].accessibilityLabel, '');
   assert.equal(viewDays[1].isSelected, true);
   assert.equal(viewDays[1].isToday, true);
   assert.equal(viewDays[1].isDisabled, false);
@@ -526,6 +527,7 @@ test('MonthCalendar normalizes controlled days without mutating consumer input',
   assert.deepEqual(plainData(emptySelectionWrites[0].viewDays), [{
     date: '2026-07-12', day: 12, markers: [], tone: 'neutral', isDisabled: false,
     isToday: false, isSelected: false, resolvedAccessibilityLabel: '2026-07-12', _index: 0,
+    accessibilityLabel: '',
   }]);
   assert.deepEqual(plainData(emptySelectionWrites[0].viewWeeks), [plainData(emptySelectionWrites[0].viewDays)]);
 });
@@ -604,7 +606,6 @@ test('MonthCalendar emits exact controlled select and monthchange details', asyn
   assert.deepEqual(invokeDay().events, [{ name: 'select', detail: { day: {
     date: '2026-07-12', day: 12, secondaryText: 'Today', markers: [{ tone: 'accent' }],
     tone: 'accent', isDisabled: false, isToday: true, isSelected: true,
-    resolvedAccessibilityLabel: '2026-07-12 Today',
   } } }]);
   assert.deepEqual(invokeDay().writes, []);
   assert.deepEqual(invokeDay({ ...normalizedDay, isDisabled: true }).events, []);
@@ -625,6 +626,48 @@ test('MonthCalendar emits exact controlled select and monthchange details', asyn
   assert.deepEqual(invokeMonth('next').events, [{ name: 'monthchange', detail: { direction: 'next' } }]);
   assert.deepEqual(invokeMonth('later').events, []);
   assert.deepEqual(invokeMonth('next').writes, []);
+});
+
+test('MonthCalendar select exposes exactly the ten public CoolCalendarDay fields', async () => {
+  const { definition } = await loadGeneratedComponent('cool-month-calendar');
+  const writes = [];
+  definition.observers['days, selectedDate'].call({ setData(update) { writes.push(update); } }, [{
+    date: '2026-07-12',
+    day: 12,
+    secondaryText: 'Release day',
+    accessibilityLabel: 'Sunday, July 12, release day',
+    isToday: true,
+    isSelected: false,
+    isDisabled: false,
+    tone: 'accent',
+    badge: '3',
+    markers: [{ tone: 'success', accessibilityLabel: 'Ready' }],
+  }], '2026-07-12');
+
+  let detail;
+  definition.methods.handleDayTap.call({
+    data: { viewDays: writes[0].viewDays, disabled: false, loading: false },
+    triggerEvent(name, eventDetail) { assert.equal(name, 'select'); detail = eventDetail; },
+  }, { currentTarget: { dataset: { index: 0 } } });
+
+  assert.deepEqual(plainData(detail), { day: {
+    date: '2026-07-12',
+    day: 12,
+    secondaryText: 'Release day',
+    accessibilityLabel: 'Sunday, July 12, release day',
+    isToday: true,
+    isSelected: true,
+    isDisabled: false,
+    tone: 'accent',
+    badge: '3',
+    markers: [{ tone: 'success', accessibilityLabel: 'Ready' }],
+  } });
+  assert.deepEqual(Object.keys(detail.day), [
+    'date', 'day', 'secondaryText', 'accessibilityLabel', 'isToday',
+    'isSelected', 'isDisabled', 'tone', 'badge', 'markers',
+  ]);
+  assert.equal(Object.hasOwn(detail.day, 'resolvedAccessibilityLabel'), false);
+  assert.equal(Object.hasOwn(detail.day, '_index'), false);
 });
 
 test('MonthCalendar select payload deep-clones the normalized day and marker records', async () => {
