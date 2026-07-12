@@ -1,7 +1,7 @@
 const coolBehavior = require('../../behaviors/cool-ui');
 
 Component({
-  behaviors: [coolBehavior],
+  behaviors: [coolBehavior, 'wx://form-field-button'],
   options: { multipleSlots: true, styleIsolation: 'apply-shared' },
   properties: {
     openType: { type: String, value: '' },
@@ -20,12 +20,6 @@ Component({
     handleButtonTap() {
       if (this.data.disabled || this.data.loading) return;
       this.triggerEvent('tap', { value: this.data.value, selected: this.data.selected });
-    },
-    handleFormSubmit(event) {
-      this.triggerEvent('submit', event.detail);
-    },
-    handleFormReset(event) {
-      this.triggerEvent('reset', event.detail);
     },
     forwardNativeEvent(event) {
       this.triggerEvent(event.type, event.detail);

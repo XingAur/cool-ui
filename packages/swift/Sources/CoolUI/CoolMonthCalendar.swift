@@ -219,13 +219,25 @@ public struct CoolMonthCalendar<Header: View, DayContent: View, MarkerContent: V
   }
 
   func localizedAccessibilityLabel(_ model: CoolCalendarDay) -> String {
-    var details = [model.accessibilityLabel ?? localizedDay(model.date)]
+    if let accessibilityLabel = model.accessibilityLabel, !accessibilityLabel.isEmpty {
+      return accessibilityLabel
+    }
+    var details = [localizedDay(model.date)]
     if let secondaryText = model.secondaryText { details.append(secondaryText) }
     if let badge = model.badge { details.append(badge) }
     details.append(contentsOf: model.markers.map { marker in
       marker.accessibilityLabel ?? accessibilityLabels.markerLabel(for: marker.tone)
     })
     return details.joined(separator: ", ")
+  }
+
+  private var selectedDayForeground: Color {
+    CoolTokenValue.color(CoolTokens.colorPrimitiveInk900)
+  }
+
+  private func selectedDayBackground(_ tone: CoolTone) -> Color {
+    if tone == .neutral { return CoolTokenValue.color(CoolTokens.colorPrimitiveIce0) }
+    return toneColor(tone)
   }
 
   func resolvedDay(_ model: CoolCalendarDay) -> CoolCalendarDay {
@@ -293,27 +305,28 @@ public struct CoolMonthCalendar<Header: View, DayContent: View, MarkerContent: V
       VStack(spacing: spacingExtraSmall) {
         Text(String(model.day))
           .font(.body.weight(model.isSelected ? .semibold : .regular))
+          .foregroundStyle(model.isSelected ? selectedDayForeground : Color.primary)
         if let secondaryText = model.secondaryText {
           Text(secondaryText)
             .font(.caption)
-            .foregroundStyle(.secondary)
+            .foregroundStyle(model.isSelected ? selectedDayForeground : Color.secondary)
             .multilineTextAlignment(.center)
             .fixedSize(horizontal: false, vertical: true)
         }
         if let badge = model.badge {
           Text(badge)
             .font(.caption.weight(.semibold))
+            .foregroundStyle(model.isSelected ? selectedDayForeground : Color.primary)
             .padding(.horizontal, spacingExtraSmall)
-            .background(toneColor(model.tone).opacity(CoolTokens.lightingHighlightOpacity), in: Capsule())
+            .background(model.isSelected ? Color.clear : toneColor(model.tone).opacity(CoolTokens.lightingHighlightOpacity), in: Capsule())
         }
       }
       .frame(maxWidth: .infinity)
       .padding(.vertical, spacingExtraSmall)
-      .foregroundStyle(toneColor(model.tone))
       .background {
         if model.isSelected {
           RoundedRectangle(cornerRadius: smallRadius, style: .continuous)
-            .fill(toneColor(model.tone).opacity(CoolTokens.lightingEdgeOpacity))
+            .fill(selectedDayBackground(model.tone))
         }
       }
       .overlay {
@@ -361,7 +374,7 @@ public struct CoolMonthCalendar<Header: View, DayContent: View, MarkerContent: V
     .accessibilityElement(children: .ignore)
     .accessibilityLabel(localizedAccessibilityLabel(model))
     .accessibilityAddTraits(model.isSelected ? .isSelected : [])
-    .accessibilityHint(model.isToday ? accessibilityLabels.today : "")
+    .accessibilityHint(model.accessibilityLabel?.isEmpty == false ? "" : (model.isToday ? accessibilityLabels.today : ""))
   }
 
   public var body: some View {

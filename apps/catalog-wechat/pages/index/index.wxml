@@ -6,7 +6,10 @@
     <cool-button label="Loading" loading="{{true}}" accessibility-label="Loading button example" />
     <cool-button label="Disabled" disabled="{{true}}" accessibility-label="Disabled button example" />
     <cool-button label="Share" open-type="share" accessibility-label="Share button example" />
-    <cool-button label="Submit" form-type="submit" bind:submit="handleButtonSubmit" accessibility-label="Submit button example" />
+    <form bindsubmit="handleButtonSubmit" bindreset="handleButtonReset">
+      <cool-button label="Submit" form-type="submit" accessibility-label="Submit button example" />
+      <cool-button label="Reset" form-type="reset" accessibility-label="Reset button example" />
+    </form>
     <text class="catalog-copy">Submit detail: {{buttonSubmitResult}}</text>
   </view></view>
 

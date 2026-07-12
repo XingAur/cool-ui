@@ -51,6 +51,11 @@ test('docs have bilingual entry points and API/state/accessibility sections', as
   assert.match(zh, /可访问性/);
 });
 
+test('MonthCalendar docs define accessibilityLabel as a complete spoken override', async () => {
+  assert.match(await read('docs/components/month-calendar.md'), /accessibilityLabel[^\n]*complete override/i);
+  assert.match(await read('docs/zh/components/month-calendar.md'), /accessibilityLabel[^\n]*完整覆盖/);
+});
+
 test('every package is version-aligned and local-only', async () => {
   const versionedPackagePaths = [
     'package.json',

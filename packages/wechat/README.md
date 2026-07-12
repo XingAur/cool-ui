@@ -15,4 +15,4 @@ Run `pnpm --dir packages/wechat build` before local linking, or consume the loca
 
 Presentation components use an `open` property and emit `dismiss`; for example, `<cool-alert-dialog open="{{showDialog}}" bind:dismiss="closeDialog" />`.
 
-`cool-button` renders one native `<button>` inside an internal `<form>` and re-emits native `submit` and `reset` details. Pass `open-type` and `form-type` only when the target WeChat base library, account capability, permissions, and review policy support them. The internal form only covers controls inside the component. For cross-component form submission, consumers must use their own native `<form>` with a native button or form adapter; a custom component cannot submit an outer form.
+`cool-button` renders one native `<button>` and adopts the official `wx://form-field-button` behavior. Put it inside a consumer-owned outer `<form bindsubmit="..." bindreset="...">`; its native `form-type="submit"` or `form-type="reset"` then reaches that form directly. Pass `open-type` and `form-type` only when the target WeChat base library, account capability, permissions, and review policy support them.

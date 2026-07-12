@@ -405,7 +405,7 @@ function monthCalendarStyles() {
   border-radius: var(--cool-radius-medium);
 }
 
-.cool-calendar-day.is-selected { color: var(--cool-color-light-background); background: var(--cool-color-light-accent); border-color: var(--cool-color-light-accent); }
+.cool-calendar-day.is-selected { color: var(--cool-color-light-text); background: var(--cool-color-light-accent); border-color: var(--cool-color-light-accent); }
 .cool-calendar-day.is-today { border-width: var(--cool-border-focus); border-color: var(--cool-color-light-accent); }
 .cool-calendar-day.is-disabled { opacity: var(--cool-opacity-disabled); }
 .cool-calendar-day-tone-accent { border-color: var(--cool-color-light-accent); }
@@ -420,7 +420,7 @@ function controlledOptionStyles(componentName) {
   const shared = `${controlledOptionStylesPrefix()}
 .cool-page-tab.is-active,
 .cool-segmented-option.is-active {
-  color: var(--cool-color-light-background);
+  color: var(--cool-color-light-text);
   background: var(--cool-color-light-accent);
   border-color: var(--cool-color-light-accent);
 }
@@ -625,7 +625,7 @@ Component({
 const coolBehavior = require('../../behaviors/cool-ui');
 
 Component({
-  behaviors: [coolBehavior],
+  behaviors: [coolBehavior, 'wx://form-field-button'],
   options: { multipleSlots: true, styleIsolation: 'apply-shared' },
   properties: {
     openType: { type: String, value: '' },
@@ -645,12 +645,6 @@ Component({
       if (this.data.disabled || this.data.loading) return;
       this.triggerEvent('tap', { value: this.data.value, selected: this.data.selected });
     },
-    handleFormSubmit(event) {
-      this.triggerEvent('submit', event.detail);
-    },
-    handleFormReset(event) {
-      this.triggerEvent('reset', event.detail);
-    },
     forwardNativeEvent(event) {
       this.triggerEvent(event.type, event.detail);
     },
@@ -658,7 +652,6 @@ Component({
 });`);
     await output(`${dir}/index.json`, JSON.stringify({ component: true, styleIsolation: 'apply-shared' }, null, 2));
     await output(`${dir}/index.wxml`, `
-<form bindsubmit="handleFormSubmit" bindreset="handleFormReset">
 <button
   class="cool-component cool-glass cool-button-native cool-button cool-material-{{resolvedMaterial}} cool-tone-{{tone}} cool-size-{{size}} {{selected ? 'is-selected' : ''}} {{disabled || loading ? 'is-disabled' : ''}} {{error ? 'is-error' : ''}}"
   data-component="Button"
@@ -694,8 +687,7 @@ Component({
     <slot/>
   </view>
   <text wx:if="{{errorMessage}}" class="cool-error" role="alert">{{errorMessage}}</text>
-</button>
-</form>`);
+</button>`);
     await output(`${dir}/index.wxss`, `
 @import "../../styles/glass.wxss";
 
@@ -857,6 +849,9 @@ Page({
   handleButtonSubmit(event) {
     this.setData({ buttonSubmitResult: JSON.stringify(event.detail) });
   },
+  handleButtonReset() {
+    this.setData({ buttonSubmitResult: 'Reset' });
+  },
   handleTabChange(event) {
     this.setData({ tabValue: event.detail.value });
   },
@@ -885,7 +880,10 @@ await output('apps/catalog-wechat/pages/index/index.wxml', `
     <cool-button label="Loading" loading="{{true}}" accessibility-label="Loading button example" />
     <cool-button label="Disabled" disabled="{{true}}" accessibility-label="Disabled button example" />
     <cool-button label="Share" open-type="share" accessibility-label="Share button example" />
-    <cool-button label="Submit" form-type="submit" bind:submit="handleButtonSubmit" accessibility-label="Submit button example" />
+    <form bindsubmit="handleButtonSubmit" bindreset="handleButtonReset">
+      <cool-button label="Submit" form-type="submit" accessibility-label="Submit button example" />
+      <cool-button label="Reset" form-type="reset" accessibility-label="Reset button example" />
+    </form>
     <text class="catalog-copy">Submit detail: {{buttonSubmitResult}}</text>
   </view></view>
 ${['foundations', 'actions-inputs', 'navigation', 'content', 'feedback-overlays'].map((category) => `
@@ -920,7 +918,7 @@ SwiftUI \`Binding<Date>\` and Compose \`LocalDate\` values are always non-empty 
 | \`date\` | Swift \`Date\`, Compose \`LocalDate\`, or ISO \`YYYY-MM-DD\` on ArkUI and WeChat |
 | \`day\` | Gregorian day number, 1–31 |
 | \`secondaryText\` | Optional consumer-provided secondary label |
-| \`accessibilityLabel\` | Optional localized spoken override |
+| \`accessibilityLabel\` | Optional localized complete override for spoken output |
 | \`isToday\` | Consumer-provided today state |
 | \`isSelected\` | Serialized field; controlled selection still wins |
 | \`isDisabled\` | Prevents selection requests |
@@ -951,7 +949,7 @@ ${stateRows}
 
 ## Accessibility and rendering
 
-When \`accessibilityLabel\` is absent, native implementations start with a localized or ISO date and append the supported secondary details. WeChat falls back to the ISO date plus \`secondaryText\`, so provide a localized label when badges, today state, or markers must be read.
+When \`accessibilityLabel\` is non-empty, SwiftUI and ArkUI treat it as a complete override and append no secondary text, badge, today state, or marker details. Otherwise native implementations start with a localized or ISO date and append the supported secondary details. WeChat falls back to the ISO date plus \`secondaryText\`, so provide a localized label when badges, today state, or markers must be read.
 
 Use a single glass surface around the header and grid. Do not add a blur layer to every day cell.
 
@@ -1071,7 +1069,7 @@ SwiftUI \`Binding<Date>\` 与 Compose \`LocalDate\` 都是非空且合法的类�
 | \`date\` | Swift 使用 \`Date\`，Compose 使用 \`LocalDate\`，ArkUI 与微信使用 ISO \`YYYY-MM-DD\` |
 | \`day\` | 1–31 的公历日序号 |
 | \`secondaryText\` | 调用方提供的可选次级文本 |
-| \`accessibilityLabel\` | 可选的本地化朗读覆盖文本 |
+| \`accessibilityLabel\` | 可选的本地化朗读完整覆盖文本 |
 | \`isToday\` | 调用方提供的“今天”状态 |
 | \`isSelected\` | 序列化字段；受控选中值仍优先 |
 | \`isDisabled\` | 禁止发送选择请求 |
@@ -1102,7 +1100,7 @@ ${stateRows}
 
 ## 无障碍与渲染
 
-没有 \`accessibilityLabel\` 时，各原生实现从本地化日期或 ISO 日期开始并追加支持的次级信息。微信回退为 ISO 日期加 \`secondaryText\`；如果徽标、今天状态或标记必须被朗读，请提供完整的本地化标签。
+当 \`accessibilityLabel\` 非空时，SwiftUI 与 ArkUI 将其作为朗读内容的完整覆盖，不再追加次级文本、徽标、今天状态或标记详情。否则各原生实现从本地化日期或 ISO 日期开始并追加支持的次级信息；微信回退为 ISO 日期加 \`secondaryText\`。
 
 日历整体只使用一个玻璃表面，包住头部和网格。不要给每个日期单元添加独立模糊层。
 

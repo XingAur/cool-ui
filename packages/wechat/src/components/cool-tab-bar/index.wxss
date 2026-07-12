@@ -16,7 +16,7 @@
 
 .cool-page-tab.is-active,
 .cool-segmented-option.is-active {
-  color: var(--cool-color-light-background);
+  color: var(--cool-color-light-text);
   background: var(--cool-color-light-accent);
   border-color: var(--cool-color-light-accent);
 }

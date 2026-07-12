@@ -55,6 +55,9 @@ Page({
   handleButtonSubmit(event) {
     this.setData({ buttonSubmitResult: JSON.stringify(event.detail) });
   },
+  handleButtonReset() {
+    this.setData({ buttonSubmitResult: 'Reset' });
+  },
   handleTabChange(event) {
     this.setData({ tabValue: event.detail.value });
   },

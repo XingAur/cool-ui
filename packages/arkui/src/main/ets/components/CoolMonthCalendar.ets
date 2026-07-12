@@ -197,8 +197,10 @@ function resolvedCoolAccessibilityLabel(
   labels: CoolMonthCalendarAccessibilityLabels,
   markers: CoolCalendarMarker[]
 ): string {
-  const baseLabel = model.accessibilityLabel !== undefined && model.accessibilityLabel.length > 0 ? model.accessibilityLabel : model.date
-  const details: string[] = [baseLabel]
+  if (model.accessibilityLabel !== undefined && model.accessibilityLabel.length > 0) {
+    return model.accessibilityLabel
+  }
+  const details: string[] = [model.date]
   if (model.secondaryText !== undefined && model.secondaryText.length > 0) details.push(model.secondaryText)
   if (model.badge !== undefined && model.badge.length > 0) details.push(model.badge)
   if (model.isToday) details.push(labels.today)

@@ -119,6 +119,38 @@ test('SwiftUI MonthCalendar exposes controlled models and native grid compositio
   assert.doesNotMatch(calendar, /\.glassEffect\(/, 'calendar days must remain native buttons inside one glass surface');
 });
 
+test('SwiftUI MonthCalendar uses AA selected ink and explicit labels fully override synthesized speech', async () => {
+  const [calendar, tokens] = await Promise.all([
+    read('packages/swift/Sources/CoolUI/CoolMonthCalendar.swift'),
+    read('packages/tokens/src/tokens.json').then(JSON.parse),
+  ]);
+  const resolveColor = (value) => value.startsWith('{')
+    ? resolveColor(value.slice(1, -1).split('.').reduce((node, key) => node[key], tokens).$value)
+    : value;
+  const hex = (path) => resolveColor(path.split('.').reduce((node, key) => node[key], tokens).$value).slice(0, 7);
+  const luminance = (rgb) => {
+    const channel = (start) => {
+      const value = Number.parseInt(rgb.slice(start, start + 2), 16) / 255;
+      return value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
+    };
+    return (0.2126 * channel(1)) + (0.7152 * channel(3)) + (0.0722 * channel(5));
+  };
+  const contrast = (foreground, background) => {
+    const first = luminance(foreground);
+    const second = luminance(background);
+    return (Math.max(first, second) + 0.05) / (Math.min(first, second) + 0.05);
+  };
+  const ink = hex('color.primitive.ink900');
+  for (const background of ['color.primitive.ice0', 'color.light.accent', 'color.light.success', 'color.light.warning', 'color.light.danger']) {
+    assert.ok(contrast(ink, hex(background)) >= 4.5, background);
+  }
+
+  assert.match(calendar, /func selectedDayBackground\(/);
+  assert.match(calendar, /CoolTokens\.colorPrimitiveInk900/);
+  assert.doesNotMatch(calendar, /foregroundStyle\(toneColor\(model\.tone\)\)/);
+  assert.match(calendar, /if let accessibilityLabel = model\.accessibilityLabel, !accessibilityLabel\.isEmpty \{\s*return accessibilityLabel\s*\}/);
+});
+
 test('Swift Catalog owns a controlled 42-cell MonthCalendar fixture', async () => {
   const catalog = await read('apps/catalog-swift/CoolUICatalog/CoolUICatalogApp.swift');
   const selectionFixture = catalog.match(/@State private var calendarSelection = CatalogView\.(\w+)/)?.[1];

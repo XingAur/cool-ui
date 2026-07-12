@@ -51,7 +51,7 @@ test('ArkUI exposes native serializable MonthCalendar models and pure resolvers'
   assert.match(calendar, /if\s*\(isSelected\)\s*selectedMatchFound\s*=\s*true/);
   assert.match(calendar, /marker\.accessibilityLabel[\s\S]*markerToneLabel\(marker\.tone\)/);
   assert.match(calendar, /secondaryText[\s\S]*badge[\s\S]*markers/);
-  assert.doesNotMatch(calendar, /if\s*\(model\.accessibilityLabel[^\n]+\)\s*return model\.accessibilityLabel/);
+  assert.match(calendar, /if\s*\(model\.accessibilityLabel\s*!==\s*undefined\s*&&\s*model\.accessibilityLabel\.length\s*>\s*0\)\s*\{\s*return model\.accessibilityLabel\s*\}/);
   assert.match(calendar, /class CoolResolvedCalendarDayItem\b[\s\S]*spokenAccessibilityText:\s*string/);
   assert.match(calendar, /const spokenAccessibilityText\s*=\s*resolvedCoolAccessibilityLabel\(model,\s*labels,\s*markers\)/);
   assert.match(calendar, /new CoolCalendarDay\([\s\S]*model\.secondaryText,\s*model\.accessibilityLabel,\s*model\.isToday,\s*isSelected,/);

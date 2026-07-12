@@ -98,26 +98,21 @@ test('Button renders one native button with native attributes and slot content',
   assert.match(source, /bindtap="handleButtonTap"/);
 });
 
-test('Button owns form semantics and forwards original submit and reset detail', async () => {
+test('Button bridges its native form-type button to a consumer-owned outer form', async () => {
   const wxml = await readFile(new URL('src/components/cool-button/index.wxml', root), 'utf8');
+  const generator = await readFile(new URL('../../scripts/generate-components.mjs', root), 'utf8');
   const readme = await readFile(new URL('README.md', root), 'utf8');
-  const { definition } = await loadGeneratedComponent('cool-button');
+  const { definition, source } = await loadGeneratedComponent('cool-button');
 
-  assert.match(wxml, /^<form\b[^>]*bindsubmit="handleFormSubmit"[^>]*bindreset="handleFormReset"/);
+  assert.ok(definition.behaviors.includes('wx://form-field-button'));
+  assert.match(generator, /behaviors:\s*\[coolBehavior,\s*'wx:\/\/form-field-button'\]/);
+  assert.doesNotMatch(wxml, /<\/?form\b/);
   assert.equal(wxml.match(/<button\b/g)?.length, 1);
-
-  for (const [methodName, eventName] of [['handleFormSubmit', 'submit'], ['handleFormReset', 'reset']]) {
-    const detail = { eventName, marker: Symbol(eventName) };
-    let forwarded;
-    definition.methods[methodName].call({
-      triggerEvent(name, forwardedDetail) { forwarded = { name, detail: forwardedDetail }; },
-    }, { detail });
-    assert.equal(forwarded.name, eventName);
-    assert.equal(forwarded.detail, detail);
-  }
-
-  assert.match(readme, /internal `<form>`/i);
-  assert.match(readme, /cross-component form[\s\S]*native button/i);
+  assert.match(wxml, /form-type="\{\{formType\}\}"/);
+  assert.doesNotMatch(source, /handleForm(?:Submit|Reset)/);
+  assert.match(readme, /consumer-owned|outer form/i);
+  assert.match(readme, /wx:\/\/form-field-button/);
+  assert.doesNotMatch(readme, /cannot submit an outer form/i);
 });
 
 test('Button explicitly forwards every supported native event', async () => {
@@ -201,11 +196,39 @@ test('WeChat catalog showcases native Button states without replacing the compon
   assert.match(source, /<cool-button label="Loading"[^>]*loading="\{\{true\}\}"/);
   assert.match(source, /<cool-button label="Disabled"[^>]*disabled="\{\{true\}\}"/);
   assert.match(source, /<cool-button label="Share"[^>]*open-type="share"/);
-  assert.doesNotMatch(source, /<form\b/);
-  assert.match(source, /<cool-button label="Submit"[^>]*form-type="submit"[^>]*bind:submit="handleButtonSubmit"/);
+  assert.match(source, /<form\b[^>]*bindsubmit="handleButtonSubmit"[^>]*bindreset="handleButtonReset"[^>]*>[\s\S]*<cool-button label="Submit"[^>]*form-type="submit"[\s\S]*<cool-button label="Reset"[^>]*form-type="reset"[\s\S]*<\/form>/);
   assert.match(source, /\{\{buttonSubmitResult\}\}/);
   assert.match(pageSource, /handleButtonSubmit\(event\)[\s\S]*setData\(\{ buttonSubmitResult:/);
+  assert.match(pageSource, /handleButtonReset\(\)[\s\S]*setData\(\{ buttonSubmitResult:/);
   assert.equal((source.match(/accessibility-label="Button example"/g) ?? []).length, 1);
+});
+
+test('selected WeChat calendar and option text use AA ink over accent', async () => {
+  const [tokens, generator, calendar, tabBar, segmentedControl] = await Promise.all([
+    readFile(new URL('../tokens/generated/wechat/cool-ui-tokens.wxss', root), 'utf8'),
+    readFile(new URL('../../scripts/generate-components.mjs', root), 'utf8'),
+    readFile(new URL('src/components/cool-month-calendar/index.wxss', root), 'utf8'),
+    readFile(new URL('src/components/cool-tab-bar/index.wxss', root), 'utf8'),
+    readFile(new URL('src/components/cool-segmented-control/index.wxss', root), 'utf8'),
+  ]);
+  const token = (name) => tokens.match(new RegExp(`--cool-color-light-${name}:\\s*(#[0-9A-F]{8});`))?.[1];
+  const luminance = (argb) => {
+    const channel = (start) => {
+      const value = Number.parseInt(argb.slice(start, start + 2), 16) / 255;
+      return value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
+    };
+    return (0.2126 * channel(1)) + (0.7152 * channel(3)) + (0.0722 * channel(5));
+  };
+  const contrast = (foreground, background) => {
+    const first = luminance(foreground);
+    const second = luminance(background);
+    return (Math.max(first, second) + 0.05) / (Math.min(first, second) + 0.05);
+  };
+
+  assert.ok(contrast(token('text'), token('accent')) >= 4.5);
+  for (const source of [generator, calendar, tabBar, segmentedControl]) assert.match(source, /color:\s*var\(--cool-color-light-text\)/);
+  assert.doesNotMatch(generator, /is-active[\s\S]{0,120}color:\s*var\(--cool-color-light-background\)/);
+  assert.doesNotMatch(calendar, /is-selected\s*\{[^}]*color:\s*var\(--cool-color-light-background\)/);
 });
 
 const controlledOptionTags = ['cool-tab-bar', 'cool-segmented-control'];
