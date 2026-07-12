@@ -17,18 +17,29 @@ function twoDigit(value: number): string {
   return value < 10 ? `0${value}` : `${value}`
 }
 
-function catalogDate(index: number): string {
-  if (index < 3) return `2026-06-${twoDigit(index + 28)}`
-  if (index < 34) return `2026-07-${twoDigit(index - 2)}`
-  return `2026-08-${twoDigit(index - 33)}`
+function calendarDate(value: Date): string {
+  return `${value.getUTCFullYear()}-${twoDigit(value.getUTCMonth() + 1)}-${twoDigit(value.getUTCDate())}`
+}
+
+function shiftMonth(displayedMonth: string, direction: CoolMonthDirection): string {
+  const year = Number(displayedMonth.substring(0, 4))
+  const month = Number(displayedMonth.substring(5, 7))
+  const offset = direction === CoolMonthDirection.previous ? -1 : 1
+  const shifted = new Date(Date.UTC(year, month - 1 + offset, 1))
+  return `${shifted.getUTCFullYear()}-${twoDigit(shifted.getUTCMonth() + 1)}`
 }
 
 function createCalendarDays(displayedMonth: string): CoolCalendarDay[] {
   const days: CoolCalendarDay[] = []
-  if (displayedMonth !== '2026-07') return days
+  const year = Number(displayedMonth.substring(0, 4))
+  const month = Number(displayedMonth.substring(5, 7))
+  if (displayedMonth.length !== 7 || !Number.isInteger(year) || !Number.isInteger(month) || month < 1 || month > 12) return days
+  const firstDay = new Date(Date.UTC(year, month - 1, 1))
+  const gridOffset = firstDay.getUTCDay()
   for (let index = 0; index < 42; index += 1) {
-    const date = catalogDate(index)
-    const day = index < 3 ? index + 28 : (index < 34 ? index - 2 : index - 33)
+    const cellDate = new Date(Date.UTC(year, month - 1, 1 - gridOffset + index))
+    const date = calendarDate(cellDate)
+    const day = cellDate.getUTCDate()
     const isSelectedToday = date === '2026-07-12'
     const markers: CoolCalendarMarker[] = isSelectedToday ? [
       new CoolCalendarMarker(Tone.accent),
@@ -55,6 +66,7 @@ function createCalendarDays(displayedMonth: string): CoolCalendarDay[] {
 @Component
 struct Index {
   @State selectedDate: string = '2026-07-12'
+  @State displayedMonth: string = '2026-07'
   @State lastMonthDirection: string = 'none'
 
   build() {
@@ -70,14 +82,15 @@ struct Index {
         Text(`Month request: ${this.lastMonthDirection}`).fontSize(CoolTokens.typographyCaption)
         CoolMonthCalendar({
           selectedDate: this.selectedDate,
-          displayedMonth: '2026-07',
-          days: createCalendarDays('2026-07'),
+          displayedMonth: this.displayedMonth,
+          days: createCalendarDays(this.displayedMonth),
           weekdays: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
           onSelect: (day: CoolCalendarDay) => {
             this.selectedDate = day.date
           },
           onMonthChange: (direction: CoolMonthDirection) => {
             this.lastMonthDirection = direction
+            this.displayedMonth = shiftMonth(this.displayedMonth, direction)
           }
         })
       }.padding(24).width('100%')

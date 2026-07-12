@@ -71,7 +71,7 @@ export function coolToneColor(tone: Tone): string {
 @Builder
 export function CoolGeneratedComponent(params: CoolGeneratedParams) {
   Stack() {
-    Row({ space: tokenNumber(CoolTokens.spaceSm) }) {
+    Row({ space: coolTokenNumber(CoolTokens.spaceSm) }) {
       if (params.config.loading) {
         LoadingProgress().width(CoolTokens.sizeControlSmall).height(CoolTokens.sizeControlSmall)
       }

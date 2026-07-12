@@ -14,6 +14,15 @@ test('ArkUI generated APIs select native primitives at generation time', async (
   }
 });
 
+test('ArkUI validator rejects calls to the removed tokenNumber helper', async () => {
+  const [core, validator] = await Promise.all([
+    read('packages/arkui/src/main/ets/components/CoolCore.ets'),
+    read('packages/arkui/scripts/validate.mjs'),
+  ]);
+  assert.doesNotMatch(core, /\btokenNumber\(/);
+  assert.match(validator, /assert\.doesNotMatch\(core,\s*\/\\btokenNumber\\\(/);
+});
+
 test('ArkUI Catalog does not render every entry as a button', async () => {
   const catalog = await read('apps/catalog-arkui/entry/src/main/ets/pages/Index.ets');
   for (const component of ['CoolButton', 'CoolTextField', 'CoolToggle', 'CoolSlider', 'CoolCard']) {
@@ -81,7 +90,10 @@ test('ArkUI MonthCalendar uses typed defaultable slots and a single token-driven
   assert.match(calendar, /ForEach\(this\.resolvedDays\(\),[\s\S]*item\.key/);
   assert.match(calendar, /resolvedWeekdays\(\)[\s\S]*length\s*===\s*7/);
   assert.match(calendar, /Button\(\)[\s\S]*accessibilityText\(item\.day\.accessibilityLabel/);
-  assert.match(calendar, /constraintSize\(\{\s*minHeight:\s*CoolTokens\.sizeTouchTarget/);
+  assert.match(calendar, /accessibilityText\(item\.day\.accessibilityLabel[^\n]+\)[\s\S]*accessibilitySelected\(item\.day\.isSelected\)[\s\S]*enabled\(!item\.day\.isDisabled\)/);
+  assert.match(calendar, /constraintSize\(\{\s*minWidth:\s*CoolTokens\.sizeTouchTarget,\s*minHeight:\s*CoolTokens\.sizeTouchTarget\s*\}\)/);
+  assert.match(calendar, /private calendarGridMinimumWidth\(\):\s*number[\s\S]*coolTokenNumber\(CoolTokens\.sizeTouchTarget\)\s*\*\s*7[\s\S]*coolTokenNumber\(CoolTokens\.spaceXs\)\s*\*\s*6/);
+  assert.match(calendar, /this\.header\([\s\S]*Scroll\(\)\s*\{\s*Column[\s\S]*this\.resolvedWeekdays\(\)[\s\S]*this\.resolvedDays\(\)[\s\S]*constraintSize\(\{\s*minWidth:\s*this\.calendarGridMinimumWidth\(\)\s*\}\)[\s\S]*scrollable\(ScrollDirection\.Horizontal\)/);
   assert.doesNotMatch(calendar, /\.maxLines\(|\.textOverflow\(/);
   assert.equal((calendar.match(/\.backdropBlur\(/g) ?? []).length, 1);
   assert.doesNotMatch(calendar, /(?:backgroundColor|fontColor|borderColor)\(['"]#/);
@@ -107,14 +119,34 @@ test('ArkUI native generation, exports, validation, and Catalog fixture stay int
   assert.match(validator, /mode\s*===\s*'native'[\s\S]*assert\.doesNotMatch\(generated/);
   assert.match(catalog, /\bCoolMonthCalendar\b/);
   assert.match(catalog, /@State selectedDate:\s*string/);
+  assert.match(catalog, /@State displayedMonth:\s*string\s*=\s*'2026-07'/);
+  assert.match(catalog, /function shiftMonth\(displayedMonth:\s*string,\s*direction:\s*CoolMonthDirection\):\s*string/);
   assert.match(catalog, /createCalendarDays\(displayedMonth:\s*string\):\s*CoolCalendarDay\[\]/);
   assert.match(catalog, /for\s*\(let index = 0; index < 42; index \+= 1\)/);
   assert.match(catalog, /selectedDate:\s*this\.selectedDate/);
+  assert.match(catalog, /displayedMonth:\s*this\.displayedMonth/);
+  assert.match(catalog, /days:\s*createCalendarDays\(this\.displayedMonth\)/);
+  assert.doesNotMatch(catalog, /displayedMonth:\s*'2026-07'|days:\s*createCalendarDays\('2026-07'\)/);
   assert.match(catalog, /onSelect:\s*\(day:\s*CoolCalendarDay\)/);
   assert.match(catalog, /this\.selectedDate\s*=\s*day\.date/);
-  assert.match(catalog, /onMonthChange:[\s\S]*CoolMonthDirection/);
+  assert.match(catalog, /onMonthChange:[\s\S]*CoolMonthDirection[\s\S]*this\.displayedMonth\s*=\s*shiftMonth\(this\.displayedMonth,\s*direction\)/);
+  assert.match(catalog, /new Date\(Date\.UTC\([\s\S]*getUTCDay\(\)[\s\S]*getUTCDate\(\)/);
   for (const fixture of ['A deliberately long secondary', "'2026-07-05'", "'2026-07-12'", "'2026-07-20'", 'Release ready']) {
     assert.match(catalog, new RegExp(fixture));
+  }
+
+  const fixtureDates = (displayedMonth) => {
+    const [year, month] = displayedMonth.split('-').map(Number);
+    const first = new Date(Date.UTC(year, month - 1, 1));
+    return Array.from({ length: 42 }, (_, index) => {
+      const date = new Date(Date.UTC(year, month - 1, 1 - first.getUTCDay() + index));
+      return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, '0')}-${String(date.getUTCDate()).padStart(2, '0')}`;
+    });
+  };
+  for (const month of ['2026-06', '2026-07', '2026-08']) {
+    const dates = fixtureDates(month);
+    assert.equal(dates.length, 42);
+    assert.ok(dates.every(Boolean));
   }
 });
 

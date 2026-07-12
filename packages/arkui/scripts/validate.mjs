@@ -5,7 +5,9 @@ const root = new URL('../', import.meta.url);
 const contract = JSON.parse(await readFile(new URL('../../contracts/components.json', root), 'utf8'));
 const capabilities = JSON.parse(await readFile(new URL('../../contracts/component-capabilities.json', root), 'utf8'));
 const generated = await readFile(new URL('src/main/ets/components/GeneratedComponents.ets', root), 'utf8');
+const core = await readFile(new URL('src/main/ets/components/CoolCore.ets', root), 'utf8');
 const index = await readFile(new URL('Index.ets', root), 'utf8');
+assert.doesNotMatch(core, /\btokenNumber\(/, 'undefined legacy tokenNumber helper');
 for (const { name } of contract.components) {
   const api = `Cool${name.replace(/^Fluid/, '')}`;
   assert.match(generated, new RegExp(`"${name}"`), `${name} registry`);

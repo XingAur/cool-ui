@@ -338,6 +338,10 @@ export struct CoolMonthCalendar {
     return resolveCoolCalendarDays(this.days, this.selectedDate, this.accessibilityLabels)
   }
 
+  private calendarGridMinimumWidth(): number {
+    return (coolTokenNumber(CoolTokens.sizeTouchTarget) * 7) + (coolTokenNumber(CoolTokens.spaceXs) * 6)
+  }
+
   private requestSelection(day: CoolCalendarDay): void {
     if (day.isDisabled) return
     this.onSelect(cloneCoolCalendarDay(day))
@@ -356,52 +360,61 @@ export struct CoolMonthCalendar {
         this.accessibilityLabels.nextMonth,
         (direction: CoolMonthDirection) => this.requestMonthChange(direction)
       ))
-      Grid() {
-        ForEach(this.resolvedWeekdays(), (weekday: string) => {
-          GridItem() {
-            Text(weekday)
-              .fontSize(CoolTokens.typographyCaption)
-              .fontColor(CoolTokens.colorLightTextSecondary)
-              .textAlign(TextAlign.Center)
-              .width('100%')
-          }
-        })
-      }
-      .columnsTemplate('1fr 1fr 1fr 1fr 1fr 1fr 1fr')
-      .columnsGap(CoolTokens.spaceXs)
-      Grid() {
-        ForEach(this.resolvedDays(), (item: CoolResolvedCalendarDayItem) => {
-          GridItem() {
-            Button() {
-              Column({ space: coolTokenNumber(CoolTokens.spaceXs) }) {
-                this.day(item.day)
-                Row({ space: coolTokenNumber(CoolTokens.spaceXs) }) {
-                  ForEach(item.day.markers, (marker: CoolCalendarMarker) => {
-                    this.marker(marker)
-                  })
-                }
+      Scroll() {
+        Column({ space: coolTokenNumber(CoolTokens.spaceMd) }) {
+          Grid() {
+            ForEach(this.resolvedWeekdays(), (weekday: string) => {
+              GridItem() {
+                Text(weekday)
+                  .fontSize(CoolTokens.typographyCaption)
+                  .fontColor(CoolTokens.colorLightTextSecondary)
+                  .textAlign(TextAlign.Center)
+                  .width('100%')
               }
-              .width('100%')
-              .padding(CoolTokens.spaceXs)
-            }
-            .constraintSize({ minHeight: CoolTokens.sizeTouchTarget })
-            .width('100%')
-            .enabled(!item.day.isDisabled)
-            .opacity(coolDayOpacity(item.day))
-            .backgroundColor(coolDayBackground(item.day))
-            .borderRadius(coolTokenNumber(CoolTokens.radiusSmall))
-            .border({
-              width: item.day.isToday ? CoolTokens.borderFocus : CoolTokens.borderHairline,
-              color: item.day.isToday ? CoolTokens.colorLightAccent : CoolTokens.colorLightSurfaceTint
             })
-            .accessibilityText(item.day.accessibilityLabel ?? `${item.day.day}`)
-            .onClick(() => this.requestSelection(item.day))
           }
-        }, (item: CoolResolvedCalendarDayItem) => item.key)
+          .columnsTemplate('1fr 1fr 1fr 1fr 1fr 1fr 1fr')
+          .columnsGap(CoolTokens.spaceXs)
+          Grid() {
+            ForEach(this.resolvedDays(), (item: CoolResolvedCalendarDayItem) => {
+              GridItem() {
+                Button() {
+                  Column({ space: coolTokenNumber(CoolTokens.spaceXs) }) {
+                    this.day(item.day)
+                    Row({ space: coolTokenNumber(CoolTokens.spaceXs) }) {
+                      ForEach(item.day.markers, (marker: CoolCalendarMarker) => {
+                        this.marker(marker)
+                      })
+                    }
+                  }
+                  .width('100%')
+                  .padding(CoolTokens.spaceXs)
+                }
+                .constraintSize({ minWidth: CoolTokens.sizeTouchTarget, minHeight: CoolTokens.sizeTouchTarget })
+                .width('100%')
+                .opacity(coolDayOpacity(item.day))
+                .backgroundColor(coolDayBackground(item.day))
+                .borderRadius(coolTokenNumber(CoolTokens.radiusSmall))
+                .border({
+                  width: item.day.isToday ? CoolTokens.borderFocus : CoolTokens.borderHairline,
+                  color: item.day.isToday ? CoolTokens.colorLightAccent : CoolTokens.colorLightSurfaceTint
+                })
+                .accessibilityText(item.day.accessibilityLabel ?? `${item.day.day}`)
+                .accessibilitySelected(item.day.isSelected)
+                .enabled(!item.day.isDisabled)
+                .onClick(() => this.requestSelection(item.day))
+              }
+            }, (item: CoolResolvedCalendarDayItem) => item.key)
+          }
+          .columnsTemplate('1fr 1fr 1fr 1fr 1fr 1fr 1fr')
+          .columnsGap(CoolTokens.spaceXs)
+          .rowsGap(CoolTokens.spaceXs)
+        }
+        .constraintSize({ minWidth: this.calendarGridMinimumWidth() })
       }
-      .columnsTemplate('1fr 1fr 1fr 1fr 1fr 1fr 1fr')
-      .columnsGap(CoolTokens.spaceXs)
-      .rowsGap(CoolTokens.spaceXs)
+      .width('100%')
+      .scrollable(ScrollDirection.Horizontal)
+      .scrollBar(BarState.Off)
     }
     .width('100%')
     .padding(CoolTokens.spaceLg)
