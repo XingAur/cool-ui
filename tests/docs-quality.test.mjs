@@ -118,8 +118,9 @@ test('WeChat README states native Button form and open-type boundaries', async (
   assert.match(source, /native `<button>`/i);
   assert.match(source, /open-type/i);
   assert.match(source, /form-type/i);
-  assert.match(source, /internal `<form>`/i);
-  assert.match(source, /cannot submit an outer form/i);
+  assert.match(source, /wx:\/\/form-field-button/);
+  assert.match(source, /consumer-owned outer `<form/i);
+  assert.doesNotMatch(source, /internal `<form>`|cannot submit an outer form/i);
   assert.match(source, /platform|base library|微信/i);
 });
 
